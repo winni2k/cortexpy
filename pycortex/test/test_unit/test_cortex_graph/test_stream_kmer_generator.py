@@ -1,5 +1,3 @@
-from io import BytesIO
-from math import ceil
 import attr
 
 from hypothesis import given
