@@ -12,6 +12,9 @@ from pycortex.test.builders.graph_header_builder import CortexGraphHeaderBuilder
 
 MAX_UINT = 2 ** (struct.calcsize('I') * 8) - 1
 MAX_ULONG = 2 ** (struct.calcsize('L') * 8) - 1
+UINT8_T = 1
+UINT32_T = 4
+UINT64_T = 8
 
 
 @composite
@@ -24,7 +27,7 @@ def color_information_blocks(draw):
     return ColorInformationBlock(*bools, *uint32_ts, name_size, name)
 
 
-class TestCortexGraphHeaderParsing(object):
+class TestHeaderParser(object):
     @given(s.binary())
     def test_raises_on_incorrect_magic_word(self, magic_word):
         assume(magic_word != b'CORTEX')
@@ -56,7 +59,7 @@ class TestCortexGraphHeaderParsing(object):
         assert 'Saw kmer size' in str(excinfo.value)
 
     def test_raises_on_invalid_kmer_bits(self):
-        fh = CortexGraphHeaderBuilder().with_kmer_size(3).with_kmer_bits(0).build()
+        fh = CortexGraphHeaderBuilder().with_kmer_size(3).with_kmer_container_size(0).build()
 
         with pytest.raises(CortexGraphParserException) as excinfo:
             CortexGraphHeader.from_stream(fh)
@@ -66,7 +69,7 @@ class TestCortexGraphHeaderParsing(object):
     def test_raises_on_invalid_num_colors(self):
         fh = (CortexGraphHeaderBuilder()
               .with_kmer_size(3)
-              .with_kmer_bits(1)
+              .with_kmer_container_size(1)
               .with_num_colors(0)
               .build())
 
@@ -108,7 +111,7 @@ class TestCortexGraphHeaderParsing(object):
 
         cgb = (CortexGraphHeaderBuilder()
                .with_kmer_size(kmer_size)
-               .with_kmer_bits(kmer_container_size)
+               .with_kmer_container_size(kmer_container_size)
                .with_num_colors(num_colors)
                .with_mean_read_lengths(mean_read_lengths)
                .with_total_sequence(total_sequence)
@@ -130,3 +133,4 @@ class TestCortexGraphHeaderParsing(object):
         assert cgh.mean_read_lengths == tuple(mean_read_lengths)
         assert cgh.mean_total_sequence == tuple(total_sequence)
         assert cgh.sample_names == tuple(color_names)
+        assert cgh.record_size == UINT64_T * kmer_container_size + (UINT32_T + UINT8_T) * num_colors
