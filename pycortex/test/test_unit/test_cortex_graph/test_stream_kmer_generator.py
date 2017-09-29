@@ -16,7 +16,7 @@ class CortexGraphHeaderStub(object):
 
 class TestStreamKmerGenerator(object):
     @given(s.data(),
-           s.integers(min_value=1),
+           s.integers(min_value=1, max_value=260),
            s.integers(min_value=0),
            s.integers(min_value=0, max_value=4))
     def test_parses_records(self, data, kmer_size, num_colors, n_kmers):
@@ -32,8 +32,8 @@ class TestStreamKmerGenerator(object):
         header = CortexGraphHeaderStub(kmer_size, builder.kmer_container_size, num_colors)
 
         # when
-        for kmer, expected_kmer in zip(
-                kmer_generator_from_stream(builder.build(), header), expected_kmers):
+        for kmer, expected_kmer in zip(kmer_generator_from_stream(builder.build(), header),
+                                       expected_kmers):
             # then
             assert expected_kmer.kmer == kmer.kmer
             assert expected_kmer.coverage == kmer.coverage
