@@ -3,7 +3,7 @@ import argparse
 import attr
 
 from pycortex.cortex_graph import CortexGraphRandomAccessParser, \
-    cortex_kmer_as_cortex_jdk_print_string, CortexGraphStreamingParser
+    cortex_kmer_as_cortex_jdk_print_string, CortexGraphStreamingParser, CortexGraphRandomAccessError
 
 
 @attr.s(slots=True)
@@ -17,7 +17,10 @@ class CortexGraphContigRetriever(object):
         kmers = []
         for kmer_start in range(len(contig) - kmer_size + 1):
             kmer_string = contig[kmer_start:(kmer_start + kmer_size)]
-            kmer = graph_parser.get_kmer_for_string(kmer_string)
+            try:
+                kmer = graph_parser.get_kmer_for_string(kmer_string)
+            except CortexGraphRandomAccessError:
+                kmer = None
             kmers.append((kmer, kmer_string))
         return kmers
 
