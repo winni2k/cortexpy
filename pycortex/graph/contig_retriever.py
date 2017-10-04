@@ -17,7 +17,7 @@ class ContigRetriever(object):
             kmer_string = contig[kmer_start:(kmer_start + kmer_size)]
             try:
                 kmer = graph_parser.get_kmer_for_string(kmer_string)
-            except parser.RandomAccessError:
+            except KeyError:
                 kmer = None
             kmers.append((kmer, kmer_string))
         return kmers

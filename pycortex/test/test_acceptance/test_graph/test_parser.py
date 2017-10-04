@@ -7,7 +7,7 @@ from pycortex.test.builders.graph.body import KmerRecord, as_edge_set, print_kme
 from pycortex.test.builders.mccortex_builder import MCCORTEX, MccortexFactory
 
 
-class TestCortexGraph(object):
+class TestGraphParser(object):
     def test_parses_a_graph_header(self, tmpdir):
         # given
         sample_name = b'sample_0'
@@ -75,7 +75,7 @@ class TestCortexGraph(object):
         cg = RandomAccess(open(output_graph, 'rb'))
 
         # when
-        actual = cg.get_kmer('AAC')
+        actual = cg['AAC']
 
         # then
         print_kmer(actual)

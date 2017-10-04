@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from pycortex.commands.print_ import print_contig
+from pycortex.command.print_ import print_contig
 
 
 def main(argv):
