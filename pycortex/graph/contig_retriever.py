@@ -1,14 +1,15 @@
 import attr
 
 from pycortex.graph import parser as parser
+from pycortex.graph.parser.streaming import kmer_generator_from_stream
 
 
 @attr.s(slots=True)
 class ContigRetriever(object):
-    fh = attr.ib()
+    graph_handle = attr.ib()
 
     def get_kmers_for_contig(self, contig):
-        graph_parser = parser.RandomAccess(self.fh)
+        graph_parser = parser.RandomAccess(self.graph_handle)
         kmer_size = graph_parser.header.kmer_size
         assert len(contig) >= kmer_size
         kmers = []
@@ -22,5 +23,4 @@ class ContigRetriever(object):
         return kmers
 
     def get_kmers(self):
-        graph_parser = parser.Streaming(self.fh)
-        return graph_parser.kmers()
+        return kmer_generator_from_stream(self.graph_handle)

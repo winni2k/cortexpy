@@ -5,7 +5,7 @@ from io import SEEK_END
 import attr
 
 from pycortex.utils import revcomp
-from pycortex.graph.parser.header import Header
+from pycortex.graph.parser.header import header_from_stream
 from pycortex.kmer import KmerByStringComparator, Kmer
 
 
@@ -15,23 +15,23 @@ class RandomAccessError(KeyError):
 
 @attr.s(slots=True)
 class RandomAccess(object):
-    fh = attr.ib()
+    graph_handle = attr.ib()
     header = attr.ib(init=False)
     graph_sequence = attr.ib(init=False)
 
     def __attrs_post_init__(self):
-        assert self.fh.seekable()
-        self.fh.seek(0)
-        self.header = Header.from_stream(self.fh)
-        body_start_stream_position = self.fh.tell()
+        assert self.graph_handle.seekable()
+        self.graph_handle.seek(0)
+        self.header = header_from_stream(self.graph_handle)
+        body_start_stream_position = self.graph_handle.tell()
 
-        self.fh.seek(0, SEEK_END)
-        body_size = self.fh.tell() - body_start_stream_position
+        self.graph_handle.seek(0, SEEK_END)
+        body_size = self.graph_handle.tell() - body_start_stream_position
         if body_size % self.header.record_size != 0:
             raise RuntimeError(
                 "Body size ({}) % Record size ({}) != 0".format(body_size, self.header.record_size))
         n_records = body_size // self.header.record_size
-        self.graph_sequence = KmerRecordSequence(fh=self.fh,
+        self.graph_sequence = KmerRecordSequence(graph_handle=self.graph_handle,
                                                  body_start=body_start_stream_position,
                                                  cortex_header=self.header,
                                                  n_records=n_records)
@@ -40,8 +40,8 @@ class RandomAccess(object):
         kmer = KmerByStringComparator(kmer=kmer_string)
         try:
             kmer_comparator = index(self.graph_sequence, kmer, retrieve=True)
-        except ValueError as e:
-            raise RandomAccessError('Could not retrieve kmer: ' + kmer_string) from e
+        except ValueError as exception:
+            raise RandomAccessError('Could not retrieve kmer: ' + kmer_string) from exception
 
         return kmer_comparator.kmer_object
 
@@ -50,27 +50,25 @@ class RandomAccess(object):
         kmer_string_revcomp = revcomp(kmer_string)
         if kmer_string < kmer_string_revcomp:
             return self.get_kmer(kmer_string)
-        else:
-            return self.get_kmer(kmer_string_revcomp)
+        return self.get_kmer(kmer_string_revcomp)
 
 
 # copied from https://docs.python.org/3.6/library/bisect.html
-def index(a, x, retrieve=False):
+def index(sequence, value, retrieve=False):
     'Locate the leftmost value exactly equal to x'
-    i = bisect_left(a, x)
-    if i != len(a):
-        val = a[i]
-        if val == x:
+    i = bisect_left(sequence, value)
+    if i != len(sequence):
+        val = sequence[i]
+        if val == value:
             if retrieve:
                 return val
-            else:
-                return i
-    raise ValueError("Could not find '{}'".format(x))
+            return i
+    raise ValueError("Could not find '{}'".format(value))
 
 
 @attr.s()
 class KmerRecordSequence(Sequence):
-    fh = attr.ib()
+    graph_handle = attr.ib()
     cortex_header = attr.ib()
     body_start = attr.ib()
     n_records = attr.ib()
@@ -90,8 +88,8 @@ class KmerRecordSequence(Sequence):
             raise TypeError("Index must be of type int")
         if item >= self.n_records or item < 0:
             raise IndexError("Index ({}) is out of range".format(item))
-        self.fh.seek(self.body_start + self.record_size * item)
-        kmer_bytes = self.fh.read(self.record_size)
+        self.graph_handle.seek(self.body_start + self.record_size * item)
+        kmer_bytes = self.graph_handle.read(self.record_size)
         return KmerByStringComparator(
             kmer_object=Kmer(
                 kmer_bytes,
@@ -102,4 +100,4 @@ class KmerRecordSequence(Sequence):
         )
 
     def __len__(self):
-        return self.n_records
+        return max(0, self.n_records)

@@ -31,12 +31,12 @@ class Kmer(object):
             kmer_as_uint64ts = np.frombuffer(
                 self._raw_data[:self.kmer_container_size_in_uint64ts * 8],
                 dtype='<u8')
-            kmer_as_uint64ts_be = kmer_as_uint64ts.byteswap().newbyteorder()  # change to big endian
-            kmer_as_properly_ordered_bits_right_aligned = np.unpackbits(
-                np.frombuffer(kmer_as_uint64ts_be.tobytes(), dtype=np.uint8)
+            big_endian_kmer = kmer_as_uint64ts.byteswap().newbyteorder()  # change to big endian
+            kmer_as_bits = np.unpackbits(
+                np.frombuffer(big_endian_kmer.tobytes(), dtype=np.uint8)
             )
             kmer = (
-                kmer_as_properly_ordered_bits_right_aligned.reshape(-1, 2) * np.array([2, 1])
+                kmer_as_bits.reshape(-1, 2) * np.array([2, 1])
             ).sum(1)
             self._kmer = ''.join(NUM_TO_LETTER[num] for num in kmer[(len(kmer) - self.kmer_size):])
         return self._kmer
