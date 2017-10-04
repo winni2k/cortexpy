@@ -3,7 +3,7 @@ import attr
 from hypothesis import given
 from hypothesis import strategies as s
 
-from pycortex.cortex_graph import kmer_generator_from_stream
+from pycortex.graph.parser.streaming import kmer_generator_from_stream
 from pycortex.test.builders.graph_body_builder import CortexGraphBodyBuilder, KmerRecord, kmers
 
 

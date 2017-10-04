@@ -2,8 +2,9 @@ import sys
 import argparse
 import attr
 
-from pycortex.cortex_graph import CortexGraphRandomAccessParser, \
-    cortex_kmer_as_cortex_jdk_print_string, CortexGraphStreamingParser, CortexGraphRandomAccessError
+import pycortex.graph.parser as parser
+from pycortex.graph.parser.streaming import Streaming
+from pycortex.commands.print_ import cortex_kmer_as_cortex_jdk_print_string
 
 
 @attr.s(slots=True)
@@ -11,7 +12,7 @@ class CortexGraphContigRetriever(object):
     fh = attr.ib()
 
     def get_kmers_for_contig(self, contig):
-        graph_parser = CortexGraphRandomAccessParser(self.fh)
+        graph_parser = parser.RandomAccess(self.fh)
         kmer_size = graph_parser.header.kmer_size
         assert len(contig) >= kmer_size
         kmers = []
@@ -19,13 +20,13 @@ class CortexGraphContigRetriever(object):
             kmer_string = contig[kmer_start:(kmer_start + kmer_size)]
             try:
                 kmer = graph_parser.get_kmer_for_string(kmer_string)
-            except CortexGraphRandomAccessError:
+            except parser.RandomAccessError:
                 kmer = None
             kmers.append((kmer, kmer_string))
         return kmers
 
     def get_kmers(self):
-        graph_parser = CortexGraphStreamingParser(self.fh)
+        graph_parser = Streaming(self.fh)
         return graph_parser.kmers()
 
 
