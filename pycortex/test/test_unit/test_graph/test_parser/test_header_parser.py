@@ -8,7 +8,7 @@ from hypothesis.strategies import data, composite, binary, integers
 
 import pycortex.graph.parser as parser
 from pycortex.graph.parser import HeaderParserError
-from pycortex.test.builders.graph_header_builder import CortexGraphHeaderBuilder, \
+from pycortex.test.builders.graph.header import CortexGraphHeaderBuilder, \
     ColorInformationBlock
 
 MAX_UINT = 2 ** (struct.calcsize('I') * 8) - 1

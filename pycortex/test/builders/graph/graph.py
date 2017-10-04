@@ -1,9 +1,9 @@
-import attr
-from attr import Factory
 from io import BytesIO
 
-from pycortex.test.builders.graph_body_builder import CortexGraphBodyBuilder
-from pycortex.test.builders.graph_header_builder import CortexGraphHeaderBuilder
+import attr
+from attr import Factory
+from pycortex.test.builders.graph.header import CortexGraphHeaderBuilder
+from pycortex.test.builders.graph.body import CortexGraphBodyBuilder
 
 
 @attr.s
