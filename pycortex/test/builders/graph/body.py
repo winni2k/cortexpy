@@ -63,7 +63,7 @@ class KmerRecord(object):
 
 
 @attr.s(slots=True)
-class CortexGraphBodyBuilder(object):
+class Body(object):
     sort_kmers = attr.ib(False)
     kmer_records = attr.ib(Factory(list), init=False)
     kmer_size = attr.ib(None)

@@ -3,7 +3,7 @@ from hypothesis import given
 from hypothesis import strategies as s
 
 from pycortex.graph.parser.streaming import kmer_generator_from_stream_and_header
-from pycortex.test.builders.graph.body import CortexGraphBodyBuilder, KmerRecord, \
+from pycortex.test.builders.graph.body import Body, KmerRecord, \
     kmers
 
 
@@ -21,7 +21,7 @@ class TestStreamKmerGenerator(object):
            s.integers(min_value=0, max_value=4))
     def test_parses_records(self, data, kmer_size, num_colors, n_kmers):
         # given
-        builder = CortexGraphBodyBuilder(kmer_size=kmer_size)
+        builder = Body(kmer_size=kmer_size)
 
         expected_kmers = []
         for _ in range(n_kmers):
@@ -45,7 +45,7 @@ class TestStreamKmerGenerator(object):
         kmer_size = 3
         num_colors = 0
         header = CortexGraphHeaderStub(kmer_size, kmer_container_size, num_colors)
-        builder = CortexGraphBodyBuilder(kmer_container_size)
+        builder = Body(kmer_container_size)
 
         expected_kmer = KmerRecord('AAC', tuple(), tuple())
         builder.with_kmer_record(expected_kmer)

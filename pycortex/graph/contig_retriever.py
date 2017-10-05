@@ -1,14 +1,14 @@
 import attr
+import networkx as nx
 
 from pycortex.graph import parser as parser
-from pycortex.graph.parser.streaming import kmer_generator_from_stream
 
 
 @attr.s(slots=True)
 class ContigRetriever(object):
     graph_handle = attr.ib()
 
-    def get_kmers_for_contig(self, contig):
+    def get_kmers(self, contig):
         graph_parser = parser.RandomAccess(self.graph_handle)
         kmer_size = graph_parser.header.kmer_size
         assert len(contig) >= kmer_size
@@ -22,5 +22,8 @@ class ContigRetriever(object):
             kmers.append((kmer, kmer_string))
         return kmers
 
-    def get_kmers(self):
-        return kmer_generator_from_stream(self.graph_handle)
+    def get_kmer_graph(self, contig):
+        g = nx.DiGraph()
+        for kmer, kmer_string in self.get_kmers(contig):
+            g.add_node(kmer_string)
+        return g

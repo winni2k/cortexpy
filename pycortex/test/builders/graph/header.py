@@ -39,7 +39,7 @@ class ColorInformationBlock(object):
 
 
 @attr.s(slots=True)
-class CortexGraphHeaderBuilder(object):
+class Header(object):
     magic_word = attr.ib(b'CORTEX')
     version = attr.ib(6)
     kmer_size = attr.ib(1)
