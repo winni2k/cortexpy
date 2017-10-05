@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from pycortex.command.print_ import print_contig
+from pycortex.command.show import show
 
 
 def main(argv):
@@ -9,11 +9,13 @@ def main(argv):
 
     # Copied from https://stackoverflow.com/a/26217957/528691
     subparsers = parser.add_subparsers()
-    parser_print = subparsers.add_parser('print', help='Print contig')
-    parser_print.add_argument('--graph')
-    parser_print.add_argument('--record')
+    show_cmd = subparsers.add_parser('show', help='Show contig')
+    show_cmd.add_argument('graph')
+    show_cmd.add_argument('--record')
+    show_cmd.add_argument('--output-type', default='term', choices=['term', 'png'])
+    show_cmd.add_argument('--output')
 
-    parser_print.set_defaults(func=print_contig)
+    show_cmd.set_defaults(func=show)
 
     args = parser.parse_args(argv)
     if args.func:
