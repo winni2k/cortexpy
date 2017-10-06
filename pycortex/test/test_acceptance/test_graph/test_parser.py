@@ -2,7 +2,6 @@ from itertools import repeat
 
 import pycortex.graph.parser as parser
 import pycortex.test.builder as builder
-from pycortex.test import runner
 from pycortex.test.builder.graph.body import KmerRecord, as_edge_set, print_kmer
 
 
@@ -14,7 +13,7 @@ class TestHeaderFromStream(object):
         kmer_size = 3
 
         mc_builder = (builder.Mccortex()
-                      .with_dna_sequence(sample_name, dna_sequence)
+                      .with_dna_sequence(dna_sequence, name=sample_name)
                       .with_kmer_size(kmer_size))
 
         expected_header = parser.Header(version=6,
@@ -29,7 +28,6 @@ class TestHeaderFromStream(object):
         # when
         output_graph = mc_builder.build(tmpdir)
 
-        runner.Mccortex(kmer_size).view(output_graph)
         header = parser.header.from_stream(open(output_graph, 'rb'))
 
         # then
@@ -41,7 +39,7 @@ class TestKmerGeneratorFromStream(object):
         # given
         kmer_size = 3
         mc_builder = (builder.Mccortex()
-                      .with_dna_sequence(b'sample_0', 'ACGTT')
+                      .with_dna_sequence('ACGTT')
                       .with_kmer_size(kmer_size))
 
         expected_kmers = [
@@ -52,7 +50,6 @@ class TestKmerGeneratorFromStream(object):
         # when
         output_graph = mc_builder.build(tmpdir)
 
-        runner.Mccortex(kmer_size).view(output_graph)
         kmer_generator = parser.kmer_generator_from_stream(open(output_graph, 'rb'))
 
         # then
@@ -68,7 +65,7 @@ class TestKmerGeneratorFromStream(object):
         # given
         kmer_size = 9
         mc_builder = (builder.Mccortex()
-                      .with_dna_sequence(b'sample_0', 'ACGTTCCCC')
+                      .with_dna_sequence('ACGTTCCCC')
                       .with_kmer_size(kmer_size))
 
         expected_kmers = [
@@ -78,7 +75,6 @@ class TestKmerGeneratorFromStream(object):
         # when
         output_graph = mc_builder.build(tmpdir)
 
-        runner.Mccortex(kmer_size).view(output_graph)
         kmer_generator = parser.kmer_generator_from_stream(open(output_graph, 'rb'))
 
         # then
@@ -95,7 +91,7 @@ class TestKmerGeneratorFromStream(object):
         kmer_size = 33
         contig = ''.join(list(repeat('A', kmer_size)))
         mc_builder = (builder.Mccortex()
-                      .with_dna_sequence(b'sample_0', contig)
+                      .with_dna_sequence(contig)
                       .with_kmer_size(kmer_size))
 
         expected_kmers = [
@@ -105,7 +101,6 @@ class TestKmerGeneratorFromStream(object):
         # when
         output_graph = mc_builder.build(tmpdir)
 
-        runner.Mccortex(kmer_size).view(output_graph)
         kmer_generator = parser.kmer_generator_from_stream(open(output_graph, 'rb'))
 
         # then
@@ -123,11 +118,10 @@ class TestRandomAccess(object):
         # given
         kmer_size = 3
         output_graph = (builder.Mccortex()
-                        .with_dna_sequence(b'sample_0', 'ACGTTT')
+                        .with_dna_sequence('ACGTTT')
                         .with_kmer_size(kmer_size)
                         .build(tmpdir))
 
-        runner.Mccortex(kmer_size).view(output_graph)
         expected = KmerRecord('AAC', (1,), (as_edge_set('A.....G.'),))
         cg = parser.RandomAccess(open(output_graph, 'rb'))
 
