@@ -43,7 +43,4 @@ class Graph(object):
 
     def build(self):
         self.header.with_kmer_container_size(self.body.kmer_container_size)
-        print(self.header)
-        print(self.body)
-        print(self.body.build().getvalue())
         return BytesIO(self.header.build().getvalue() + self.body.build().getvalue())

@@ -2,6 +2,7 @@ import attr
 import networkx as nx
 
 from pycortex.graph import parser as parser
+from pycortex.utils import revcomp
 
 
 @attr.s(slots=True)
@@ -23,7 +24,23 @@ class ContigRetriever(object):
         return kmers
 
     def get_kmer_graph(self, contig):
-        g = nx.DiGraph()
+        kmer_graph = nx.DiGraph()
         for kmer, kmer_string in self.get_kmers(contig):
-            g.add_node(kmer_string)
-        return g
+            kmer_graph.add_node(kmer_string)
+            is_revcomp = kmer.kmer != kmer_string
+            incoming_kmers = set()
+            outgoing_kmers = set()
+            for edge_set in kmer.edges:
+                for incoming_kmer in edge_set.get_incoming_kmers(kmer.kmer):
+                    incoming_kmers.add(incoming_kmer)
+                for outgoing_kmer in edge_set.get_outgoing_kmers(kmer.kmer):
+                    outgoing_kmers.add(outgoing_kmer)
+            if is_revcomp:
+                incoming_kmers, outgoing_kmers = \
+                    {revcomp(kmer) for kmer in outgoing_kmers}, \
+                    {revcomp(kmer) for kmer in incoming_kmers}
+            for incoming_kmer in incoming_kmers:
+                kmer_graph.add_edge(incoming_kmer, kmer_string)
+            for outgoing_kmer in outgoing_kmers:
+                kmer_graph.add_edge(kmer_string, outgoing_kmer)
+        return kmer_graph

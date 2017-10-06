@@ -3,6 +3,7 @@ from struct import unpack
 import attr
 import numpy as np
 
+from pycortex.edge_set import EdgeSet
 from pycortex.graph.parser.constants import NUM_TO_LETTER, UINT64_T, UINT32_T
 
 
@@ -15,6 +16,8 @@ class Kmer(object):
     _kmer = attr.ib(None)
     _coverage = attr.ib(None)
     _edges = attr.ib(None)
+    _incoming_kmers = attr.ib(None)
+    _outgoing_kmers = attr.ib(None)
     _kmer_vals_to_delete = attr.ib(init=False)
 
     def __attrs_post_init__(self):
@@ -59,7 +62,7 @@ class Kmer(object):
             edge_bytes = list(self._raw_data[start:])
             edge_sets = np.unpackbits(np.array(edge_bytes, dtype=np.uint8)).reshape(-1, 4)
             edge_sets[1::2] = np.fliplr(edge_sets[1::2])
-            self._edges = tuple(map(tuple, edge_sets.reshape(-1, 8)))
+            self._edges = tuple(map(EdgeSet, edge_sets.reshape(-1, 8)))
         return self._edges
 
 

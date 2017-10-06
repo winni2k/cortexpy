@@ -8,10 +8,10 @@ from attr import Factory
 from bitstring import BitArray
 from hypothesis import strategies as s
 
+from pycortex.edge_set import EdgeSet
 from pycortex.test.test_unit.test_graph.test_parser.test_header_parser import UINT64_T
 
 KMER_LETTER_TO_NUM = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
-KMER_LETTER_TO_NUM_REVERSED_BITS = {'A': 0, 'C': 2, 'G': 1, 'T': 3}
 KMER_LETTER_NUM_TO_BIT_REPR = ('00', '01', '10', '11')
 KMER_CONTAINER_WORD_SIZE_IN_BITS = 64
 LETTERS_PER_UINT64_T = UINT64_T * 4
@@ -114,19 +114,12 @@ def kmers(draw, kmer_size, num_colors):
         s.lists(s.integers(min_value=0, max_value=1), min_size=8, max_size=8),
         min_size=num_colors,
         max_size=num_colors))
-    edges = tuple([tuple(edge_set) for edge_set in edges])
+    edges = tuple([EdgeSet(edge_set) for edge_set in edges])
     return KmerRecord(kmer, coverage, edges)
 
 
 def as_edge_set(edge_set_string):
-    assert len(edge_set_string) == 8
-    edge_set = []
-    for edge in edge_set_string:
-        if edge == '.':
-            edge_set.append(0)
-        else:
-            edge_set.append(1)
-    return tuple(edge_set)
+    return EdgeSet(edge_set_string)
 
 
 def print_kmer(kmer):
