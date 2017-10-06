@@ -1,26 +1,39 @@
+from enum import Enum
+
+import networkx as nx
+
 from pycortex.graph import ContigRetriever
 from pycortex.graph.parser.constants import NUM_TO_LETTER
 from pycortex.graph.parser.streaming import kmer_generator_from_stream
 from pycortex.utils import revcomp
 
 
+class ViewChoice(Enum):
+    term = 0
+    png = 1
+
+
 def view(args):
-    print_contig(args)
-
-
-def print_contig(args):
     with open(args.graph, 'rb') as graph_handle:
-        if args.record:
-            contig_retriever = ContigRetriever(graph_handle=graph_handle)
-            contig_kmers = contig_retriever.get_kmers(args.record)
-            if len(contig_kmers) == 1:
-                print(kmer_to_cortex_jdk_print_string(contig_kmers[0][0]))
-            else:
-                for kmer, kmer_string in contig_kmers:
-                    print(kmer_to_cortex_jdk_print_string(kmer, alt_kmer_string=kmer_string))
-        else:
-            for kmer in kmer_generator_from_stream(graph_handle):
-                print(kmer_to_cortex_jdk_print_string(kmer))
+        if args.output_type == ViewChoice.term.name:
+            print_contig(graph_handle, record=args.record)
+        elif args.output_type == ViewChoice.png.name:
+            plot_contig(graph_handle, args.output, args.record)
+
+
+def plot_contig(graph_handle, output, record):
+    kmer_graph = ContigRetriever(graph_handle).get_kmer_graph(record)
+    nx.draw(kmer_graph)
+
+
+def print_contig(graph_handle, *, record=None):
+    if record is None:
+        for kmer in kmer_generator_from_stream(graph_handle):
+            print(kmer_to_cortex_jdk_print_string(kmer))
+    else:
+        contig_kmers = ContigRetriever(graph_handle=graph_handle).get_kmers(record)
+        for kmer, kmer_string in contig_kmers:
+            print(kmer_to_cortex_jdk_print_string(kmer, alt_kmer_string=kmer_string))
 
 
 def kmer_to_cortex_jdk_print_string(kmer, alt_kmer_string=None):

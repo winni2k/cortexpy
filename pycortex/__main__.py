@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from pycortex.command.view import view
+import pycortex.command.view as view
 
 
 def main(argv):
@@ -12,10 +12,11 @@ def main(argv):
     view_cmd = subparsers.add_parser('view', help='Show contig')
     view_cmd.add_argument('graph')
     view_cmd.add_argument('--record')
-    view_cmd.add_argument('--output-type', default='term', choices=['term', 'png'])
+    view_cmd.add_argument('--output-type', default='term',
+                          choices=[v.name for v in view.ViewChoice])
     view_cmd.add_argument('--output')
 
-    view_cmd.set_defaults(func=view)
+    view_cmd.set_defaults(func=view.view)
 
     args = parser.parse_args(argv)
     if args.func:
