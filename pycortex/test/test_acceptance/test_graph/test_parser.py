@@ -122,13 +122,13 @@ class TestRandomAccess(object):
     def test_retrieves_kmer_by_random_access(self, tmpdir):
         # given
         kmer_size = 3
-        mc_builder = (builder.Mccortex()
-                      .with_dna_sequence(b'sample_0', 'ACGTTT')
-                      .with_kmer_size(kmer_size))
+        output_graph = (builder.Mccortex()
+                        .with_dna_sequence(b'sample_0', 'ACGTTT')
+                        .with_kmer_size(kmer_size)
+                        .build(tmpdir))
 
-        expected = KmerRecord('AAC', (1,), (as_edge_set('A.....G.'),))
-        output_graph = mc_builder.build(tmpdir)
         runner.Mccortex(kmer_size).view(output_graph)
+        expected = KmerRecord('AAC', (1,), (as_edge_set('A.....G.'),))
         cg = parser.RandomAccess(open(output_graph, 'rb'))
 
         # when

@@ -4,7 +4,7 @@ from pycortex.graph.parser.streaming import kmer_generator_from_stream
 from pycortex.utils import revcomp
 
 
-def show(args):
+def view(args):
     print_contig(args)
 
 
