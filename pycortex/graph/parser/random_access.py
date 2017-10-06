@@ -5,7 +5,7 @@ from io import SEEK_END
 import attr
 
 from pycortex.utils import revcomp
-from pycortex.graph.parser.header import header_from_stream
+import pycortex.graph.parser.header
 from pycortex.graph.parser.streaming import kmer_generator_from_stream_and_header
 from pycortex.kmer import KmerByStringComparator, Kmer
 
@@ -24,7 +24,7 @@ class RandomAccess(Mapping):
     def __attrs_post_init__(self):
         assert self.graph_handle.seekable()
         self.graph_handle.seek(0)
-        self.header = header_from_stream(self.graph_handle)
+        self.header = pycortex.graph.parser.header.from_stream(self.graph_handle)
         body_start_stream_position = self.graph_handle.tell()
 
         self.graph_handle.seek(0, SEEK_END)

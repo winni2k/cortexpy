@@ -21,7 +21,7 @@ Header = namedtuple('Header', [
 ])
 
 
-def header_from_stream(stream):
+def from_stream(stream):
     magic_word = unpack('cccccc', stream.read(6))
 
     if magic_word != CORTEX_MAGIC_WORD:

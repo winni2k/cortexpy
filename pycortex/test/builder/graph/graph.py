@@ -1,8 +1,8 @@
 from io import BytesIO
 
 import attr
-from pycortex.test.builders.graph.body import as_edge_set, KmerRecord, Body
-from pycortex.test.builders.graph.header import Header
+from pycortex.test.builder.graph.body import as_edge_set, KmerRecord, Body
+from pycortex.test.builder.graph.header import Header
 
 
 @attr.s

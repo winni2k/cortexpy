@@ -1,10 +1,10 @@
 from pycortex.graph.parser.constants import UINT64_T
-from pycortex.graph.parser.header import header_from_stream
+from pycortex.graph.parser.header import from_stream
 from pycortex.kmer import Kmer
 
 
 def kmer_generator_from_stream(stream):
-    header = header_from_stream(stream)
+    header = from_stream(stream)
     return kmer_generator_from_stream_and_header(stream, header)
 
 

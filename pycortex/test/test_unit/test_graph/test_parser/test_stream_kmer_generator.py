@@ -3,8 +3,7 @@ from hypothesis import given
 from hypothesis import strategies as s
 
 from pycortex.graph.parser.streaming import kmer_generator_from_stream_and_header
-from pycortex.test.builders.graph.body import Body, KmerRecord, \
-    kmers
+from pycortex.test.builder.graph.body import Body, KmerRecord, kmers
 
 
 @attr.s(slots=True)
