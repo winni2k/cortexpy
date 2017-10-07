@@ -4,6 +4,7 @@ from math import ceil
 from struct import pack
 
 import attr
+import numpy as np
 from attr import Factory
 from bitstring import BitArray
 from hypothesis import strategies as s
@@ -119,7 +120,18 @@ def kmers(draw, kmer_size, num_colors):
 
 
 def as_edge_set(edge_set_string):
-    return EdgeSet(edge_set_string)
+    return EdgeSet(edge_set_string_to_array(edge_set_string))
+
+
+def edge_set_string_to_array(edge_set_string):
+    assert len(edge_set_string) == 8
+    edge_set = []
+    for edge in edge_set_string:
+        if edge == '.':
+            edge_set.append(0)
+        else:
+            edge_set.append(1)
+    return np.array(edge_set, dtype=np.uint8)
 
 
 def print_kmer(kmer):
