@@ -13,7 +13,14 @@ class ViewChoice(Enum):
     png = 1
 
 
+def check_view_arguments(args):
+    if args.output_type != ViewChoice.term.name:
+        if not args.output:
+            raise RuntimeError("Need to specify --output if --output-type is not 'term'")
+
+
 def view(args):
+    check_view_arguments(args)
     with open(args.graph, 'rb') as graph_handle:
         if args.output_type == ViewChoice.term.name:
             print_contig(graph_handle, record=args.record)

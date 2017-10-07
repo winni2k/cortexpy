@@ -1,5 +1,4 @@
 import pycortex.test.builder as builder
-
 import pycortex.graph as graph
 
 

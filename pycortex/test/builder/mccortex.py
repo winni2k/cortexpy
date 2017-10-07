@@ -16,7 +16,7 @@ class Mccortex(object):
         self.kmer_size = kmer_size
         return self
 
-    def with_dna_sequence(self, sequence, *, name=b'sample_0'):
+    def with_dna_sequence(self, sequence, *, name='sample_0'):
         self.sequences[name].append(sequence)
         return self
 

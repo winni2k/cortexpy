@@ -9,8 +9,10 @@ from pycortex.test.builder.graph.header import Header
 class Graph(object):
     header = attr.ib(attr.Factory(Header))
     body = attr.ib(attr.Factory(Body))
+    kmer_size_is_set = attr.ib(False, init=False)
 
     def __attrs_post_init__(self):
+        self.header.num_colors = 1
         self.body.sort_kmers = True
 
     def without_sorted_kmers(self):
@@ -18,6 +20,7 @@ class Graph(object):
         return self
 
     def with_kmer_size(self, size):
+        self.kmer_size_is_set = True
         self.body.kmer_size = size
         self.header.kmer_size = size
         return self
@@ -42,5 +45,7 @@ class Graph(object):
         return self
 
     def build(self):
+        if not self.kmer_size_is_set:
+            self.with_kmer_size(1)
         self.header.with_kmer_container_size(self.body.kmer_container_size)
         return BytesIO(self.header.build().getvalue() + self.body.build().getvalue())

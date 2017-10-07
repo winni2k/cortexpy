@@ -12,6 +12,7 @@ class ContigRetriever(object):
     def get_kmers(self, contig):
         graph_parser = parser.RandomAccess(self.graph_handle)
         kmer_size = graph_parser.header.kmer_size
+        assert contig is not None
         assert len(contig) >= kmer_size
         kmers = []
         for kmer_start in range(len(contig) - kmer_size + 1):
