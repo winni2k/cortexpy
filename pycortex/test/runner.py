@@ -1,5 +1,3 @@
-import contextlib
-import io
 import os
 import subprocess
 
@@ -35,20 +33,6 @@ class Mccortex(object):
         return subprocess.check_call(command)
 
 
-def run_in_process(args):
-    pycortex_stdout = io.StringIO()
-    pycortex_stderr = io.StringIO()
-    exit_status = 0
-    with contextlib.redirect_stdout(pycortex_stdout):
-        with contextlib.redirect_stdout(pycortex_stderr):
-            try:
-                main(args)
-            except Exception as e:
-                print(e, file=pycortex_stderr)
-                exit_status = 1
-    return pycortex_stdout.getvalue(), pycortex_stderr.getvalue(), exit_status
-
-
 @attr.s(slots=True)
 class Pycortex(object):
     spawn_process = attr.ib(False)
@@ -58,6 +42,8 @@ class Pycortex(object):
 
     def run(self, args):
         if self.spawn_process:
-            raise NotImplementedError
+            return subprocess.run(['pipenv', 'run', 'python', '-m', 'pycortex'] + args,
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         else:
-            return run_in_process(args)
+            main(args)
+            return subprocess.CompletedProcess(args, 0)
