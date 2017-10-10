@@ -2,6 +2,7 @@ import os
 import subprocess
 
 import attr
+import sys
 
 from pycortex.__main__ import main
 
@@ -42,8 +43,11 @@ class Pycortex(object):
 
     def run(self, args):
         if self.spawn_process:
-            return subprocess.run(['pipenv', 'run', 'python', '-m', 'pycortex'] + args,
-                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            return subprocess.run(
+                [sys.executable, '-m', 'pycortex'] + args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
         else:
             main(args)
             return subprocess.CompletedProcess(args, 0)
