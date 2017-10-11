@@ -6,6 +6,19 @@ from pycortex.command.view import make_graph_json_representable
 
 
 class TestGetKmerGraph(object):
+    def test_with_no_kmer_returns_missing_kmer(self):
+        # given
+        graph_builder = (builder.Graph()
+                         .with_kmer_size(3))
+        retriever = graph.ContigRetriever(graph_builder.build())
+
+        # when
+        kmer_graph = retriever.get_kmer_graph('AAA')
+
+        # then
+        assert len(kmer_graph.edges) == 0
+        assert list(kmer_graph.nodes) == ['AAA']
+
     def test_with_one_kmer_returns_one_kmer(self):
         # given
         graph_builder = (builder.Graph()

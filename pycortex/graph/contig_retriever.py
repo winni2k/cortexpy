@@ -28,6 +28,8 @@ class ContigRetriever(object):
         kmer_graph = nx.DiGraph()
         for kmer, kmer_string in self.get_kmers(contig):
             kmer_graph.add_node(kmer_string, kmer=kmer)
+            if kmer is None:
+                continue
             is_revcomp = kmer.kmer != kmer_string
             incoming_kmers = set()
             outgoing_kmers = set()
