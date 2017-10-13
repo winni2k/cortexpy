@@ -25,7 +25,7 @@ class Graph(object):
         self.header.kmer_size = size
         return self
 
-    def with_kmer(self, kmer_string, colors=tuple(), edges=tuple()):
+    def with_kmer(self, kmer_string, colors=0, edges='........'):
         if isinstance(edges, str):
             edges = [edges]
         if isinstance(colors, int):

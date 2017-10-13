@@ -1,13 +1,10 @@
-import json
 from enum import Enum
-
-import networkx as nx
 
 from pycortex.graph import ContigRetriever
 from pycortex.graph.parser.constants import NUM_TO_LETTER
 from pycortex.graph.parser.streaming import kmer_generator_from_stream
+from pycortex.graph.serializer import Serializer
 from pycortex.utils import revcomp
-from networkx.readwrite import json_graph
 
 
 class ViewChoice(Enum):
@@ -26,6 +23,7 @@ def add_subparser_to(subparsers):
     parser.add_argument('--record')
     parser.add_argument('--output-type', default='term',
                         choices=[v.name for v in ViewChoice])
+    parser.add_argument('--collapse-kmer-unitigs', action='store_true')
     parser.set_defaults(func=view)
 
 
@@ -38,40 +36,13 @@ def view(args):
             if args.output_type == ViewChoice.term.name:
                 print_contig(contig_retriever, args.record)
             else:
-                graph = contig_retriever.get_kmer_graph(args.record)
+                serializer = Serializer(
+                    contig_retriever.get_kmer_graph(args.record),
+                    collapse_kmer_unitigs=args.collapse_kmer_unitigs)
                 if args.output_type == ViewChoice.json.name:
-                    print_graph_as_json(graph)
+                    print(serializer.to_json())
                 else:
                     raise ArgparseError
-
-
-def make_graph_json_representable(graph):
-    graph = graph.copy()
-    for node, node_data in graph.nodes.items():
-        kmer = node_data.pop('kmer', None)
-        if kmer is None:
-            node_data['is_missing'] = True
-        else:
-            node_data['coverage'] = list(kmer.coverage)
-    return graph
-
-
-def print_graph_as_json(graph):
-    serializable = json_graph.node_link_data(make_graph_json_representable(graph),
-                                             attrs={'link': 'edges'})
-    print(json.dumps(serializable))
-
-
-def dump_graph_to_file(graph, output, file_type):
-    if file_type == ViewChoice.graphml:
-        nx.write_graphml(graph, output)
-    else:
-        raise ArgparseError
-
-
-def plot_graph_as_agraph(kmer_graph, output, record):
-    agraph = nx.drawing.nx_agraph.to_agraph(kmer_graph)
-    print(agraph)
 
 
 def print_cortex_file(graph_handle):

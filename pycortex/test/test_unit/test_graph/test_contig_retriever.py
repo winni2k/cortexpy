@@ -1,8 +1,5 @@
-import pytest
-
 import pycortex.test.builder as builder
 import pycortex.graph as graph
-from pycortex.command.view import make_graph_json_representable
 
 
 class TestGetKmerGraph(object):
@@ -115,31 +112,3 @@ class TestGetKmerGraphRevcomp(object):
 
         assert list(kmer_graph.nodes['TTT']['kmer'].coverage) == [1, 1]
         assert list(kmer_graph.nodes['GTT']['kmer'].coverage) == [1, 0]
-
-
-class TestMakeGraphJsonRepresentable(object):
-    def test_with_three_linked_kmers_and_two_colors_returns_three_kmers_jsonifiable(self):
-        # given
-        graph_builder = (builder.Graph()
-                         .with_kmer_size(3)
-                         .with_num_colors(2))
-        graph_builder.with_kmer('AAA', [1, 1], ['.....C..', '.......T'])
-        graph_builder.with_kmer('AAC', [1, 0], ['a.......', '........'])
-        graph_builder.with_kmer('AAT', [0, 1], ['........', 'a.......'])
-        retriever = graph.ContigRetriever(graph_builder.build())
-
-        # when
-        kmer_graph = retriever.get_kmer_graph('GTTT')
-
-        # then
-        assert set(kmer_graph.nodes) == {'TTT', 'GTT', 'ATT'}
-        assert set(kmer_graph.edges) == {('GTT', 'TTT'), ('ATT', 'TTT')}
-
-        kmer_graph = make_graph_json_representable(kmer_graph)
-        assert kmer_graph.node['TTT']['coverage'] == [1, 1]
-        assert kmer_graph.node['GTT']['coverage'] == [1, 0]
-        assert kmer_graph.node['ATT']['is_missing']
-
-        ttt_node = kmer_graph.node['TTT']
-        with pytest.raises(KeyError):
-            ttt_node['kmer']
