@@ -41,7 +41,7 @@ class RandomAccess(Mapping):
     def __getitem__(self, kmer_string):
         kmer = KmerByStringComparator(kmer=kmer_string)
         try:
-            kmer_comparator = index(self.graph_sequence, kmer, retrieve=True)
+            kmer_comparator = index_and_retrieve(self.graph_sequence, kmer)
         except ValueError as exception:
             raise KeyError('Could not retrieve kmer: ' + kmer_string) from exception
 
@@ -52,8 +52,7 @@ class RandomAccess(Mapping):
 
     def __iter__(self):
         self.graph_handle.seek(self.graph_sequence.body_start)
-        generator = kmer_generator_from_stream_and_header(self.graph_handle, self.header)
-        return (kmer.kmer for kmer in generator)
+        return kmer_generator_from_stream_and_header(self.graph_handle, self.header)
 
     def get_kmer_for_string(self, kmer_string):
         """Will compute the revcomp of kmer string before getting a kmer"""
@@ -64,15 +63,13 @@ class RandomAccess(Mapping):
 
 
 # copied from https://docs.python.org/3.6/library/bisect.html
-def index(sequence, value, retrieve=False):
+def index_and_retrieve(sequence, value):
     'Locate the leftmost value exactly equal to x'
     i = bisect_left(sequence, value)
     if i != len(sequence):
         val = sequence[i]
         if val == value:
-            if retrieve:
-                return val
-            return i
+            return val
     raise ValueError("Could not find '{}'".format(value))
 
 

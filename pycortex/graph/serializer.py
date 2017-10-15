@@ -35,19 +35,6 @@ def make_graph_json_representable(graph):
     return graph
 
 
-def traverse_to_next_junction(graph, start_node, unvisited_nodes, orientation):
-    path = nx.DiGraph()
-    path.add_node(start_node)
-    for source, target in nx.edge_dfs(graph, start_node, orientation=orientation):
-        if target in unvisited_nodes:
-            path.add_edge(source, target)
-            if graph.degree[target] > 2:
-                break
-        else:
-            break
-    return path
-
-
 def find_unitig_from(start_node, graph):
     """Find a unitig that contains :param start_node:
 

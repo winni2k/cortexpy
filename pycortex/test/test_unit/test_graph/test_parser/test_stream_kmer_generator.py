@@ -1,22 +1,15 @@
-import attr
 from hypothesis import given
 from hypothesis import strategies as s
 
 from pycortex.graph.parser.streaming import kmer_generator_from_stream_and_header
 from pycortex.test.builder.graph.body import Body, KmerRecord, kmers
-
-
-@attr.s(slots=True)
-class CortexGraphHeaderStub(object):
-    kmer_size = attr.ib()
-    kmer_container_size = attr.ib()
-    num_colors = attr.ib()
+from pycortex.test.mock.graph import Header
 
 
 class TestStreamKmerGenerator(object):
     @given(s.data(),
            s.integers(min_value=1, max_value=260),
-           s.integers(min_value=0),
+           s.integers(min_value=0, max_value=10),
            s.integers(min_value=0, max_value=4))
     def test_parses_records(self, data, kmer_size, num_colors, n_kmers):
         # given
@@ -28,7 +21,7 @@ class TestStreamKmerGenerator(object):
             builder.with_kmer_record(kmer)
             expected_kmers.append(kmer)
 
-        header = CortexGraphHeaderStub(kmer_size, builder.kmer_container_size, num_colors)
+        header = Header(kmer_size, builder.kmer_container_size, num_colors)
 
         # when
         for kmer, expected_kmer in zip(
@@ -43,7 +36,7 @@ class TestStreamKmerGenerator(object):
         kmer_container_size = 1
         kmer_size = 3
         num_colors = 0
-        header = CortexGraphHeaderStub(kmer_size, kmer_container_size, num_colors)
+        header = Header(kmer_size, kmer_container_size, num_colors)
         builder = Body(kmer_container_size)
 
         expected_kmer = KmerRecord('AAC', tuple(), tuple())
