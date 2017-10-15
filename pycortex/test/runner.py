@@ -3,8 +3,10 @@ import subprocess
 
 import attr
 import sys
-
+import logging
 from pycortex.__main__ import main
+
+logger = logging.getLogger(__name__)
 
 
 @attr.s(slots=True)
@@ -43,11 +45,9 @@ class Pycortex(object):
 
     def run(self, args):
         if self.spawn_process:
-            return subprocess.run(
-                [sys.executable, '-m', 'pycortex'] + args,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
+            command = [sys.executable, '-m', 'pycortex'] + args
+            print('Running: ' + ' '.join(command))
+            return subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         else:
             main(args)
             return subprocess.CompletedProcess(args, 0)

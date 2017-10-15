@@ -8,13 +8,16 @@ from networkx.readwrite import json_graph
 class Serializer(object):
     """A class for serializing kmer graphs."""
     graph = attr.ib()
-    collapse_kmer_unitigs = attr.ib()
+    collapse_kmer_unitigs = attr.ib(False)
 
-    def to_json(self):
+    def to_json_serializable(self):
         graph = self.graph.copy()
         if self.collapse_kmer_unitigs:
             graph = collapse_kmer_unitigs(graph)
-        graph = make_graph_json_representable(graph)
+        return make_graph_json_representable(graph)
+
+    def to_json(self):
+        graph = self.to_json_serializable()
         serializable = json_graph.node_link_data(graph, attrs={'link': 'edges'})
         return json.dumps(serializable)
 
@@ -27,6 +30,8 @@ def make_graph_json_representable(graph):
             node_data['is_missing'] = True
         else:
             node_data['coverage'] = list(kmer.coverage)
+        if isinstance(node_data.get('node_object'), nx.Graph):
+            node_data['node_object'] = repr(node_data['node_object'])
     return graph
 
 
@@ -140,5 +145,6 @@ def collapse_kmer_unitigs(graph):
                 short_kmer_name = node
             else:
                 short_kmer_name = node[-1]
-        out_graph.nodes[node]['name'] = short_kmer_name
+        out_graph.nodes[node]['repr'] = short_kmer_name
+    out_graph = nx.convert_node_labels_to_integers(out_graph, label_attribute='node_object')
     return out_graph

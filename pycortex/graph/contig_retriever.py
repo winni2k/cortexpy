@@ -46,4 +46,6 @@ class ContigRetriever(object):
                 kmer_graph.add_edge(incoming_kmer, kmer_string)
             for outgoing_kmer in outgoing_kmers:
                 kmer_graph.add_edge(kmer_string, outgoing_kmer)
+        for kmer_node in kmer_graph:
+            kmer_graph.nodes[kmer_node]['repr'] = kmer_node
         return kmer_graph
