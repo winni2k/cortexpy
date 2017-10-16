@@ -26,8 +26,13 @@ class ContigRetriever(object):
 
     def get_kmer_graph(self, contig):
         kmer_graph = nx.DiGraph()
+        previous_kmer_tuple = None
         for kmer, kmer_string in self.get_kmers(contig):
             kmer_graph.add_node(kmer_string, kmer=kmer)
+            if previous_kmer_tuple is not None:
+                if previous_kmer_tuple[0] is None or kmer is None:
+                    kmer_graph.add_edge(previous_kmer_tuple[1], kmer_string, is_missing=True)
+            previous_kmer_tuple = (kmer, kmer_string)
             if kmer is None:
                 continue
             is_revcomp = kmer.kmer != kmer_string
@@ -43,9 +48,9 @@ class ContigRetriever(object):
                     {revcomp(kmer) for kmer in outgoing_kmers}, \
                     {revcomp(kmer) for kmer in incoming_kmers}
             for incoming_kmer in incoming_kmers:
-                kmer_graph.add_edge(incoming_kmer, kmer_string)
+                kmer_graph.add_edge(incoming_kmer, kmer_string, is_missing=False)
             for outgoing_kmer in outgoing_kmers:
-                kmer_graph.add_edge(kmer_string, outgoing_kmer)
+                kmer_graph.add_edge(kmer_string, outgoing_kmer, is_missing=False)
         for kmer_node in kmer_graph:
             kmer_graph.nodes[kmer_node]['repr'] = kmer_node
         return kmer_graph

@@ -25,9 +25,9 @@ class TestHeaderFromStream(object):
                                         mean_total_sequence=(len(dna_sequence),),
                                         sample_names=(sample_name,))
 
-        # when
         output_graph = mc_builder.build(tmpdir)
 
+        # when
         header = parser.header.from_stream(open(output_graph, 'rb'))
 
         # then
@@ -56,6 +56,7 @@ class TestKmerGeneratorFromStream(object):
         actual_kmers = list(kmer_generator)
         for kmer in actual_kmers:
             print_kmer(kmer)
+        assert len(actual_kmers) == len(expected_kmers)
         for expected_kmer, kmer in zip(expected_kmers, actual_kmers):
             assert kmer.kmer == expected_kmer.kmer
             assert kmer.coverage == expected_kmer.coverage

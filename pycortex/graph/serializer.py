@@ -11,9 +11,10 @@ class Serializer(object):
     collapse_kmer_unitigs = attr.ib(False)
 
     def to_json_serializable(self):
-        graph = self.graph.copy()
+        graph = self.graph
         if self.collapse_kmer_unitigs:
             graph = collapse_kmer_unitigs(graph)
+        graph = nx.convert_node_labels_to_integers(graph, label_attribute='node_key')
         return make_graph_json_representable(graph)
 
     def to_json(self):
@@ -23,15 +24,24 @@ class Serializer(object):
 
 
 def make_graph_json_representable(graph):
+    """
+    1. Removes the kmer object
+    2. Converts graph node keys to their reprs
+    3. Sets every node to missing or not missing
+    """
     graph = graph.copy()
     for node, node_data in graph.nodes.items():
         kmer = node_data.pop('kmer', None)
-        if kmer is None:
-            node_data['is_missing'] = True
-        else:
+        node_data['is_missing'] = True
+        if kmer is not None:
+            node_data['is_missing'] = False
             node_data['coverage'] = list(kmer.coverage)
-        if isinstance(node_data.get('node_object'), nx.Graph):
-            node_data['node_object'] = repr(node_data['node_object'])
+        if isinstance(node_data.get('node_key'), nx.Graph):
+            node_data['is_missing'] = False
+            node_data['node_key'] = repr(node_data['node_key'])
+    for source, target, edge_data in graph.edges.data():
+        is_missing = bool(graph.node[source]['is_missing'] or graph.node[target]['is_missing'])
+        graph[source][target]['is_missing'] = is_missing
     return graph
 
 
@@ -66,7 +76,7 @@ def find_unitig_from(start_node, graph):
     return unitig_graph, left_node, right_node
 
 
-def find_unitigs(graph, in_place=False):
+def find_unitigs(graph):
     """Finds unitigs of 2 or more nodes and replaces them by a subgraph containing the
     unitig nodes.
 
@@ -76,17 +86,20 @@ def find_unitigs(graph, in_place=False):
     """
 
     unitigable_nodes = set()
-    if not in_place:
-        graph = graph.copy()
+    graph = graph.copy()
+    graph_no_miss_edges = graph.copy()
+    for source, target, data in graph.edges.data():
+        if data.get('is_missing'):
+            graph_no_miss_edges.remove_edge(source, target)
     for node in graph:
-        if graph.in_degree(node) < 2 and graph.out_degree(node) < 2:
+        if graph_no_miss_edges.in_degree(node) < 2 and graph_no_miss_edges.out_degree(node) < 2:
             unitigable_nodes.add(node)
 
     visited_nodes = set()
     for start_node in unitigable_nodes:
         if start_node in visited_nodes:
             continue
-        unitig_graph, left_node, right_node = find_unitig_from(start_node, graph)
+        unitig_graph, left_node, right_node = find_unitig_from(start_node, graph_no_miss_edges)
         unitig_graph_set = set(unitig_graph)
         assert visited_nodes & unitig_graph_set == set()
         visited_nodes |= unitig_graph_set
@@ -104,6 +117,14 @@ def find_unitigs(graph, in_place=False):
     return graph
 
 
+def non_missing_in_degree(graph, node):
+    in_degree = graph.in_degree(node)
+    for edge in graph.in_edges(node):
+        if graph.get_edge_data(*edge).get('is_missing'):
+            in_degree -= 1
+    return in_degree
+
+
 def collapse_kmer_unitigs(graph):
     """Collapses unitig kmers into a single graph node.
 
@@ -118,9 +139,10 @@ def collapse_kmer_unitigs(graph):
     unitig_graph = find_unitigs(graph)
     out_graph = unitig_graph.copy()
     for node, data in unitig_graph.nodes.data():
+
         if data.get('is_unitig'):
             left_node = data['left_node']
-            if graph.in_degree(left_node) > 0:
+            if non_missing_in_degree(graph, left_node) > 0:
                 short_kmer_name = [left_node[-1]]
             else:
                 short_kmer_name = [left_node]
@@ -128,10 +150,10 @@ def collapse_kmer_unitigs(graph):
                 short_kmer_name.append(target[-1])
             short_kmer_name = ''.join(short_kmer_name)
         else:
-            if graph.in_degree(node) == 0:
-                short_kmer_name = node
-            else:
+            if non_missing_in_degree(graph, node) > 0:
                 short_kmer_name = node[-1]
+            else:
+                short_kmer_name = node
+
         out_graph.nodes[node]['repr'] = short_kmer_name
-    out_graph = nx.convert_node_labels_to_integers(out_graph, label_attribute='node_object')
     return out_graph
