@@ -1,6 +1,6 @@
 import networkx as nx
 
-from pycortex.graph.serializer import find_unitigs_separated_by_missingness
+from pycortex.graph.serializer import find_unitigs
 from pycortex.test.expectation.unitig_graph import GraphWithUnitigExpectation
 
 
@@ -12,7 +12,7 @@ class TestWithMissingNodes(object):
         graph.add_path(range(2, 4), is_missing=True)
 
         # when
-        expect = GraphWithUnitigExpectation(find_unitigs_separated_by_missingness(graph))
+        expect = GraphWithUnitigExpectation(find_unitigs(graph))
 
         # then
         expect.has_n_nodes(2)
