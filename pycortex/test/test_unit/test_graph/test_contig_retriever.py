@@ -1,5 +1,50 @@
+import attr
+
 import pycortex.test.builder as builder
 import pycortex.graph as graph
+from pycortex.test.expectation.kmer import KmerNodeExpectation
+
+
+@attr.s(slots=True)
+class KmerGraphExpectation(object):
+    graph = attr.ib()
+
+    def with_node(self, node):
+        assert node in self.graph
+        return KmerNodeExpectation(self.graph.node[node])
+
+    def has_n_nodes(self, n):
+        assert len(self.graph) == n
+        return self
+
+    def has_n_edges(self, n):
+        assert len(self.graph.edges) == n
+        return self
+
+    def has_nodes(self, *nodes):
+        assert set(self.graph.nodes) == set(nodes)
+        return self
+
+    def has_edges(self, *edges):
+        assert set(self.graph.edges) == set(edges)
+        return self
+
+    def has_edge(self, source, target):
+        assert (source, target) in self.graph.edges
+        return KmerGraphEdgeExpectation(self.graph[source][target])
+
+
+@attr.s(slots=True)
+class KmerGraphEdgeExpectation(object):
+    edge = attr.ib()
+
+    def is_missing(self):
+        assert self.edge['is_missing']
+        return self
+
+    def is_not_missing(self):
+        assert not self.edge['is_missing']
+        return self
 
 
 class TestGetKmerGraph(object):
@@ -10,11 +55,12 @@ class TestGetKmerGraph(object):
         retriever = graph.ContigRetriever(graph_builder.build())
 
         # when
-        kmer_graph = retriever.get_kmer_graph('AAA')
+        expect = KmerGraphExpectation(retriever.get_kmer_graph('AAA'))
 
         # then
-        assert len(kmer_graph.edges) == 0
-        assert list(kmer_graph) == ['AAA']
+        (expect.has_n_nodes(1)
+         .has_n_edges(0)
+         .with_node('AAA').is_missing())
 
     def test_with_one_kmer_returns_one_kmer(self):
         # given
@@ -39,11 +85,11 @@ class TestGetKmerGraph(object):
         retriever = graph.ContigRetriever(graph_builder.build())
 
         # when
-        kmer_graph = retriever.get_kmer_graph('AAAC')
+        expect = KmerGraphExpectation(retriever.get_kmer_graph('AAA'))
 
         # then
-        assert set(kmer_graph.nodes) == {'AAA', 'AAC'}
-        assert list(kmer_graph.edges) == [('AAA', 'AAC')]
+        expect.has_nodes('AAA', 'AAC').has_n_edges(1)
+        expect.has_edge('AAA', 'AAC').is_not_missing()
 
     def test_with_three_linked_kmers_and_two_colors_returns_three_kmers(self):
         # given
@@ -71,11 +117,29 @@ class TestGetKmerGraph(object):
         retriever = graph.ContigRetriever(graph_builder.build())
 
         # when
-        kmer_graph = retriever.get_kmer_graph('AAACC')
+        expect = KmerGraphExpectation(retriever.get_kmer_graph('AAACC'))
 
         # then
-        assert set(kmer_graph) == {'AAA', 'AAC', 'ACC'}
-        assert set(kmer_graph.edges) == {('AAA', 'AAC'), ('AAC', 'ACC')}
+        expect.has_nodes('AAA', 'AAC', 'ACC')
+        expect.has_n_edges(2)
+        expect.has_edge('AAA', 'AAC').is_missing()
+        expect.has_edge('AAC', 'ACC').is_missing()
+
+    def test_with_two_neighboring_unlinked_kmers_returns_two_kmers_linked_by_missing_edge(self):
+        # given
+        graph_builder = (builder.Graph()
+                         .with_kmer_size(3))
+        graph_builder.with_kmer('AAA', 1, '........')
+        graph_builder.with_kmer('AAC', 1, '........')
+        retriever = graph.ContigRetriever(graph_builder.build())
+
+        # when
+        expect = KmerGraphExpectation(retriever.get_kmer_graph('AAAC'))
+
+        # then
+        expect.has_nodes('AAA', 'AAC')
+        expect.has_n_edges(1)
+        expect.has_edge('AAA', 'AAC').is_missing()
 
 
 class TestGetKmerGraphRevcomp(object):

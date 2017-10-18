@@ -143,5 +143,3 @@ class Test(object):
         expect.has_n_unitigs(2)
         expect.has_unitig_with_edges((0, 1)).with_left_node(0).with_right_node(1)
         expect.has_unitig_with_edges((2, 3)).with_left_node(2).with_right_node(3)
-
-

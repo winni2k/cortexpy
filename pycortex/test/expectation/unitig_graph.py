@@ -18,6 +18,7 @@ class UnitigGraphExpectation(object):
         assert self.unitig_data['is_missing']
         return self
 
+    # fixme: all nodes should have is_missing set
     def is_not_missing(self):
         assert not self.unitig_data.get('is_missing')
         return self
@@ -35,6 +36,7 @@ class GraphWithUnitigExpectation(object):
                 self.unitigs.append((node, data))
 
     def has_n_nodes(self, n):
+        print(list(self.graph))
         assert len(self.graph) == n
         return self
 

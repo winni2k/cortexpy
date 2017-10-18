@@ -1,8 +1,8 @@
 from io import BytesIO
-
 import attr
 from pycortex.test.builder.graph.body import as_edge_set, KmerRecord, Body
 from pycortex.test.builder.graph.header import Header
+from Bio.Seq import Seq
 
 
 @attr.s
@@ -26,6 +26,9 @@ class Graph(object):
         return self
 
     def with_kmer(self, kmer_string, colors=0, edges='........'):
+        revcomp = str(Seq(kmer_string).reverse_complement())
+        if revcomp < kmer_string:
+            raise Exception("kmer_string is not lexlow.  Please fix.")
         if isinstance(edges, str):
             edges = [edges]
         if isinstance(colors, int):

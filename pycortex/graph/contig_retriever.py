@@ -28,25 +28,16 @@ class ContigRetriever(object):
         kmer_graph = nx.DiGraph()
         previous_kmer_tuple = None
         for kmer, kmer_string in self.get_kmers(contig):
-            kmer_graph.add_node(kmer_string, kmer=kmer)
+            kmer_missing = bool(kmer is None)
+            kmer_graph.add_node(kmer_string, kmer=kmer, is_missing=kmer_missing)
             if previous_kmer_tuple is not None:
-                if previous_kmer_tuple[0] is None or kmer is None:
+                if (previous_kmer_tuple[1], kmer_string) not in kmer_graph:
                     kmer_graph.add_edge(previous_kmer_tuple[1], kmer_string, is_missing=True)
             previous_kmer_tuple = (kmer, kmer_string)
-            if kmer is None:
+            if kmer_missing:
                 continue
             is_revcomp = kmer.kmer != kmer_string
-            incoming_kmers = set()
-            outgoing_kmers = set()
-            for edge_set in kmer.edges:
-                for incoming_kmer in edge_set.get_incoming_kmers(kmer.kmer):
-                    incoming_kmers.add(incoming_kmer)
-                for outgoing_kmer in edge_set.get_outgoing_kmers(kmer.kmer):
-                    outgoing_kmers.add(outgoing_kmer)
-            if is_revcomp:
-                incoming_kmers, outgoing_kmers = \
-                    {revcomp(kmer) for kmer in outgoing_kmers}, \
-                    {revcomp(kmer) for kmer in incoming_kmers}
+            incoming_kmers, outgoing_kmers = calculate_incoming_and_outgoing_kmers(is_revcomp, kmer)
             for incoming_kmer in incoming_kmers:
                 kmer_graph.add_edge(incoming_kmer, kmer_string, is_missing=False)
             for outgoing_kmer in outgoing_kmers:
@@ -54,3 +45,18 @@ class ContigRetriever(object):
         for kmer_node in kmer_graph:
             kmer_graph.nodes[kmer_node]['repr'] = kmer_node
         return kmer_graph
+
+
+def calculate_incoming_and_outgoing_kmers(is_revcomp, kmer):
+    incoming_kmers = set()
+    outgoing_kmers = set()
+    for edge_set in kmer.edges:
+        for incoming_kmer in edge_set.get_incoming_kmers(kmer.kmer):
+            incoming_kmers.add(incoming_kmer)
+        for outgoing_kmer in edge_set.get_outgoing_kmers(kmer.kmer):
+            outgoing_kmers.add(outgoing_kmer)
+    if is_revcomp:
+        incoming_kmers, outgoing_kmers = \
+            {revcomp(kmer) for kmer in outgoing_kmers}, \
+            {revcomp(kmer) for kmer in incoming_kmers}
+    return incoming_kmers, outgoing_kmers

@@ -32,13 +32,15 @@ def make_graph_json_representable(graph):
     graph = graph.copy()
     for node, node_data in graph.nodes.items():
         kmer = node_data.pop('kmer', None)
-        node_data['is_missing'] = True
         if kmer is not None:
-            node_data['is_missing'] = False
             node_data['coverage'] = list(kmer.coverage)
         if isinstance(node_data.get('node_key'), nx.Graph):
-            node_data['is_missing'] = False
             node_data['node_key'] = repr(node_data['node_key'])
+        if 'is_missing' not in node_data:
+            if kmer is None:
+                node_data['is_missing'] = True
+            else:
+                raise ValueError
     for source, target, edge_data in graph.edges.data():
         is_missing = bool(graph.node[source]['is_missing'] or graph.node[target]['is_missing'])
         graph[source][target]['is_missing'] = is_missing
@@ -90,7 +92,10 @@ def find_unitigs(graph):
     graph_no_miss_edges = graph.copy()
     for source, target, data in graph.edges.data():
         if data.get('is_missing'):
-            graph_no_miss_edges.remove_edge(source, target)
+            source_missing = bool(graph.node[source].get('is_missing'))
+            target_missing = bool(graph.node[target].get('is_missing'))
+            if not (source_missing and target_missing):
+                graph_no_miss_edges.remove_edge(source, target)
     for node in graph:
         if graph_no_miss_edges.in_degree(node) < 2 and graph_no_miss_edges.out_degree(node) < 2:
             unitigable_nodes.add(node)
@@ -104,7 +109,8 @@ def find_unitigs(graph):
         assert visited_nodes & unitig_graph_set == set()
         visited_nodes |= unitig_graph_set
         if len(unitig_graph) > 1:
-            graph.add_node(unitig_graph, is_unitig=True, left_node=left_node, right_node=right_node)
+            graph.add_node(unitig_graph, is_unitig=True, left_node=left_node, right_node=right_node,
+                           is_missing=graph_no_miss_edges.node[left_node].get('is_missing', False))
             for source, _ in graph.in_edges(left_node):
                 graph.add_edge(source, unitig_graph)
                 if source == right_node:
@@ -128,8 +134,8 @@ def non_missing_in_degree(graph, node):
 def collapse_kmer_unitigs(graph):
     """Collapses unitig kmers into a single graph node.
 
-    All nodes have an attribute `name` added which is the node label with the left k-1 letters
-    removed unless the node has no incoming edges.
+    All nodes have an attribute `repr` added which is the node label with the left k-1 letters
+    removed unless the node has no incoming edges. In that case, `repr` is the full kmer.
 
     Unitigs are described in :py:func:`find_unitig_from`.
 
