@@ -25,16 +25,16 @@ class Graph(object):
         self.header.kmer_size = size
         return self
 
-    def with_kmer(self, kmer_string, colors=0, edges='........'):
+    def with_kmer(self, kmer_string, color_coverage=0, edges='........'):
         revcomp = str(Seq(kmer_string).reverse_complement())
         if revcomp < kmer_string:
             raise Exception("kmer_string is not lexlow.  Please fix.")
         if isinstance(edges, str):
             edges = [edges]
-        if isinstance(colors, int):
-            colors = [colors]
+        if isinstance(color_coverage, int):
+            color_coverage = [color_coverage]
         return self.with_kmer_record(
-            KmerRecord(kmer_string, colors, tuple([as_edge_set(e) for e in edges])))
+            KmerRecord(kmer_string, color_coverage, tuple([as_edge_set(e) for e in edges])))
 
     def with_kmer_record(self, record):
         assert len(record.coverage) == self.header.num_colors

@@ -4,10 +4,10 @@ from io import SEEK_END
 
 import attr
 
-from pycortex.utils import revcomp
 import pycortex.graph.parser.header
+from pycortex.graph.parser.kmer import KmerByStringComparator, Kmer
 from pycortex.graph.parser.streaming import kmer_generator_from_stream_and_header
-from pycortex.kmer import KmerByStringComparator, Kmer
+from pycortex.utils import revcomp
 
 
 class RandomAccessError(KeyError):

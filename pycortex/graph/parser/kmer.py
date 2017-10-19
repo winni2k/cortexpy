@@ -1,10 +1,30 @@
 from struct import unpack
-
 import attr
 import numpy as np
 
-from pycortex.edge_set import EdgeSet
+from pycortex.edge_set import EdgeSet, EDGE_SET_LENGTH
 from pycortex.graph.parser.constants import NUM_TO_LETTER, UINT64_T, UINT32_T
+from pycortex.utils import revcomp
+
+
+def build_empty_kmer(kmer_string, num_colors):
+    kmer_string_to_use = revcomp(kmer_string)
+    if kmer_string < kmer_string_to_use:
+        kmer_string_to_use = kmer_string
+    return EmptyKmer(kmer=kmer_string_to_use,
+                     coverage=np.zeros(num_colors, dtype=np.uint8))
+
+
+@attr.s(slots=True)
+class EmptyKmer(object):
+    kmer = attr.ib()
+    coverage = attr.ib()
+    edges = attr.ib(None)
+
+    def __attrs_post_init__(self):
+        if self.edges is None:
+            self.edges = [EdgeSet(np.zeros(EDGE_SET_LENGTH, dtype=np.uint8)) for _ in
+                          range(len(self.coverage))]
 
 
 @attr.s(slots=True)

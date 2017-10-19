@@ -2,6 +2,7 @@ from enum import Enum
 
 from pycortex.graph import ContigRetriever
 from pycortex.graph.parser.constants import NUM_TO_LETTER
+from pycortex.graph.parser.kmer import EmptyKmer
 from pycortex.graph.parser.streaming import kmer_generator_from_stream
 from pycortex.graph.serializer import Serializer
 from pycortex.utils import revcomp
@@ -20,10 +21,9 @@ class ArgparseError(ValueError):
 def add_subparser_to(subparsers):
     parser = subparsers.add_parser('view', help='Show contig')
     parser.add_argument('graph')
-    parser.add_argument('--record')
+    parser.add_argument('--record', help='Returns record with unitigs collapsed in json format')
     parser.add_argument('--output-type', default='term',
                         choices=[v.name for v in ViewChoice])
-    parser.add_argument('--collapse-kmer-unitigs', action='store_true')
     parser.set_defaults(func=view)
 
 
@@ -36,9 +36,7 @@ def view(args):
             if args.output_type == ViewChoice.term.name:
                 print_contig(contig_retriever, args.record)
             else:
-                serializer = Serializer(
-                    contig_retriever.get_kmer_graph(args.record),
-                    collapse_kmer_unitigs=args.collapse_kmer_unitigs)
+                serializer = Serializer(contig_retriever.get_kmer_graph(args.record))
                 if args.output_type == ViewChoice.json.name:
                     print(serializer.to_json())
                 else:
@@ -57,7 +55,7 @@ def print_contig(contig_retriever, contig):
 
 
 def kmer_to_cortex_jdk_print_string(kmer, alt_kmer_string=None):
-    if kmer is None:
+    if isinstance(kmer, EmptyKmer):
         revcomp_kmer = revcomp(alt_kmer_string)
         if revcomp_kmer > alt_kmer_string:
             revcomp_kmer = alt_kmer_string

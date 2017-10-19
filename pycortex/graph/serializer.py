@@ -1,4 +1,5 @@
 import json
+from enum import Enum
 import attr
 import networkx as nx
 from networkx.readwrite import json_graph
@@ -8,14 +9,12 @@ from networkx.readwrite import json_graph
 class Serializer(object):
     """A class for serializing kmer graphs."""
     graph = attr.ib()
-    collapse_kmer_unitigs = attr.ib(False)
 
     def to_json_serializable(self):
         graph = self.graph
-        if self.collapse_kmer_unitigs:
-            graph = collapse_kmer_unitigs(graph)
+        graph = collapse_kmer_unitigs(graph)
         graph = nx.convert_node_labels_to_integers(graph, label_attribute='node_key')
-        return make_graph_json_representable(graph)
+        return _make_graph_json_representable(graph)
 
     def to_json(self):
         graph = self.to_json_serializable()
@@ -23,28 +22,114 @@ class Serializer(object):
         return json.dumps(serializable)
 
 
-def make_graph_json_representable(graph):
-    """
-    1. Removes the kmer object
-    2. Converts graph node keys to their reprs
-    3. Sets every node to missing or not missing
-    """
+def _make_graph_json_representable(graph):
+    """Makes a unitig graph json representable"""
     graph = graph.copy()
     for node, node_data in graph.nodes.items():
-        kmer = node_data.pop('kmer', None)
-        if kmer is not None:
-            node_data['coverage'] = list(kmer.coverage)
         if isinstance(node_data.get('node_key'), nx.Graph):
             node_data['node_key'] = repr(node_data['node_key'])
-        if 'is_missing' not in node_data:
-            if kmer is None:
-                node_data['is_missing'] = True
-            else:
-                raise ValueError
+
+        coverage = []
+        for coverage_list in node_data['coverage']:
+            try:
+                coverage_list = coverage_list.tolist()
+            except AttributeError:
+                pass
+            finally:
+                coverage.append(coverage_list)
+        node_data['coverage'] = coverage
     for source, target, edge_data in graph.edges.data():
         is_missing = bool(graph.node[source]['is_missing'] or graph.node[target]['is_missing'])
         graph[source][target]['is_missing'] = is_missing
     return graph
+
+
+def missing_kmers_change_in_edge(graph, edge):
+    source_coverage = graph.node[edge[0]]['kmer'].coverage
+    target_coverage = graph.node[edge[1]]['kmer'].coverage
+    if source_coverage is None and target_coverage is None:
+        return False
+
+    if source_coverage is None or target_coverage is None:
+        return True
+
+    if len(source_coverage) != len(target_coverage):
+        return True
+
+    for source_color_coverage, target_color_coverage in zip(source_coverage, target_coverage):
+        if (source_color_coverage == 0) != (target_color_coverage == 0):
+            return True
+    return False
+
+
+@attr.s(slots=True)
+class Unitig(object):
+    graph = attr.ib()
+    left_node = attr.ib()
+    right_node = attr.ib()
+    _coverage = attr.ib(None, init=False)
+
+    @property
+    def coverage(self):
+        if self._coverage is None:
+            coverage = [self.graph.node[self.left_node]['kmer'].coverage]
+            for source, target in nx.edge_dfs(self.graph, self.left_node, orientation='forward'):
+                coverage.append(self.graph.node[target]['kmer'].coverage)
+            self._coverage = coverage
+        return self._coverage
+
+    @property
+    def is_missing(self):
+        for color_coverage in self.coverage:
+            if color_coverage is not None and any(c != 0 for c in color_coverage):
+                return False
+        return True
+
+
+class EdgeTraversalOrientation(Enum):
+    original = 0
+    reverse = 1
+    forward = 0
+
+    @classmethod
+    def other(cls, orientation):
+        if orientation == cls.original:
+            return cls.reverse
+        return cls.original
+
+
+@attr.s
+class OrientedGraphFuncs(object):
+    graph = attr.ib()
+    orientation = attr.ib()
+    degree = attr.ib(init=False)
+    edges = attr.ib(init=False)
+
+    def __attrs_post_init__(self):
+        assert self.orientation in EdgeTraversalOrientation
+        if self.orientation == EdgeTraversalOrientation.original:
+            self.degree = self.graph.out_degree
+            self.edges = self.graph.out_edges
+        else:
+            self.degree = self.graph.in_degree
+            self.edges = self.graph.in_edges
+
+
+def is_unitig_end(node, graph, orientation):
+    """Returns true if node is a unitig end in orientation direction"""
+    assert orientation in EdgeTraversalOrientation
+    forward = OrientedGraphFuncs(graph, orientation)
+    reverse = OrientedGraphFuncs(graph, EdgeTraversalOrientation.other(orientation))
+    if forward.degree(node) != 1:
+        return True
+    edge = next(e for e in forward.edges(node))
+    if orientation != EdgeTraversalOrientation.original:
+        other_edge_node = edge[0]
+    else:
+        other_edge_node = edge[1]
+    if missing_kmers_change_in_edge(graph, edge) or reverse.degree(other_edge_node) > 1:
+        return True
+    return False
 
 
 def find_unitig_from(start_node, graph):
@@ -57,25 +142,42 @@ def find_unitig_from(start_node, graph):
     Additionally, a unitig must not visit a kmer more than once.
     """
     unitig_graph = nx.DiGraph()
-    left_node = right_node = start_node
-    seen = {start_node}
-    for source, target in nx.edge_dfs(graph, start_node, orientation='forward'):
-        if graph.in_degree(target) != 1 or target in seen:
-            break
-        right_node = target
-        unitig_graph.add_edge(source, target)
-        seen.add(target)
-        if graph.out_degree(target) != 1:
-            break
-    for source, target, orientation in nx.edge_dfs(graph, start_node, orientation='reverse'):
-        if graph.out_degree(source) != 1 or source in seen:
-            break
-        left_node = source
-        unitig_graph.add_edge(source, target)
-        seen.add(source)
-        if graph.in_degree(source) != 1:
-            break
-    return unitig_graph, left_node, right_node
+    unitig_graph.add_node(start_node)
+    end_nodes = {EdgeTraversalOrientation.original: start_node,
+                 EdgeTraversalOrientation.reverse: start_node}
+    for orientation in EdgeTraversalOrientation:
+        if not is_unitig_end(start_node, graph, orientation):
+            for edge_info in nx.edge_dfs(graph, start_node, orientation=orientation.name):
+                source, target = edge_info[0], edge_info[1]
+                if orientation == EdgeTraversalOrientation.reverse:
+                    source, target = target, source
+                if target in unitig_graph or is_unitig_end(source, graph, orientation):
+                    break
+                end_nodes[orientation] = target
+                unitig_graph.add_edge(edge_info[0], edge_info[1])
+    for node in unitig_graph:
+        unitig_graph.add_node(node, **graph.node[node])
+    return Unitig(unitig_graph,
+                  end_nodes[EdgeTraversalOrientation.reverse],
+                  end_nodes[EdgeTraversalOrientation.original])
+
+
+def replace_unitig_nodes_with_unitig(out_graph, unitig):
+    out_graph.add_node(unitig.graph, is_unitig=True,
+                       left_node=unitig.left_node,
+                       is_missing=unitig.is_missing,
+                       right_node=unitig.right_node,
+                       coverage=unitig.coverage)
+    for source, _ in out_graph.in_edges(unitig.left_node):
+        out_graph.add_edge(source, unitig.graph)
+        if source == unitig.right_node:
+            out_graph.add_edge(unitig.graph, unitig.graph)
+    for _, target in out_graph.out_edges(unitig.right_node):
+        out_graph.add_edge(unitig.graph, target)
+        if target == unitig.left_node:
+            out_graph.add_edge(unitig.graph, unitig.graph)
+    out_graph.remove_nodes_from(unitig.graph)
+    return out_graph
 
 
 def find_unitigs(graph):
@@ -87,48 +189,18 @@ def find_unitigs(graph):
     returns a graph containing unitig subgraphs
     """
 
-    unitigable_nodes = set()
-    graph = graph.copy()
-    graph_no_miss_edges = graph.copy()
-    for source, target, data in graph.edges.data():
-        if data.get('is_missing'):
-            source_missing = bool(graph.node[source].get('is_missing'))
-            target_missing = bool(graph.node[target].get('is_missing'))
-            if not (source_missing and target_missing):
-                graph_no_miss_edges.remove_edge(source, target)
-    for node in graph:
-        if graph_no_miss_edges.in_degree(node) < 2 and graph_no_miss_edges.out_degree(node) < 2:
-            unitigable_nodes.add(node)
-
+    out_graph = graph.copy()
     visited_nodes = set()
-    for start_node in unitigable_nodes:
+    for start_node in graph:
         if start_node in visited_nodes:
             continue
-        unitig_graph, left_node, right_node = find_unitig_from(start_node, graph_no_miss_edges)
-        unitig_graph_set = set(unitig_graph)
+        unitig = find_unitig_from(start_node, graph)
+        unitig_graph_set = set(unitig.graph)
         assert visited_nodes & unitig_graph_set == set()
         visited_nodes |= unitig_graph_set
-        if len(unitig_graph) > 1:
-            graph.add_node(unitig_graph, is_unitig=True, left_node=left_node, right_node=right_node,
-                           is_missing=graph_no_miss_edges.node[left_node].get('is_missing', False))
-            for source, _ in graph.in_edges(left_node):
-                graph.add_edge(source, unitig_graph)
-                if source == right_node:
-                    graph.add_edge(unitig_graph, unitig_graph)
-            for _, target in graph.out_edges(right_node):
-                graph.add_edge(unitig_graph, target)
-                if target == left_node:
-                    graph.add_edge(unitig_graph, unitig_graph)
-            graph.remove_nodes_from(unitig_graph)
-    return graph
 
-
-def non_missing_in_degree(graph, node):
-    in_degree = graph.in_degree(node)
-    for edge in graph.in_edges(node):
-        if graph.get_edge_data(*edge).get('is_missing'):
-            in_degree -= 1
-    return in_degree
+        out_graph = replace_unitig_nodes_with_unitig(out_graph, unitig)
+    return out_graph
 
 
 def collapse_kmer_unitigs(graph):
@@ -145,21 +217,14 @@ def collapse_kmer_unitigs(graph):
     unitig_graph = find_unitigs(graph)
     out_graph = unitig_graph.copy()
     for node, data in unitig_graph.nodes.data():
-
-        if data.get('is_unitig'):
-            left_node = data['left_node']
-            if non_missing_in_degree(graph, left_node) > 0:
-                short_kmer_name = [left_node[-1]]
-            else:
-                short_kmer_name = [left_node]
-            for source, target in nx.edge_dfs(node, left_node):
-                short_kmer_name.append(target[-1])
-            short_kmer_name = ''.join(short_kmer_name)
+        assert data['is_unitig']
+        left_node = data['left_node']
+        if graph.in_degree(left_node) > 0:
+            short_kmer_name = [left_node[-1]]
         else:
-            if non_missing_in_degree(graph, node) > 0:
-                short_kmer_name = node[-1]
-            else:
-                short_kmer_name = node
-
+            short_kmer_name = [left_node]
+        for source, target in nx.edge_dfs(node, left_node):
+            short_kmer_name.append(target[-1])
+        short_kmer_name = ''.join(short_kmer_name)
         out_graph.nodes[node]['repr'] = short_kmer_name
     return out_graph

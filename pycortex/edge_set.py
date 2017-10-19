@@ -1,6 +1,7 @@
 import attr
 import numpy as np
 
+EDGE_SET_LENGTH = 8
 EDGE_SET_LETTER_LOOKUP = {
     'a': 0, 'c': 1, 'g': 2, 't': 3,
     'A': 4, 'C': 5, 'G': 6, 'T': 7,
@@ -15,7 +16,7 @@ class EdgeSet(object):
 
     @data.validator
     def check(self, _, value):
-        assert len(value) == 8
+        assert len(value) == EDGE_SET_LENGTH
 
     def is_edge(self, letter):
         return self.data[EDGE_SET_LETTER_LOOKUP[letter]]
@@ -28,11 +29,11 @@ class EdgeSet(object):
 
     @property
     def outgoing(self):
-        return self.data[4:]
+        return self.data[EDGE_SET_LENGTH // 2:]
 
     @property
     def incoming(self):
-        return self.data[:4]
+        return self.data[:EDGE_SET_LENGTH // 2]
 
     def get_incoming_kmers(self, kmer_string):
         kmers = []
