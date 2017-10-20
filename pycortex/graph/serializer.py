@@ -73,7 +73,8 @@ class Unitig(object):
     def coverage(self):
         if self._coverage is None:
             coverage = [self.graph.node[self.left_node]['kmer'].coverage]
-            for source, target in nx.edge_dfs(self.graph, self.left_node, orientation='forward'):
+            for source, target in nx.edge_dfs(self.graph, self.left_node,
+                                              orientation=EdgeTraversalOrientation.original.name):
                 coverage.append(self.graph.node[target]['kmer'].coverage)
             self._coverage = coverage
         return self._coverage
@@ -89,7 +90,6 @@ class Unitig(object):
 class EdgeTraversalOrientation(Enum):
     original = 0
     reverse = 1
-    forward = 0
 
     @classmethod
     def other(cls, orientation):
@@ -118,11 +118,11 @@ class OrientedGraphFuncs(object):
 def is_unitig_end(node, graph, orientation):
     """Returns true if node is a unitig end in orientation direction"""
     assert orientation in EdgeTraversalOrientation
-    forward = OrientedGraphFuncs(graph, orientation)
+    original = OrientedGraphFuncs(graph, orientation)
     reverse = OrientedGraphFuncs(graph, EdgeTraversalOrientation.other(orientation))
-    if forward.degree(node) != 1:
+    if original.degree(node) != 1:
         return True
-    edge = next(e for e in forward.edges(node))
+    edge = next(e for e in original.edges(node))
     if orientation != EdgeTraversalOrientation.original:
         other_edge_node = edge[0]
     else:
