@@ -28,7 +28,7 @@ class ColorInformationBlock(object):
     cleaning_graph_name = attr.ib()
 
     def to_binary(self):
-        string = pack('ccccIII', self.is_clipping_applied,
+        string = pack('4c3I', self.is_clipping_applied,
                       self.are_low_coverage_unitigs_removed,
                       self.are_low_coverage_kmers_removed,
                       self.is_cleaned_against_other_graph,

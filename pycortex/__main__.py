@@ -12,8 +12,10 @@ def main(argv):
     view.add_subparser_to(subparsers)
 
     args = parser.parse_args(argv)
-    if args.func:
+    if getattr(args, 'func', False):
         args.func(args)
+    else:
+        parser.print_help()
 
 
 if __name__ == '__main__':
