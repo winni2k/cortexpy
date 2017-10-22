@@ -1,6 +1,6 @@
 import struct
-import attr
 from struct import unpack
+import attr
 
 from pycortex.graph.parser.constants import CORTEX_MAGIC_WORD, CORTEX_VERSION, UINT8_T, UINT32_T, \
     UINT64_T
@@ -61,73 +61,92 @@ class Header(object):
         self._num_colors = value
 
 
-class HeaderParserError(Exception):
-    """This error is thrown if the header is not parseable.
-
-    Returns a partially filled header object for inspection.
-    """
-
-
 @attr.s(slots=True)
 class HeaderFromStreamBuilder(object):
+    stream = attr.ib()
     header = attr.ib(attr.Factory(Header))
 
-    def fill_first_four_params(self, binary_string):
-        params = unpack('4I', binary_string)
+    def _extract_magic_word(self):
+        return unpack('6c', self.stream.read(6))
+
+    def extract_initial_magic_word(self):
+        magic_word = self._extract_magic_word()
+        if magic_word != CORTEX_MAGIC_WORD:
+            raise ValueError(
+                "Saw initial magic word {} but was expecting {}".format(magic_word,
+                                                                        CORTEX_MAGIC_WORD)
+            )
+        return self
+
+    def extract_concluding_magic_word(self):
+        concluding_magic_word = self._extract_magic_word()
+        if concluding_magic_word != CORTEX_MAGIC_WORD:
+            raise ValueError(
+                (
+                    'Concluding magic word {} != starting magic word {}\n'
+                    'Unparsed: {}\n'
+                    'Parsed header: {}'
+                ).format(
+                    concluding_magic_word,
+                    CORTEX_MAGIC_WORD,
+                    self.stream.read(1000),
+                    self.header
+                )
+            )
+        return self.header
+
+    def fill_first_four_params(self):
+        params = unpack('4I', self.stream.read(16))
         self.header.version = params[0]
         self.header.kmer_size = params[1]
         self.header.kmer_container_size = params[2]
         self.header.num_colors = params[3]
+        return self
 
-    def fill_sample_names_from_stream(self, stream):
+    def extract_mean_read_lengths(self):
+        self.header.mean_read_lengths = unpack(
+            '{}I'.format(self.header.num_colors),
+            self.stream.read(struct.calcsize('I') * self.header.num_colors)
+        )
+        return self
+
+    def extract_mean_total_sequence(self):
+        self.header.mean_total_sequence = unpack(
+            '{}L'.format(self.header.num_colors),
+            self.stream.read(struct.calcsize('L') * self.header.num_colors)
+        )
+        return self
+
+    def extract_sample_names_from_stream(self):
         sample_names = []
         for _ in range(self.header.num_colors):
-            sample_name_length_string = stream.read(struct.calcsize('I'))
+            sample_name_length_string = self.stream.read(struct.calcsize('I'))
             sample_name_length = unpack('I', sample_name_length_string)[0]
-            sample_name = unpack('{}c'.format(sample_name_length), stream.read(sample_name_length))
+            sample_name = unpack('{}c'.format(sample_name_length),
+                                 self.stream.read(sample_name_length))
             sample_names.append(b''.join(sample_name))
         self.header.sample_names = tuple(sample_names)
+        return self
+
+    def extract_error_rate(self):
+        unpack('16c', self.stream.read(16))  # error_rate
+        return self
+
+    def extract_color_info_blocks(self):
+        for _ in range(self.header.num_colors):
+            color_info_block_string = self.stream.read(4 + 3 * struct.calcsize('I'))
+            color_info_block = unpack('4c3I', color_info_block_string)
+            self.stream.read(color_info_block[6])
+        return self
 
 
 def from_stream(stream):
-    magic_word = unpack('cccccc', stream.read(6))
-    if magic_word != CORTEX_MAGIC_WORD:
-        raise HeaderParserError(
-            "Saw magic word {} but was expecting {}".format(magic_word, CORTEX_MAGIC_WORD)
-        )
-
-    builder = HeaderFromStreamBuilder()
-    builder.fill_first_four_params(stream.read(16))
-    header = builder.header
-
-    header.mean_read_lengths = unpack(
-        '{}I'.format(header.num_colors), stream.read(struct.calcsize('I') * header.num_colors)
-    )
-
-    header.mean_total_sequence = unpack(
-        '{}L'.format(header.num_colors), stream.read(struct.calcsize('L') * header.num_colors)
-    )
-
-    builder.fill_sample_names_from_stream(stream)
-    header = builder.header
-
-    _ = unpack('16c', stream.read(16))  # error_rate
-
-    for _ in range(header.num_colors):
-        color_info_block_string = stream.read(4 + 3 * struct.calcsize('I'))
-        color_info_block = unpack('4c3I', color_info_block_string)
-        stream.read(color_info_block[6])
-
-    concluding_magic_word = unpack('6c', stream.read(6))
-
-    if concluding_magic_word != magic_word:
-        raise HeaderParserError(
-            'Concluding magic word {} != starting magic word {}\nUnparsed: {}\nParsed header: {}'.format(
-                concluding_magic_word,
-                magic_word,
-                stream.read(1000),
-                header
-            )
-        )
-
-    return header
+    return (HeaderFromStreamBuilder(stream)
+            .extract_initial_magic_word()
+            .fill_first_four_params()
+            .extract_mean_read_lengths()
+            .extract_mean_total_sequence()
+            .extract_sample_names_from_stream()
+            .extract_error_rate()
+            .extract_color_info_blocks()
+            .extract_concluding_magic_word())

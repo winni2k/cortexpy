@@ -4,7 +4,6 @@ import pytest
 from hypothesis import assume, given
 from hypothesis import strategies as s
 
-from pycortex.graph.parser import HeaderParserError
 import pycortex.graph.parser as parser
 from pycortex.test.builder.graph.header import Header, ColorInformationBlock
 
@@ -32,10 +31,10 @@ class TestHeaderParser(object):
 
         fh = Header().with_magic_word(magic_word).build()
 
-        with pytest.raises(HeaderParserError) as excinfo:
+        with pytest.raises(ValueError) as excinfo:
             parser.header.from_stream(fh)
 
-        assert 'Saw magic word' in str(excinfo.value)
+        assert 'Saw initial magic word' in str(excinfo.value)
 
     @given(s.integers(min_value=0, max_value=MAX_UINT))
     def test_raises_on_incorrect_version(self, version):
@@ -83,7 +82,7 @@ class TestHeaderParser(object):
               .with_mean_read_lengths([0 for _ in range(num_colors + 1)])
               .build())
 
-        with pytest.raises(HeaderParserError) as excinfo:
+        with pytest.raises(ValueError) as excinfo:
             parser.header.from_stream(fh)
 
         assert 'Concluding magic word' in str(excinfo.value)

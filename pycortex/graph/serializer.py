@@ -25,7 +25,7 @@ class Serializer(object):
 def _make_graph_json_representable(graph):
     """Makes a unitig graph json representable"""
     graph = graph.copy()
-    for node, node_data in graph.nodes.items():
+    for _, node_data in graph.nodes.items():
         if isinstance(node_data.get('node_key'), nx.Graph):
             node_data['node_key'] = repr(node_data['node_key'])
 
@@ -38,7 +38,7 @@ def _make_graph_json_representable(graph):
             finally:
                 coverage.append(coverage_list)
         node_data['coverage'] = coverage
-    for source, target, edge_data in graph.edges.data():
+    for source, target, _ in graph.edges.data():
         is_missing = bool(graph.node[source]['is_missing'] or graph.node[target]['is_missing'])
         graph[source][target]['is_missing'] = is_missing
     return graph
@@ -73,8 +73,8 @@ class Unitig(object):
     def coverage(self):
         if self._coverage is None:
             coverage = [self.graph.node[self.left_node]['kmer'].coverage]
-            for source, target in nx.edge_dfs(self.graph, self.left_node,
-                                              orientation=EdgeTraversalOrientation.original.name):
+            for _, target in nx.edge_dfs(self.graph, self.left_node,
+                                         orientation=EdgeTraversalOrientation.original.name):
                 coverage.append(self.graph.node[target]['kmer'].coverage)
             self._coverage = coverage
         return self._coverage
@@ -223,7 +223,7 @@ def collapse_kmer_unitigs(graph):
             short_kmer_name = [left_node[-1]]
         else:
             short_kmer_name = [left_node]
-        for source, target in nx.edge_dfs(node, left_node):
+        for _, target in nx.edge_dfs(node, left_node):
             short_kmer_name.append(target[-1])
         short_kmer_name = ''.join(short_kmer_name)
         out_graph.nodes[node]['repr'] = short_kmer_name
