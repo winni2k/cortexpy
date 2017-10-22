@@ -1,5 +1,4 @@
 from itertools import repeat
-
 import pycortex.graph.parser as parser
 import pycortex.test.builder as builder
 from pycortex.test.builder.graph.body import KmerRecord, as_edge_set, print_kmer
@@ -16,22 +15,23 @@ class TestHeaderFromStream(object):
                       .with_dna_sequence(dna_sequence, name=sample_name)
                       .with_kmer_size(kmer_size))
 
-        expected_header = parser.Header(version=6,
-                                        kmer_size=kmer_size,
-                                        record_size=13,
-                                        kmer_container_size=1,
-                                        num_colors=1,
-                                        mean_read_lengths=(len(dna_sequence),),
-                                        mean_total_sequence=(len(dna_sequence),),
-                                        sample_names=(sample_name,))
-
         output_graph = mc_builder.build(tmpdir)
+
+        expected_header_attributes = {'version': 6,
+                                      'kmer_size': kmer_size,
+                                      'record_size': 13,
+                                      'kmer_container_size': 1,
+                                      'num_colors': 1,
+                                      'mean_read_lengths': (len(dna_sequence),),
+                                      'mean_total_sequence': (len(dna_sequence),),
+                                      'sample_names': (sample_name,)}
 
         # when
         header = parser.header.from_stream(open(output_graph, 'rb'))
 
         # then
-        assert header == expected_header
+        for key, value in expected_header_attributes.items():
+            assert getattr(header, key) == value
 
 
 class TestKmerGeneratorFromStream(object):

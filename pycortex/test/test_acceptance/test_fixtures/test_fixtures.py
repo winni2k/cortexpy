@@ -1,6 +1,4 @@
 import os
-
-from pycortex.test import runner
 import pycortex.graph.parser as parser
 
 
