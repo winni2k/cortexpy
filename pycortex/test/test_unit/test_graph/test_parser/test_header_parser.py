@@ -45,7 +45,7 @@ class TestHeaderParser(object):
         with pytest.raises(ValueError) as excinfo:
             parser.header.from_stream(fh)
 
-        assert 'Version is not 6' in str(excinfo.value)
+        assert "'version' must be in [6]" in str(excinfo.value)
 
     def test_raises_on_invalid_kmer_size(self):
         fh = Header().with_kmer_size(0).build()
@@ -53,7 +53,7 @@ class TestHeaderParser(object):
         with pytest.raises(ValueError) as excinfo:
             parser.header.from_stream(fh)
 
-        assert 'Kmer size < 1' in str(excinfo.value)
+        assert "'kmer_size' has to be greater than 0" in str(excinfo.value)
 
     def test_raises_on_invalid_kmer_container_size(self):
         fh = Header().with_kmer_size(3).with_kmer_container_size(0).build()
@@ -61,7 +61,7 @@ class TestHeaderParser(object):
         with pytest.raises(ValueError) as excinfo:
             parser.header.from_stream(fh)
 
-        assert 'Kmer container size < 1' in str(excinfo.value)
+        assert "'kmer_container_size' has to be greater than 0" in str(excinfo.value)
 
     def test_raises_on_invalid_num_colors(self):
         fh = (Header()
@@ -73,7 +73,7 @@ class TestHeaderParser(object):
         with pytest.raises(ValueError) as excinfo:
             parser.header.from_stream(fh)
 
-        assert 'Number of colors < 1' in str(excinfo.value)
+        assert "'num_colors' has to be greater than 0" in str(excinfo.value)
 
     @given(s.integers(min_value=1, max_value=10))
     def test_raises_when_concluding_magic_word_is_wrong(self, num_colors):

@@ -6,12 +6,17 @@ from pycortex.graph.parser.constants import CORTEX_MAGIC_WORD, CORTEX_VERSION, U
     UINT64_T
 
 
-@attr.s(slots=True)
+def none_or_greater_than_zero(_, attribute, value):
+    if value is not None and value <= 0:
+        raise ValueError("'{}' has to be greater than 0!".format(attribute.name))
+
+
+@attr.s(slots=True, frozen=True)
 class Header(object):
-    _version = attr.ib(CORTEX_VERSION)
-    _kmer_size = attr.ib(None)
-    _kmer_container_size = attr.ib(None)
-    _num_colors = attr.ib(None)
+    version = attr.ib(CORTEX_VERSION, validator=[attr.validators.in_([CORTEX_VERSION])])
+    kmer_size = attr.ib(None, validator=[none_or_greater_than_zero])
+    kmer_container_size = attr.ib(None, validator=[none_or_greater_than_zero])
+    num_colors = attr.ib(None, validator=[none_or_greater_than_zero])
     mean_read_lengths = attr.ib(None)
     mean_total_sequence = attr.ib(None)
     sample_names = attr.ib(None)
@@ -19,46 +24,6 @@ class Header(object):
     @property
     def record_size(self):
         return UINT64_T * self.kmer_container_size + (UINT32_T + UINT8_T) * self.num_colors
-
-    @property
-    def version(self):
-        return self._version
-
-    @version.setter
-    def version(self, value):
-        if value != CORTEX_VERSION:
-            raise ValueError('Version is not 6')
-        self._version = value
-
-    @property
-    def kmer_size(self):
-        return self._kmer_size
-
-    @kmer_size.setter
-    def kmer_size(self, value):
-        if value <= 0:
-            raise ValueError('Kmer size < 1')
-        self._kmer_size = value
-
-    @property
-    def kmer_container_size(self):
-        return self._kmer_container_size
-
-    @kmer_container_size.setter
-    def kmer_container_size(self, value):
-        if value <= 0:
-            raise ValueError('Kmer container size < 1')
-        self._kmer_container_size = value
-
-    @property
-    def num_colors(self):
-        return self._num_colors
-
-    @num_colors.setter
-    def num_colors(self, value):
-        if value <= 0:
-            raise ValueError("Number of colors < 1")
-        self._num_colors = value
 
 
 @attr.s(slots=True)
@@ -97,23 +62,30 @@ class HeaderFromStreamBuilder(object):
 
     def fill_first_four_params(self):
         params = unpack('4I', self.stream.read(16))
-        self.header.version = params[0]
-        self.header.kmer_size = params[1]
-        self.header.kmer_container_size = params[2]
-        self.header.num_colors = params[3]
+        self.header = attr.evolve(self.header,
+                                  version=params[0],
+                                  kmer_size=params[1],
+                                  kmer_container_size=params[2],
+                                  num_colors=params[3])
         return self
 
     def extract_mean_read_lengths(self):
-        self.header.mean_read_lengths = unpack(
-            '{}I'.format(self.header.num_colors),
-            self.stream.read(struct.calcsize('I') * self.header.num_colors)
+        self.header = attr.evolve(
+            self.header,
+            mean_read_lengths=unpack(
+                '{}I'.format(self.header.num_colors),
+                self.stream.read(struct.calcsize('I') * self.header.num_colors)
+            )
         )
         return self
 
     def extract_mean_total_sequence(self):
-        self.header.mean_total_sequence = unpack(
-            '{}L'.format(self.header.num_colors),
-            self.stream.read(struct.calcsize('L') * self.header.num_colors)
+        self.header = attr.evolve(
+            self.header,
+            mean_total_sequence=unpack(
+                '{}L'.format(self.header.num_colors),
+                self.stream.read(struct.calcsize('L') * self.header.num_colors)
+            )
         )
         return self
 
@@ -125,7 +97,7 @@ class HeaderFromStreamBuilder(object):
             sample_name = unpack('{}c'.format(sample_name_length),
                                  self.stream.read(sample_name_length))
             sample_names.append(b''.join(sample_name))
-        self.header.sample_names = tuple(sample_names)
+        self.header = attr.evolve(self.header, sample_names=tuple(sample_names))
         return self
 
     def extract_error_rate(self):

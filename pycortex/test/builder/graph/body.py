@@ -10,8 +10,8 @@ from bitstring import BitArray
 from hypothesis import strategies as s
 
 from pycortex.edge_set import EdgeSet
-from pycortex.test.test_unit.test_graph.test_parser.test_header_parser import UINT64_T
 
+UINT64_T = 8
 KMER_LETTER_TO_NUM = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
 KMER_LETTER_NUM_TO_BIT_REPR = ('00', '01', '10', '11')
 KMER_CONTAINER_WORD_SIZE_IN_BITS = 64
