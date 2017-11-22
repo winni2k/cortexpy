@@ -7,7 +7,6 @@ import attr
 import numpy as np
 from attr import Factory
 from bitstring import BitArray
-from hypothesis import strategies as s
 
 from pycortex.edge_set import EdgeSet
 
@@ -104,19 +103,6 @@ class Body(object):
         for record in self.kmer_records:
             byte_strings.append(record.to_bytestring())
         return BytesIO(b''.join(byte_strings))
-
-
-@s.composite
-def kmers(draw, kmer_size, num_colors):
-    kmer = draw(s.text('ACGT', min_size=kmer_size, max_size=kmer_size))
-    coverage = tuple(
-        draw(s.lists(s.integers(min_value=0), min_size=num_colors, max_size=num_colors)))
-    edges = draw(s.lists(
-        s.lists(s.integers(min_value=0, max_value=1), min_size=8, max_size=8),
-        min_size=num_colors,
-        max_size=num_colors))
-    edges = tuple([EdgeSet(edge_set) for edge_set in edges])
-    return KmerRecord(kmer, coverage, edges)
 
 
 def as_edge_set(edge_set_string):

@@ -1,6 +1,5 @@
-from Bio.Alphabet import IUPAC
-from Bio.Seq import Seq
+from Bio.Seq import reverse_complement
 
 
-def revcomp(kmer_string):
-    return str(Seq(kmer_string, IUPAC.unambiguous_dna).reverse_complement())
+def revcomp(dna_string):
+    return reverse_complement(dna_string)

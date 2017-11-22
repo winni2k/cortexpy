@@ -15,6 +15,24 @@ class TestIsEdge(object):
             assert not es.is_edge(letter)
 
 
+class TestAddEdge(object):
+    def test_adds_each_edge(self):
+        es = EdgeSet(np.zeros(8))
+        for letter in 'acgtACGT':
+            assert not es.is_edge(letter)
+            es.add_edge(letter)
+            assert es.is_edge(letter)
+
+
+class TestRemoveEdge(object):
+    def test_removes_each_edge(self):
+        es = EdgeSet(np.ones(8))
+        for letter in 'acgtACGT':
+            assert es.is_edge(letter)
+            es.remove_edge(letter)
+            assert not es.is_edge(letter)
+
+
 class TestGetitem(object):
     def test_works(self):
         es = EdgeSet(np.ones(8))
@@ -44,3 +62,27 @@ class TestIncomingOutgoingKmers(object):
         es = EdgeSet(np.concatenate([np.zeros(4), np.ones(4)]))
         assert len(es.get_incoming_kmers('AAA')) == 0
         assert es.get_outgoing_kmers('AAA') == ['AAA', 'AAC', 'AAG', 'AAT']
+
+    def test_incoming_returns_lexicographically_lowest_kmers(self):
+        es = EdgeSet(np.zeros(8))
+        es.add_edge('t')
+        assert es.get_incoming_kmers('TAA') == ['TAA']
+
+    def test_outgoing_returns_lexicographically_lowest_kmers(self):
+        es = EdgeSet(np.zeros(8))
+        es.add_edge('T')
+        assert es.get_outgoing_kmers('CGG') == ['ACC']
+
+
+class TestStr(object):
+    def test_empty_kmer(self):
+        es = EdgeSet(np.zeros(8))
+        for as_revcomp in [True, False]:
+            assert es.to_str(as_revcomp=as_revcomp) == '........'
+
+    def test_with_a_and_c(self):
+        es = EdgeSet(np.zeros(8))
+        es.add_edge('A')
+        es.add_edge('c')
+        assert es.to_str() == '.c..A...'
+        assert es.to_str(as_revcomp=True) == '...T..g.'

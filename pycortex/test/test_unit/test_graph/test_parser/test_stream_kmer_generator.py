@@ -1,8 +1,10 @@
+import numpy as np
 from hypothesis import given
 from hypothesis import strategies as s
 
 from pycortex.graph.parser.streaming import kmer_generator_from_stream_and_header
-from pycortex.test.builder.graph.body import Body, KmerRecord, kmers
+from pycortex.test.builder.graph.body import Body, KmerRecord
+from pycortex.test.builder.graph.kmer import kmers
 from pycortex.test.mock.graph import Header
 
 
@@ -29,7 +31,7 @@ class TestStreamKmerGenerator(object):
                 expected_kmers):
             # then
             assert expected_kmer.kmer == kmer.kmer
-            assert expected_kmer.coverage == kmer.coverage
+            assert np.all(expected_kmer.coverage == kmer.coverage)
             assert expected_kmer.edges == kmer.edges
 
     def test_parses_aac_kmer(self):
@@ -39,11 +41,11 @@ class TestStreamKmerGenerator(object):
         header = Header(kmer_size, kmer_container_size, num_colors)
         builder = Body(kmer_container_size)
 
-        expected_kmer = KmerRecord('AAC', tuple(), tuple())
+        expected_kmer = KmerRecord('AAC', [], [])
         builder.with_kmer_record(expected_kmer)
 
         kmer = next(kmer_generator_from_stream_and_header(builder.build(), header))
 
         assert expected_kmer.kmer == kmer.kmer
-        assert expected_kmer.coverage == kmer.coverage
+        assert np.all(expected_kmer.coverage == kmer.coverage)
         assert expected_kmer.edges == kmer.edges

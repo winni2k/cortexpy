@@ -18,4 +18,8 @@ class TestGetKmerGraph(object):
 
         # then
         assert set(kmer_graph.nodes) == {'TTT', 'GTT', 'ATT'}
-        assert set(kmer_graph.edges) == {('GTT', 'TTT'), ('ATT', 'TTT')}
+        assert set(kmer_graph.edges) == {
+            ('GTT', 'TTT', 0),
+            ('GTT', 'TTT', 1),
+            ('ATT', 'TTT', 0)
+        }

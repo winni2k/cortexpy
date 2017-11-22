@@ -1,88 +1,56 @@
 import networkx as nx
-import pytest
 
 from pycortex.graph.serializer import find_unitigs
 from pycortex.test.builder.graph.networkx import NetworkxGraphBuilder
 from pycortex.test.expectation.unitig_graph import GraphWithUnitigExpectation
 
 
-class TestWithMissingNodes(object):
-    def test_two_results_in_one_unitig(self):
-        # given
-        builder = NetworkxGraphBuilder()
-        graph = builder.graph
-        graph.add_path(range(2), is_missing=True)
-        graph.node[0]['is_missing'] = True
-        graph.node[1]['is_missing'] = True
-        graph = builder.build()
-
-        # when
-        expect = GraphWithUnitigExpectation(find_unitigs(graph))
-
-        # then
-        expect.has_n_nodes(1)
-        expect.has_n_unitigs(1)
-        (expect.has_unitig_with_edges((0, 1))
-         .with_left_node(0)
-         .with_right_node(1)
-         .with_coverage([(1,), (1,)]))
-
-    @pytest.mark.xfail(reason="Requires the use of MultiDiGraph under the hood")
-    def test_path_two_and_path_two_results_in_two_unitigs(self):
-        # given
-        graph = nx.DiGraph()
-        graph.add_path(range(2))
-        graph.add_path(range(2, 4))
-        graph.node[2]['is_missing'] = True
-        graph.node[3]['is_missing'] = True
-
-        # when
-        expect = GraphWithUnitigExpectation(find_unitigs(graph))
-
-        # then
-        expect.has_n_nodes(2)
-        expect.has_n_unitigs(2)
-        expect.has_unitig_with_edges((0, 1)).with_left_node(0).with_right_node(1).is_not_missing()
-        expect.has_unitig_with_edges((2, 3)).with_left_node(2).with_right_node(3).is_missing()
-
-    def test_path_two_and_path_three_results_in_two_unitigs(self):
-        # given
-        builder = NetworkxGraphBuilder()
-        graph = builder.graph
-        graph.add_edge(0, 1)
-        graph.add_path(range(1, 4), is_missing=True)
-
-        (builder
-         .with_node_coverage(0, 1)
-         .with_node_coverage(1, 1)
-         .with_node_coverage(2, 0)
-         .with_node_coverage(3, 0))
-        graph = builder.build()
-
-        # when
-        expect = GraphWithUnitigExpectation(find_unitigs(graph))
-
-        # then
-        expect.has_n_nodes(2)
-        expect.has_n_unitigs(2)
-        expect.has_unitig_with_edges((0, 1)).with_left_node(0).with_right_node(1).is_not_missing()
-        expect.has_unitig_with_edges((2, 3)).with_left_node(2).with_right_node(3).is_missing()
-
-
 class TestWithMissingEdge(object):
-    @pytest.mark.xfail(reason="Requires the use of MultiDiGraph under the hood")
-    def test_path_two_and_path_two_results_in_two_unitigs(self):
+    def test_two_edges_and_two_edges_results_in_two_unitigs(self):
         # given
-        graph = nx.DiGraph()
-        graph.add_edge(0, 1)
-        graph.add_edge(1, 2, is_missing=True)
-        graph.add_edge(2, 3)
+        builder = NetworkxGraphBuilder()
+        builder.graph.add_edge(0, 1)
+        builder.graph.add_edge(2, 3)
 
         # when
-        expect = GraphWithUnitigExpectation(find_unitigs(graph))
+        expect = GraphWithUnitigExpectation(find_unitigs(builder.build()))
 
         # then
         expect.has_n_nodes(2)
         expect.has_n_unitigs(2)
-        expect.has_unitig_with_edges((0, 1)).with_left_node(0).with_right_node(1).is_not_missing()
-        expect.has_unitig_with_edges((2, 3)).with_left_node(2).with_right_node(3).is_not_missing()
+        expect.has_unitig_with_edges((0, 1)).with_left_node(0).with_right_node(1)
+        expect.has_unitig_with_edges((2, 3)).with_left_node(2).with_right_node(3)
+
+    def test_two_pairs_of_edges_separated_by_single_edge_results_in_two_unitigs(self):
+        # given
+        colors = [0, 1]
+        builder = NetworkxGraphBuilder()
+        builder.with_colors(*colors)
+        nx.add_path(builder.graph, range(4), key=0)
+        builder.add_edge_with_color(0, 1, 1)
+        builder.add_edge_with_color(2, 3, 1)
+
+        # when
+        expect = GraphWithUnitigExpectation(find_unitigs(builder.build(), colors=colors))
+
+        # then
+        expect.has_n_nodes(2)
+        expect.has_n_unitigs(2)
+        expect.has_unitig_with_edges((0, 1)).with_left_node(0).with_right_node(1)
+        expect.has_unitig_with_edges((2, 3)).with_left_node(2).with_right_node(3)
+
+    def test_two_pairs_of_nodes_separated_by_single_edge_results_in_two_unitigs(self):
+        # given
+        builder = NetworkxGraphBuilder()
+        colors = (0, 1)
+        builder.with_colors(*colors)
+        builder.add_edge_with_color(0, 1, 0)
+
+        # when
+        expect = GraphWithUnitigExpectation(find_unitigs(builder.build(), colors=colors))
+
+        # then
+        expect.has_n_unitigs(2)
+        expect.has_n_edges(1)
+        expect.has_unitig_with_one_node(0)
+        expect.has_unitig_with_one_node(1)

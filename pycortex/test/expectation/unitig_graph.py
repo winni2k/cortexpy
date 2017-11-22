@@ -48,6 +48,10 @@ class GraphWithUnitigExpectation(object):
             raise
         return self
 
+    def has_n_edges(self, n):
+        assert len(self.graph.edges) == n
+        return self
+
     def has_n_unitigs(self, n):
         assert len(self.unitigs) == n
         return self
@@ -61,7 +65,7 @@ class GraphWithUnitigExpectation(object):
 
     def has_unitig_with_edges(self, *expected_edges):
         expected_edge_set = set(expected_edges)
-        actual_edge_sets = [set(g.edges) for g, _ in self.unitigs]
+        actual_edge_sets = [set(g.edges()) for g, _ in self.unitigs]
         assert expected_edge_set in actual_edge_sets
         return UnitigExpectation(*self.unitigs[actual_edge_sets.index(expected_edge_set)])
 

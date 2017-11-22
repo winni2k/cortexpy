@@ -43,8 +43,8 @@ class TestKmerGeneratorFromStream(object):
                       .with_kmer_size(kmer_size))
 
         expected_kmers = [
-            KmerRecord('AAC', (1,), (as_edge_set('......G.'),)),
-            KmerRecord('ACG', (2,), (as_edge_set('A......T'),)),
+            KmerRecord('AAC', (1,), [as_edge_set('......G.')]),
+            KmerRecord('ACG', (2,), [as_edge_set('a......T')]),
         ]
 
         # when
@@ -56,11 +56,11 @@ class TestKmerGeneratorFromStream(object):
         actual_kmers = list(kmer_generator)
         for kmer in actual_kmers:
             print_kmer(kmer)
-        assert len(actual_kmers) == len(expected_kmers)
         for expected_kmer, kmer in zip(expected_kmers, actual_kmers):
             assert kmer.kmer == expected_kmer.kmer
             assert kmer.coverage == expected_kmer.coverage
             assert kmer.edges == expected_kmer.edges
+        assert len(actual_kmers) == len(expected_kmers)
 
     def test_parses_a_graph_with_kmer_size_9(self, tmpdir):
         # given
@@ -70,7 +70,7 @@ class TestKmerGeneratorFromStream(object):
                       .with_kmer_size(kmer_size))
 
         expected_kmers = [
-            KmerRecord('ACGTTCCCC', (1,), (as_edge_set('........'),)),
+            KmerRecord('ACGTTCCCC', (1,), [as_edge_set('........')]),
         ]
 
         # when
@@ -96,7 +96,7 @@ class TestKmerGeneratorFromStream(object):
                       .with_kmer_size(kmer_size))
 
         expected_kmers = [
-            KmerRecord(contig, (1,), (as_edge_set('........'),)),
+            KmerRecord(contig, (1,), [as_edge_set('........')]),
         ]
 
         # when
@@ -123,7 +123,7 @@ class TestRandomAccess(object):
                         .with_kmer_size(kmer_size)
                         .build(tmpdir))
 
-        expected = KmerRecord('AAC', (1,), (as_edge_set('A.....G.'),))
+        expected = KmerRecord('AAC', (1,), [as_edge_set('A.....G.')])
         cg = parser.RandomAccess(open(output_graph, 'rb'))
 
         # when

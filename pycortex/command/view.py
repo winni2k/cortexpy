@@ -2,10 +2,8 @@ from enum import Enum
 
 from pycortex.graph import ContigRetriever
 from pycortex.graph.parser.constants import NUM_TO_LETTER
-from pycortex.graph.parser.kmer import EmptyKmer
 from pycortex.graph.parser.streaming import kmer_generator_from_stream
 from pycortex.graph.serializer import Serializer
-from pycortex.utils import revcomp
 
 
 class ViewChoice(Enum):
@@ -36,7 +34,8 @@ def view(args):
             if args.output_type == ViewChoice.term.name:
                 print_contig(contig_retriever, args.record)
             else:
-                serializer = Serializer(contig_retriever.get_kmer_graph(args.record))
+                serializer = Serializer(contig_retriever.get_kmer_graph(args.record),
+                                        colors=contig_retriever.colors)
                 if args.output_type == ViewChoice.json.name:
                     print(serializer.to_json())
                 else:
@@ -55,15 +54,9 @@ def print_contig(contig_retriever, contig):
 
 
 def kmer_to_cortex_jdk_print_string(kmer, alt_kmer_string=None):
-    if isinstance(kmer, EmptyKmer):
-        revcomp_kmer = revcomp(alt_kmer_string)
-        if revcomp_kmer > alt_kmer_string:
-            revcomp_kmer = alt_kmer_string
-        return '{}: {} missing'.format(revcomp_kmer, alt_kmer_string)
     is_revcomp = bool(alt_kmer_string is not None and kmer.kmer != alt_kmer_string)
 
-    edge_set_strings = [edge_set_as_string(edge_set, is_revcomp=is_revcomp) for edge_set in
-                        kmer.edges]
+    edge_set_strings = (edge_set.to_str(as_revcomp=is_revcomp) for edge_set in kmer.edges)
     to_print = [str(kmer.kmer)]
     if alt_kmer_string is not None:
         to_print.append(': ' + alt_kmer_string)
