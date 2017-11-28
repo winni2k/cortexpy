@@ -43,7 +43,7 @@ class GraphWithUnitigExpectation(object):
     def has_n_nodes(self, n):
         try:
             self.has_n_unitigs(n)
-        except:
+        except Exception:
             print(list(self.graph))
             raise
         return self
