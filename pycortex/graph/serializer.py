@@ -71,7 +71,7 @@ class Unitig(object):
     def coverage(self):
         if self._coverage is None:
             coverage = [self.graph.node[self.left_node]['kmer'].coverage]
-            for source, target, key in nx.edge_dfs(
+            for _, target, _ in nx.edge_dfs(
                     self.graph,
                     self.left_node,
                     orientation=EdgeTraversalOrientation.original.name
@@ -118,8 +118,7 @@ class OrientedGraphFuncs(object):
 
     def degree(self, node):
         degree = 0
-        # key = color
-        for u, v, color in self.edges(node, keys=True, default=0):
+        for _, _, color in self.edges(node, keys=True, default=0):
             if color == self.color:
                 degree += 1
         return degree
@@ -140,7 +139,7 @@ def is_unitig_end(node, graph, orientation, *, colors=(0,), test_coverage=False)
         return any(ends)
     if all(ends):
         return True
-    end_idx, end = next(filter(lambda end_tup: not end_tup[1], enumerate(ends)))
+    end_idx, _ = next(filter(lambda end_tup: not end_tup[1], enumerate(ends)))
     original = OrientedGraphFuncs(graph, orientation, color=colors[end_idx])
 
     edge = next(filter(lambda inputs: inputs[2] == colors[end_idx],
@@ -186,7 +185,7 @@ def find_unitig_from(start_node, graph, *, colors=(0,), test_coverage=False):
         if not is_unitig_end(start_node, graph, orientation, colors=colors,
                              test_coverage=test_coverage):
             for edge_info in nx.edge_dfs(graph, start_node, orientation=orientation.name):
-                source, target, color = edge_info[:3]
+                source, target, _ = edge_info[:3]
                 if orientation == EdgeTraversalOrientation.reverse:
                     source, target = target, source
                 if target in unitig_graph or is_unitig_end(source, graph, orientation,
@@ -265,7 +264,7 @@ def collapse_kmer_unitigs(graph, *, colors=(0,), test_coverage=True):
         else:
             short_kmer_name = [left_node]
         seen_nodes = set()
-        for _, target, key in nx.edge_dfs(unitig_graph, source=left_node):
+        for _, target, _ in nx.edge_dfs(unitig_graph, source=left_node):
             if target not in seen_nodes:
                 seen_nodes.add(target)
                 short_kmer_name.append(target[-1])

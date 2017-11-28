@@ -14,7 +14,7 @@ class EmptyKmerBuilder(object):
     _seen_kmers = attr.ib(attr.Factory(dict))
 
     @num_colors.validator
-    def not_less_than_zero(self, attribute, value):
+    def not_less_than_zero(self, attribute, value):  # noqa
         if value < 0:
             raise ValueError('value less than zero')
 
