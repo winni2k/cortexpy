@@ -45,7 +45,7 @@ class Header(object):
     kmer_size = attr.ib(1)
     kmer_container_size = attr.ib(1)
     num_colors = attr.ib(1)
-    error_rate = attr.ib(bytes(16))
+    error_rates = attr.ib(None)
     _mean_read_lengths = attr.ib(None)
     _total_sequence = attr.ib(None)
     _color_names = attr.ib(None)
@@ -114,8 +114,8 @@ class Header(object):
         self._color_information_blocks.append(color_information_block)
         return self
 
-    def with_error_rate(self, error_rate):
-        self.error_rate = error_rate
+    def with_error_rates(self, *error_rates):
+        self.error_rates = error_rates
         return self
 
     def build(self):
@@ -133,7 +133,11 @@ class Header(object):
             header_string += pack('I', len(color))
             header_string += color
 
-        header_string += self.error_rate
+        if self.error_rates is None:
+            self.error_rates = [bytes(16) for _ in self.color_names]
+        assert len(self.error_rates) == len(self.color_names)
+        for error_rate in self.error_rates:
+            header_string += error_rate
 
         for block in self.color_information_blocks:
             header_string += block.to_binary()

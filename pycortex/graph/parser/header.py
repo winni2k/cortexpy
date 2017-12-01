@@ -20,6 +20,8 @@ class Header(object):
     mean_read_lengths = attr.ib(None)
     mean_total_sequence = attr.ib(None)
     sample_names = attr.ib(None)
+    error_rate = attr.ib(None)
+    color_info_blocks = attr.ib(attr.Factory(list))
 
     @property
     def record_size(self):
@@ -101,14 +103,18 @@ class HeaderFromStreamBuilder(object):
         return self
 
     def extract_error_rate(self):
-        unpack('16c', self.stream.read(16))  # error_rate
+        error_rates = []
+        for _ in range(self.header.num_colors):
+            error_rates.append(unpack('16c', self.stream.read(16)))
+        self.header = attr.evolve(self.header, error_rate=tuple(error_rates))
         return self
 
     def extract_color_info_blocks(self):
         for _ in range(self.header.num_colors):
             color_info_block_string = self.stream.read(4 + 3 * struct.calcsize('I'))
             color_info_block = unpack('4c3I', color_info_block_string)
-            self.stream.read(color_info_block[6])
+            cleaned_graph_name = self.stream.read(color_info_block[6])
+            self.header.color_info_blocks.append((color_info_block, cleaned_graph_name))
         return self
 
 

@@ -1,10 +1,8 @@
 import os
-import pytest
 
 import pycortex.graph.parser as parser
 
 
-@pytest.mark.xfail(reason='Still need to find out why this header is not being parsed correctly')
 class TestManyColorsHeaderOnlyFixture(object):
     def test_does_not_raise(self):
         # given
@@ -19,4 +17,4 @@ class TestManyColorsHeaderOnlyFixture(object):
         assert header.version == 6
         assert header.kmer_size == 47
         assert header.kmer_container_size == 2
-        assert header.colors == 25
+        assert header.num_colors == 25

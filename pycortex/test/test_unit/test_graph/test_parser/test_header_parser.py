@@ -87,10 +87,10 @@ class TestHeaderParser(object):
 
         assert 'Concluding magic word' in str(excinfo.value)
 
-    @given(s.data())
-    def test_loads_entire_header_successfully(self, data):
+    @given(s.data(),
+           s.integers(min_value=1, max_value=3))
+    def test_loads_entire_header_successfully(self, data, num_colors):
         # given
-        num_colors = data.draw(s.integers(min_value=1, max_value=3))
         kmer_size = data.draw(s.integers(min_value=1, max_value=100))
         kmer_container_size = data.draw(s.integers(min_value=1, max_value=5))
 
@@ -113,7 +113,8 @@ class TestHeaderParser(object):
                .with_mean_read_lengths(mean_read_lengths)
                .with_total_sequence(total_sequence)
                .with_color_names(color_names)
-               .with_error_rate(data.draw(s.binary(min_size=16, max_size=16))))
+               .with_error_rates(*[data.draw(s.binary(min_size=16, max_size=16))
+                                   for _ in range(num_colors)]))
 
         for _ in color_names:
             cgb.with_color_information_block(data.draw(color_information_blocks()))
