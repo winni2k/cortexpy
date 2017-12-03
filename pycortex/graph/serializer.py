@@ -13,8 +13,8 @@ class Serializer(object):
     unitig_graph = attr.ib(None)
 
     def to_json_serializable(self):
-        graph = self.graph
-        self.unitig_graph = collapse_kmer_unitigs(graph, colors=self.colors)
+        collapser = UnitigCollapser(self.graph, colors=self.colors).collapse_kmer_unitigs()
+        self.unitig_graph = collapser.unitig_graph
         self.unitig_graph = nx.convert_node_labels_to_integers(self.unitig_graph,
                                                                label_attribute='node_key')
         self._make_graph_json_representable()
@@ -43,23 +43,6 @@ class Serializer(object):
             node_data['coverage'] = coverage
 
 
-def missing_kmers_change_in_edge(graph, edge):
-    source_kmer = graph.node[edge[0]]['kmer']
-    target_kmer = graph.node[edge[1]]['kmer']
-    source_coverage = source_kmer.coverage
-    target_coverage = target_kmer.coverage
-    if source_coverage is None or target_coverage is None:
-        raise ValueError('Coverage is none in {} or {}'.format(source_kmer, target_kmer))
-
-    if len(source_coverage) != len(target_coverage):
-        raise ValueError('Coverage length differs in {} or {}'.format(source_kmer, target_kmer))
-
-    for source_color_coverage, target_color_coverage in zip(source_coverage, target_coverage):
-        if (source_color_coverage == 0) != (target_color_coverage == 0):
-            return True
-    return False
-
-
 @attr.s(slots=True)
 class Unitig(object):
     graph = attr.ib()
@@ -79,13 +62,6 @@ class Unitig(object):
                 coverage.append(self.graph.node[target]['kmer'].coverage)
             self._coverage = coverage
         return self._coverage
-
-    @property
-    def is_missing(self):
-        for color_coverage in self.coverage:
-            if color_coverage is not None and any(c != 0 for c in color_coverage):
-                return False
-        return True
 
 
 class EdgeTraversalOrientation(Enum):
@@ -122,9 +98,6 @@ class OrientedGraphFuncs(object):
             if color == self.color:
                 degree += 1
         return degree
-
-    def degree_node_collapsed(self, node):
-        return len(set(self.other_edge_node(e) for e in self.edges(node)))
 
 
 def is_unitig_end(node, graph, orientation, *, colors=(0,), test_coverage=False):
@@ -218,56 +191,67 @@ def replace_unitig_nodes_with_unitig(out_graph, unitig):
     return out_graph
 
 
-def find_unitigs(graph, *, colors=(0,), test_coverage=False):
-    """Finds unitigs of one or more nodes and replaces them by a subgraph containing the
-    unitig nodes.
+@attr.s(slots=True)
+class UnitigCollapser(object):
+    graph = attr.ib()
+    colors = attr.ib((0,))
+    test_coverage = attr.ib(True)
+    unitig_graph = attr.ib(None)
 
-    Unitigs are described in :py:func:`find_unitig_from`.
+    @graph.validator
+    def is_a_multi_di_graph(self, attribute, value):  # noqa
+        assert isinstance(value, nx.MultiDiGraph)
 
-    returns a graph containing unitig subgraphs
-    """
+    def collapse_kmer_unitigs(self):
+        """Collapses unitig kmers into a single graph node.
 
-    assert isinstance(graph, nx.MultiDiGraph)
-    out_graph = graph.copy()
-    visited_nodes = set()
-    for start_node in graph:
-        if start_node in visited_nodes:
-            continue
-        unitig = find_unitig_from(start_node, graph, colors=colors, test_coverage=test_coverage)
-        unitig_graph_set = set(unitig.graph)
-        assert visited_nodes & unitig_graph_set == set(), "{} is not disjoint from {}".format(
-            visited_nodes, unitig_graph_set)
-        visited_nodes |= unitig_graph_set
+        All nodes have an attribute `repr` added which is the node label with the left k-1 letters
+        removed unless the node has no incoming edges. In that case, `repr` is the full kmer.
 
-        out_graph = replace_unitig_nodes_with_unitig(out_graph, unitig)
-    return out_graph
+        Unitigs are described in :py:func:`find_unitig_from`.
 
+        :param graph:
+        :return graph:
+        """
+        self.find_unitigs()
+        out_graph = self.unitig_graph.copy()
+        for unitig_graph, data in self.unitig_graph.nodes.data():
+            assert data['is_unitig']
+            left_node = data['left_node']
+            if self.graph.in_degree(left_node) > 0:
+                short_kmer_name = [left_node[-1]]
+            else:
+                short_kmer_name = [left_node]
+            seen_nodes = set()
+            for _, target, _ in nx.edge_dfs(unitig_graph, source=left_node):
+                if target not in seen_nodes:
+                    seen_nodes.add(target)
+                    short_kmer_name.append(target[-1])
+            short_kmer_name = ''.join(short_kmer_name)
+            out_graph.nodes[unitig_graph]['repr'] = short_kmer_name
+        self.unitig_graph = out_graph
+        return self
 
-def collapse_kmer_unitigs(graph, *, colors=(0,), test_coverage=True):
-    """Collapses unitig kmers into a single graph node.
+    def find_unitigs(self):
+        """Finds unitigs of one or more nodes and replaces them by a subgraph containing the
+        unitig nodes.
 
-    All nodes have an attribute `repr` added which is the node label with the left k-1 letters
-    removed unless the node has no incoming edges. In that case, `repr` is the full kmer.
+        Unitigs are described in :py:func:`find_unitig_from`.
 
-    Unitigs are described in :py:func:`find_unitig_from`.
+        returns a graph containing unitig subgraphs
+        """
 
-    :param graph:
-    :return graph:
-    """
-    unitigs_graph = find_unitigs(graph, colors=colors, test_coverage=test_coverage)
-    out_graph = unitigs_graph.copy()
-    for unitig_graph, data in unitigs_graph.nodes.data():
-        assert data['is_unitig']
-        left_node = data['left_node']
-        if graph.in_degree(left_node) > 0:
-            short_kmer_name = [left_node[-1]]
-        else:
-            short_kmer_name = [left_node]
-        seen_nodes = set()
-        for _, target, _ in nx.edge_dfs(unitig_graph, source=left_node):
-            if target not in seen_nodes:
-                seen_nodes.add(target)
-                short_kmer_name.append(target[-1])
-        short_kmer_name = ''.join(short_kmer_name)
-        out_graph.nodes[unitig_graph]['repr'] = short_kmer_name
-    return out_graph
+        self.unitig_graph = self.graph.copy()
+        visited_nodes = set()
+        for start_node in self.graph:
+            if start_node in visited_nodes:
+                continue
+            unitig = find_unitig_from(start_node, self.graph, colors=self.colors,
+                                      test_coverage=self.test_coverage)
+            unitig_graph_set = set(unitig.graph)
+            assert visited_nodes & unitig_graph_set == set(), "{} is not disjoint from {}".format(
+                visited_nodes, unitig_graph_set)
+            visited_nodes |= unitig_graph_set
+
+            self.unitig_graph = replace_unitig_nodes_with_unitig(self.unitig_graph, unitig)
+        return self

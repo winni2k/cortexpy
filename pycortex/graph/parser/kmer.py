@@ -13,7 +13,7 @@ class EmptyKmerBuilder(object):
     num_colors = attr.ib(0)
     _seen_kmers = attr.ib(attr.Factory(dict))
 
-    @num_colors.validator
+    @num_colors.validator  # noqa
     def not_less_than_zero(self, attribute, value):  # noqa
         if value < 0:
             raise ValueError('value less than zero')
@@ -27,13 +27,13 @@ class EmptyKmerBuilder(object):
         if kmer_string < kmer_string_to_use:
             kmer_string_to_use = kmer_string
 
-        if kmer_string_to_use in self._seen_kmers:
+        if kmer_string_to_use in self._seen_kmers.keys():
             return self._seen_kmers[kmer_string_to_use]
-        self._seen_kmers[kmer_string_to_use] = EmptyKmer(kmer=kmer_string_to_use,
-                                                         coverage=np.zeros(self.num_colors,
-                                                                           dtype=np.uint8),
-                                                         kmer_size=len(kmer_string_to_use),
-                                                         num_colors=self.num_colors)
+        self._seen_kmers[kmer_string_to_use] = Kmer(EmptyKmer(kmer=kmer_string_to_use,
+                                                              coverage=np.zeros(self.num_colors,
+                                                                                dtype=np.uint8),
+                                                              kmer_size=len(kmer_string_to_use),
+                                                              num_colors=self.num_colors))
         return self._seen_kmers[kmer_string_to_use]
 
 
@@ -95,17 +95,12 @@ def connect_kmers(first, second, color):
 
 
 def kmer_eq(self, other):
-    if self.kmer != other.kmer:
-        return False
-    if self.kmer_size != other.kmer_size:
-        return False
-    if self.num_colors != other.num_colors:
-        return False
-    if not np.all(self.coverage == other.coverage):
-        return False
-    if (self.edges is None) != (other.edges is None):
-        return False
-    if self.edges is not None and not np.all(self.edges == other.edges):
+    if any([self.kmer != other.kmer,
+            self.kmer_size != other.kmer_size,
+            self.num_colors != other.num_colors,
+            not np.all(self.coverage == other.coverage),
+            (self.edges is None) != (other.edges is None),
+            (self.edges is not None and not np.all(self.edges == other.edges))]):
         return False
     return True
 
@@ -122,27 +117,13 @@ class EmptyKmer(object):
         if self.edges is None:
             self.edges = [pycortex.edge_set.empty() for _ in range(len(self.coverage))]
 
-    def append_color(self, coverage=0, edge_set=None):
-        if edge_set is None:
-            edge_set = pycortex.edge_set.empty()
-
-        coverage_array = np.resize(self.coverage, len(self.coverage) + 1)
-        coverage_array[-1] = coverage
-        self.coverage = coverage_array
-
-        self.edges.append(edge_set)
-        self.num_colors += 1
-
-    def __eq__(self, other):
-        return kmer_eq(self, other)
-
 
 @attr.s(slots=True, cmp=False)
-class Kmer(object):
-    _raw_data = attr.ib()
+class KmerData(object):
+    _data = attr.ib()
     kmer_size = attr.ib()
     num_colors = attr.ib()
-    kmer_container_size_in_uint64ts = attr.ib(1)
+    _kmer_container_size_in_uint64ts = attr.ib(1)
     _kmer = attr.ib(None)
     _coverage = attr.ib(None)
     _edges = attr.ib(None)
@@ -162,7 +143,7 @@ class Kmer(object):
     def kmer(self):
         if self._kmer is None:
             kmer_as_uint64ts = np.frombuffer(
-                self._raw_data[:self.kmer_container_size_in_uint64ts * 8],
+                self._data[:self._kmer_container_size_in_uint64ts * 8],
                 dtype='<u8')
             big_endian_kmer = kmer_as_uint64ts.byteswap().newbyteorder()  # change to big endian
             kmer_as_bits = np.unpackbits(
@@ -177,27 +158,40 @@ class Kmer(object):
     @property
     def coverage(self):
         if self._coverage is None:
-            start = self.kmer_container_size_in_uint64ts * UINT64_T
-            coverage_raw = self._raw_data[start:(start + self.num_colors * UINT32_T)]
+            start = self._kmer_container_size_in_uint64ts * UINT64_T
+            coverage_raw = self._data[start:(start + self.num_colors * UINT32_T)]
             fmt_string = ''.join(['I' for _ in range(self.num_colors)])
             self._coverage = np.array(unpack(fmt_string, coverage_raw), dtype=np.uint32)
         return self._coverage
-
-    @coverage.setter
-    def coverage(self, val):
-        self._coverage = val
 
     @property
     def edges(self):
         if self._edges is None:
             start = (
-                self.kmer_container_size_in_uint64ts * UINT64_T + self.num_colors * UINT32_T
+                self._kmer_container_size_in_uint64ts * UINT64_T + self.num_colors * UINT32_T
             )
-            edge_bytes = list(self._raw_data[start:])
+            edge_bytes = list(self._data[start:])
             edge_sets = np.unpackbits(np.array(edge_bytes, dtype=np.uint8)).reshape(-1, 4)
             edge_sets[1::2] = np.fliplr(edge_sets[1::2])
             self._edges = list(map(EdgeSet, edge_sets.reshape(-1, 8)))
         return self._edges
+
+
+@attr.s(slots=True, cmp=False)
+class Kmer(object):
+    _kmer_data = attr.ib()
+    kmer = attr.ib(init=False)
+    coverage = attr.ib(init=False)
+    edges = attr.ib(init=False)
+    kmer_size = attr.ib(init=False)
+    num_colors = attr.ib(init=False)
+
+    def __attrs_post_init__(self):
+        self.kmer = self._kmer_data.kmer
+        self.coverage = self._kmer_data.coverage
+        self.edges = self._kmer_data.edges
+        self.kmer_size = self._kmer_data.kmer_size
+        self.num_colors = self._kmer_data.num_colors
 
     def append_color(self, coverage=0, edge_set=None):
         if edge_set is None:

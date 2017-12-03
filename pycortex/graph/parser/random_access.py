@@ -5,7 +5,7 @@ from io import SEEK_END
 import attr
 
 import pycortex.graph.parser.header
-from pycortex.graph.parser.kmer import KmerByStringComparator, Kmer
+from pycortex.graph.parser.kmer import KmerByStringComparator, Kmer, KmerData
 from pycortex.graph.parser.streaming import kmer_generator_from_stream_and_header
 from pycortex.utils import revcomp
 
@@ -98,12 +98,12 @@ class KmerRecordSequence(Sequence):
         self.graph_handle.seek(self.body_start + self.record_size * item)
         kmer_bytes = self.graph_handle.read(self.record_size)
         return KmerByStringComparator(
-            kmer_object=Kmer(
+            kmer_object=Kmer(KmerData(
                 kmer_bytes,
                 kmer_size=self.kmer_size,
                 num_colors=self.num_colors,
                 kmer_container_size_in_uint64ts=self.kmer_container_size,
-            )
+            ))
         )
 
     def __len__(self):

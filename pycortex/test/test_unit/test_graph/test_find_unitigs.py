@@ -1,46 +1,47 @@
 from unittest.mock import Mock
 
 import networkx as nx
-from hypothesis import strategies as s
 from hypothesis import given, assume, settings
+from hypothesis import strategies as s
 
-from pycortex.graph.serializer import find_unitigs, find_unitig_from, is_unitig_end, \
+from pycortex.graph.serializer import find_unitig_from, is_unitig_end, \
     EdgeTraversalOrientation
-from pycortex.test.expectation.unitig_graph import GraphWithUnitigExpectation
 from pycortex.test.builder.graph.networkx import add_kmers_to_graph
+from pycortex.test.driver.graph.find_unitigs import FindUnitigsTestDriver
 
 
 class Test(object):
     def test_three_node_path_becomes_a_unitig(self):
-        graph = nx.MultiDiGraph()
-        graph.add_path(range(3))
-        graph = add_kmers_to_graph(graph)
-        expect = GraphWithUnitigExpectation(find_unitigs(graph))
+        # given
+        driver = FindUnitigsTestDriver()
+        driver.graph.add_path(range(3))
+
+        # when
+        expect = driver.run()
 
         expect.has_n_nodes(1)
         expect.has_unitig_with_edges((0, 1), (1, 2))
 
     def test_three_node_path_with_mixed_node_order_becomes_a_unitig(self):
         # given
-        graph = nx.MultiDiGraph()
+        driver = FindUnitigsTestDriver()
+        graph = driver.graph
         graph.add_edge(0, 2)
         graph.add_edge(1, 0)
-        graph = add_kmers_to_graph(graph)
 
         # when
-        expect = GraphWithUnitigExpectation(find_unitigs(graph))
+        expect = driver.run()
 
         # then
         expect.has_unitig_with_edges((0, 2), (1, 0))
 
     def test_two_node_cycle_becomes_unitig(self):
         # given
-        graph = nx.MultiDiGraph()
-        graph.add_cycle(range(2))
-        graph = add_kmers_to_graph(graph)
+        driver = FindUnitigsTestDriver()
+        driver.graph.add_cycle(range(2))
 
         # when
-        expect = GraphWithUnitigExpectation(find_unitigs(graph))
+        expect = driver.run()
 
         # then
         expect.has_n_unitigs(1)
@@ -48,24 +49,22 @@ class Test(object):
 
     def test_two_node_path_becomes_unitig(self):
         # given
-        graph = nx.MultiDiGraph()
-        graph.add_path(range(2))
-        graph = add_kmers_to_graph(graph)
+        driver = FindUnitigsTestDriver()
+        driver.graph.add_path(range(2))
 
         # when
-        expect = GraphWithUnitigExpectation(find_unitigs(graph))
+        expect = driver.run()
 
         # then
         expect.has_unitig_with_edges((0, 1))
 
     def test_three_node_cycle_becomes_three_node_unitig(self):
         # given
-        graph = nx.MultiDiGraph()
-        graph.add_cycle(range(3))
-        graph = add_kmers_to_graph(graph)
+        driver = FindUnitigsTestDriver()
+        driver.graph.add_cycle(range(3))
 
         # when
-        expect = GraphWithUnitigExpectation(find_unitigs(graph))
+        expect = driver.run()
 
         # then
         (expect
@@ -77,12 +76,11 @@ class Test(object):
 
     def test_four_node_cycle_becomes_four_node_unitig(self):
         # given
-        graph = nx.MultiDiGraph()
-        graph.add_cycle(range(4))
-        graph = add_kmers_to_graph(graph)
+        driver = FindUnitigsTestDriver()
+        driver.graph.add_cycle(range(4))
 
         # when
-        expect = GraphWithUnitigExpectation(find_unitigs(graph))
+        expect = driver.run()
 
         # then
         (expect
@@ -94,14 +92,14 @@ class Test(object):
 
     def test_path_and_cycle_becomes_four_unitigs(self):
         # given
-        graph = nx.MultiDiGraph()
+        driver = FindUnitigsTestDriver()
+        graph = driver.graph
         graph.add_path(range(4))
         graph.add_edge(2, 4)
         graph.add_edge(4, 1)
-        graph = add_kmers_to_graph(graph)
 
         # when
-        expect = GraphWithUnitigExpectation(find_unitigs(graph))
+        expect = driver.run()
 
         # then
         expect.has_n_nodes(4)
@@ -113,13 +111,13 @@ class Test(object):
 
     def test_two_node_path_and_three_node_cycle_becomes_two_unitigs(self):
         # given
-        graph = nx.MultiDiGraph()
+        driver = FindUnitigsTestDriver()
+        graph = driver.graph
         graph.add_path(range(3))
         graph.add_cycle(range(2, 5))
-        graph = add_kmers_to_graph(graph)
 
         # when
-        expect = GraphWithUnitigExpectation(find_unitigs(graph))
+        expect = driver.run()
 
         # then
         (expect
@@ -136,14 +134,15 @@ class Test(object):
 
     def test_cycle_and_six_node_path_results_in_four_unitigs(self):
         # given
-        graph = nx.MultiDiGraph()
+        driver = FindUnitigsTestDriver()
+        graph = driver.graph
         graph.add_edge(2, 3)
         graph.add_edge(3, 1)
         graph.add_path([4, 6, 0, 1, 2, 5])
         graph = add_kmers_to_graph(graph)
 
         # when
-        expect = GraphWithUnitigExpectation(find_unitigs(graph))
+        expect = driver.run()
 
         # then
         (expect
@@ -157,13 +156,13 @@ class Test(object):
 
     def test_two_paths_making_bubble_results_in_four_unitigs(self):
         # given
-        graph = nx.MultiDiGraph()
+        driver = FindUnitigsTestDriver()
+        graph = driver.graph
         graph.add_path(range(4))
         graph.add_path([1, 4, 2])
-        graph = add_kmers_to_graph(graph)
 
         # when
-        expect = GraphWithUnitigExpectation(find_unitigs(graph))
+        expect = driver.run()
 
         # then
         expect.has_n_unitigs(3)
@@ -175,9 +174,8 @@ class Test(object):
 class TestIsUnitigEnd(object):
     def test_single_node_is_end_from_both_sides(self):
         # given
-        graph = nx.MultiDiGraph()
+        graph = FindUnitigsTestDriver().graph
         graph.add_node(0)
-        graph = add_kmers_to_graph(graph)
 
         # when/then
         for orientation in EdgeTraversalOrientation:
@@ -187,10 +185,11 @@ class TestIsUnitigEnd(object):
     @settings(max_examples=3)
     def test_each_end_of_path_is_end(self, num_edges):
         # given
-        graph = nx.MultiDiGraph()
+        driver = FindUnitigsTestDriver()
+        graph = driver.graph
         for color in range(num_edges):
             graph.add_edge(0, 1, key=color)
-        graph = add_kmers_to_graph(graph)
+        driver.run()
 
         # when/then
         assert is_unitig_end(0, graph, EdgeTraversalOrientation.reverse)
@@ -200,10 +199,11 @@ class TestIsUnitigEnd(object):
 
     def test_two_edges_into_one_node(self):
         # given
-        graph = nx.MultiDiGraph()
+        driver = FindUnitigsTestDriver()
+        graph = driver.graph
         graph.add_edge(0, 1)
         graph.add_edge(2, 1)
-        graph = add_kmers_to_graph(graph)
+        driver.run()
 
         # when/then
         for node in range(3):
@@ -212,10 +212,11 @@ class TestIsUnitigEnd(object):
 
     def test_two_edges_out_of_one_node(self):
         # given
-        graph = nx.MultiDiGraph()
+        driver = FindUnitigsTestDriver()
+        graph = driver.graph
         graph.add_edge(0, 1)
         graph.add_edge(0, 2)
-        graph = add_kmers_to_graph(graph)
+        driver.run()
 
         # when/then
         for node in range(3):
@@ -224,9 +225,10 @@ class TestIsUnitigEnd(object):
 
     def test_middle_unconnected_node_in_two_color_graph(self):
         # given
-        graph = nx.MultiDiGraph()
+        driver = FindUnitigsTestDriver()
+        graph = driver.graph
         nx.add_path(graph, range(3), key=0)
-        graph = add_kmers_to_graph(graph)
+        driver.run()
 
         # when/then
         for node in range(3):
@@ -237,7 +239,8 @@ class TestIsUnitigEnd(object):
 class TestFindUnitigFromTwoColorGraph(object):
     def test_three_node_path_becomes_a_unitig_and_attributes_are_copied_across(self):
         # given
-        graph = nx.MultiDiGraph()
+        driver = FindUnitigsTestDriver()
+        graph = driver.graph
         graph.add_path(range(3))
         for node in graph:
             kmer_mock = Mock()
@@ -261,17 +264,20 @@ class TestFindUnitigFromTwoColorGraph(object):
     @given(s.sampled_from(((0, 1), (1, 0), (1, 1), (0, 0), (0,), (1,), tuple())),
            s.sampled_from(((0, 1), (1, 0), (1, 1), (0, 0), (0,), (1,), tuple())))
     def test_two_node_path_with_differing_missing_kmers_are_joined(self, coverage0, coverage1):
+        # given
         assume(len(coverage0) == len(coverage1))
+        driver = FindUnitigsTestDriver()
+        driver.graph.add_edge(0, 1)
 
-        graph = nx.MultiDiGraph()
-        graph.add_edge(0, 1)
-        graph = add_kmers_to_graph(graph)
+        # when
+        driver.run()
 
         for node, coverage in zip(range(2), [coverage0, coverage1]):
-            graph.node[node]['kmer'].coverage = coverage
+            driver.graph.node[node]['kmer'].coverage = coverage
 
+        # then
         for start_node in range(2):
-            unitig = find_unitig_from(start_node, graph)
+            unitig = find_unitig_from(start_node, driver.graph)
             assert unitig.left_node == 0
             assert unitig.right_node == 1
             assert len(unitig.graph) == 2
@@ -288,20 +294,21 @@ class TestUnitigGraphCoverage(object):
                                                              link_color_1_exists,
                                                              kmer_coverages):
         # given
-        graph = nx.MultiDiGraph()
-        graph.add_nodes_from([0, 1])
+        driver = FindUnitigsTestDriver()
+        driver.graph.add_nodes_from([0, 1])
         colors = [0, 1]
         for color, link_exists in zip(colors, [link_color_0_exists, link_color_1_exists]):
             if link_exists:
-                graph.add_edge(0, 1, key=color)
-        graph = add_kmers_to_graph(graph)
-        kmers = [graph.node[r]['kmer'] for r in range(2)]
+                driver.graph.add_edge(0, 1, key=color)
+        driver.run()
+
+        kmers = [driver.graph.node[r]['kmer'] for r in range(2)]
         kmers[0].coverage = kmer_coverages[0]
         kmers[1].coverage = kmer_coverages[1]
 
         for start_node in range(2):
             # when
-            unitig = find_unitig_from(start_node, graph, colors=colors, test_coverage=True)
+            unitig = find_unitig_from(start_node, driver.graph, colors=colors, test_coverage=True)
 
             # then
             if ((link_color_0_exists and link_color_1_exists) or

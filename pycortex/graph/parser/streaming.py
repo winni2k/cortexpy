@@ -1,4 +1,4 @@
-from pycortex.graph.parser.kmer import Kmer
+from pycortex.graph.parser.kmer import Kmer, KmerData
 from pycortex.graph.parser.constants import UINT64_T
 from pycortex.graph.parser.header import from_stream
 
@@ -13,8 +13,10 @@ def kmer_generator_from_stream_and_header(stream, header):
 
     raw_record = stream.read(record_size)
     while raw_record != b'':
-        yield Kmer(raw_record,
-                   header.kmer_size,
-                   header.num_colors,
-                   header.kmer_container_size)
+        yield Kmer(
+            KmerData(raw_record,
+                     header.kmer_size,
+                     header.num_colors,
+                     header.kmer_container_size)
+        )
         raw_record = stream.read(record_size)
