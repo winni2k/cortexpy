@@ -1,7 +1,6 @@
 from enum import Enum
 
 from pycortex.graph import ContigRetriever
-from pycortex.graph.parser.constants import NUM_TO_LETTER
 from pycortex.graph.parser.streaming import kmer_generator_from_stream
 from pycortex.graph.serializer import Serializer
 
@@ -63,28 +62,3 @@ def kmer_to_cortex_jdk_print_string(kmer, alt_kmer_string=None):
     to_print.append(' ' + ' '.join(map(str, kmer.coverage)))
     to_print.append(' ' + ' '.join(edge_set_strings))
     return ''.join(to_print)
-
-
-def edge_set_as_string(edge_set, is_revcomp=False):
-    letters = []
-
-    if is_revcomp:
-        num_to_letter = list(reversed(NUM_TO_LETTER))
-    else:
-        num_to_letter = NUM_TO_LETTER
-
-    for idx, edge in enumerate(edge_set):
-        letter = num_to_letter[idx % 4]
-        if idx < 4:
-            letter = letter.lower()
-        if edge:
-            letters.append(letter)
-        else:
-            letters.append('.')
-
-    if is_revcomp:
-        incoming, outgoing = letters[:4], letters[4:]
-        incoming, outgoing = list(reversed(incoming)), list(reversed(outgoing))
-        letters = outgoing + incoming
-
-    return ''.join(letters)
