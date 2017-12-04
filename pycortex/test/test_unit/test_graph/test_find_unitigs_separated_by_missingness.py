@@ -25,7 +25,7 @@ class TestWithMissingEdge(object):
         # given
         driver = FindUnitigsTestDriver()
         driver.without_test_coverage()
-        builder = driver.builder
+        builder = driver.graph_builder
         builder.with_colors(0, 1)
         nx.add_path(builder.graph, range(4), key=0)
         builder.add_edge_with_color(0, 1, 1)
@@ -43,7 +43,7 @@ class TestWithMissingEdge(object):
     def test_two_pairs_of_nodes_separated_by_single_edge_results_in_two_unitigs(self):
         # given
         driver = FindUnitigsTestDriver().without_test_coverage()
-        builder = driver.builder
+        builder = driver.graph_builder
         builder.with_colors(0, 1)
         builder.add_edge_with_color(0, 1, 0)
 

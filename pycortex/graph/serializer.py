@@ -100,33 +100,6 @@ class OrientedGraphFuncs(object):
         return degree
 
 
-def is_unitig_end(node, graph, orientation, *, colors=(0,), test_coverage=False):
-    """Returns true if the unitig ends in any color
-
-    if test_coverage is True, then look at the coverage of nodes either side of a single link.
-    If both nodes have zero coverage for that color, then don't consider that color to have ended
-    the unitig.
-    """
-    ends = [is_unitig_end_of_color(node, graph, orientation, color=color) for color in colors]
-    if not test_coverage:
-        return any(ends)
-    if all(ends):
-        return True
-    end_idx, _ = next(filter(lambda end_tup: not end_tup[1], enumerate(ends)))
-    original = OrientedGraphFuncs(graph, orientation, color=colors[end_idx])
-
-    edge = next(filter(lambda inputs: inputs[2] == colors[end_idx],
-                       ((u, v, c) for u, v, c in original.edges(node, keys=True))))
-    other_node = original.other_edge_node(edge)
-    for color_idx, color in enumerate(colors):
-        node_coverage = graph.node[node]['kmer'].coverage[color]
-        other_node_coverage = graph.node[other_node]['kmer'].coverage[color]
-        if ends[color_idx]:
-            if node_coverage == other_node_coverage == 0:
-                ends[color_idx] = False
-    return any(ends)
-
-
 def is_unitig_end_of_color(node, graph, orientation, *, color=0):
     """Returns true if node is a unitig end in orientation direction"""
     assert orientation in EdgeTraversalOrientation
@@ -139,39 +112,6 @@ def is_unitig_end_of_color(node, graph, orientation, *, color=0):
     if reverse.degree(next_node) != 1:
         return True
     return False
-
-
-def find_unitig_from(start_node, graph, *, colors=(0,), test_coverage=False):
-    """Find a unitig that contains :param start_node:
-
-    # from https://github.com/mcveanlab/mccortex/wiki/unitig
-    Unitig definition: A maximal run of de Bruijn nodes (kmers, each with an orientation)
-    where all nodes must have in-degree and out-degree exactly 1, with the exception of in-degree
-    of the first node and out-degree of the last node (they may have any number).
-    Additionally, a unitig must not visit a kmer more than once.
-    """
-    unitig_graph = nx.MultiDiGraph()
-    unitig_graph.add_node(start_node)
-    end_nodes = {EdgeTraversalOrientation.original: start_node,
-                 EdgeTraversalOrientation.reverse: start_node}
-    for orientation in EdgeTraversalOrientation:
-        if not is_unitig_end(start_node, graph, orientation, colors=colors,
-                             test_coverage=test_coverage):
-            for edge_info in nx.edge_dfs(graph, start_node, orientation=orientation.name):
-                source, target, _ = edge_info[:3]
-                if orientation == EdgeTraversalOrientation.reverse:
-                    source, target = target, source
-                if target in unitig_graph or is_unitig_end(source, graph, orientation,
-                                                           colors=colors,
-                                                           test_coverage=test_coverage):
-                    break
-                end_nodes[orientation] = target
-                unitig_graph.add_edge(*edge_info[:3])
-    for node in unitig_graph:
-        unitig_graph.add_node(node, **graph.node[node])
-    return Unitig(unitig_graph,
-                  end_nodes[EdgeTraversalOrientation.reverse],
-                  end_nodes[EdgeTraversalOrientation.original])
 
 
 def replace_unitig_nodes_with_unitig(out_graph, unitig):
@@ -192,11 +132,104 @@ def replace_unitig_nodes_with_unitig(out_graph, unitig):
 
 
 @attr.s(slots=True)
+class UnitigFinder(object):
+    graph = attr.ib()
+    colors = attr.ib((0,))
+    test_coverage = attr.ib(True)
+
+    def find_unitigs(self):
+        """Finds unitigs of one or more nodes and replaces them by a subgraph containing the
+        unitig nodes.
+
+        Unitigs are described in :py:func:`find_unitig_from`.
+
+        returns a graph containing unitig subgraphs
+        """
+
+        unitig_graph = self.graph.copy()
+        visited_nodes = set()
+        for start_node in self.graph:
+            if start_node in visited_nodes:
+                continue
+            unitig = self.find_unitig_from(start_node)
+            unitig_graph_set = set(unitig.graph)
+            assert visited_nodes & unitig_graph_set == set(), "{} is not disjoint from {}".format(
+                visited_nodes, unitig_graph_set)
+            visited_nodes |= unitig_graph_set
+
+            unitig_graph = replace_unitig_nodes_with_unitig(unitig_graph, unitig)
+        return unitig_graph
+
+    def find_unitig_from(self, start_node):
+        """Find a unitig that contains :param start_node:
+
+        # from https://github.com/mcveanlab/mccortex/wiki/unitig
+        Unitig definition: A maximal run of de Bruijn nodes (kmers, each with an orientation)
+        where all nodes must have in-degree and out-degree exactly 1, with the exception of
+        in-degree of the first node and out-degree of the last node (they may have any number).
+        Additionally, a unitig must not visit a kmer more than once.
+
+        In addition, the colors of the in-edges and out-edges must match.
+        """
+        unitig_graph = nx.MultiDiGraph()
+        unitig_graph.add_node(start_node)
+        end_nodes = {EdgeTraversalOrientation.original: start_node,
+                     EdgeTraversalOrientation.reverse: start_node}
+        for orientation in EdgeTraversalOrientation:
+            if not self.is_unitig_end(start_node, orientation):
+                for edge_info in nx.edge_dfs(self.graph, start_node, orientation=orientation.name):
+                    source, target, _ = edge_info[:3]
+                    if orientation == EdgeTraversalOrientation.reverse:
+                        source, target = target, source
+                    if target in unitig_graph or self.is_unitig_end(source, orientation):
+                        break
+                    end_nodes[orientation] = target
+                    unitig_graph.add_edge(*edge_info[:3])
+        for node in unitig_graph:
+            unitig_graph.add_node(node, **self.graph.node[node])
+        return Unitig(unitig_graph,
+                      end_nodes[EdgeTraversalOrientation.reverse],
+                      end_nodes[EdgeTraversalOrientation.original])
+
+    def is_unitig_end(self, node, orientation):
+        """Returns true if the unitig ends in any color
+
+        if test_coverage is True, then look at the coverage of nodes either side of a single link.
+        If both nodes have zero coverage for that color, then don't consider that color to
+        have ended the unitig.
+        """
+        ends = [is_unitig_end_of_color(node, self.graph, orientation, color=color)
+                for color in self.colors]
+        if not self.test_coverage:
+            return any(ends)
+        if all(ends):
+            return True
+        end_idx, _ = next(filter(lambda end_tup: not end_tup[1], enumerate(ends)))
+        original = OrientedGraphFuncs(self.graph, orientation, color=self.colors[end_idx])
+
+        edge = next(filter(lambda inputs: inputs[2] == self.colors[end_idx],
+                           ((u, v, c) for u, v, c in original.edges(node, keys=True))))
+        other_node = original.other_edge_node(edge)
+        for color_idx, color in enumerate(self.colors):
+            node_coverage = self.graph.node[node]['kmer'].coverage[color]
+            other_node_coverage = self.graph.node[other_node]['kmer'].coverage[color]
+            if ends[color_idx]:
+                if node_coverage == other_node_coverage == 0:
+                    ends[color_idx] = False
+        return any(ends)
+
+
+@attr.s(slots=True)
 class UnitigCollapser(object):
     graph = attr.ib()
     colors = attr.ib((0,))
     test_coverage = attr.ib(True)
     unitig_graph = attr.ib(None)
+    unitig_finder = attr.ib(init=False)
+
+    def __attrs_post_init__(self):
+        self.unitig_finder = UnitigFinder(self.graph, colors=self.colors,
+                                          test_coverage=self.test_coverage)
 
     @graph.validator
     def is_a_multi_di_graph(self, attribute, value):  # noqa
@@ -213,7 +246,7 @@ class UnitigCollapser(object):
         :param graph:
         :return graph:
         """
-        self.find_unitigs()
+        self.unitig_graph = self.unitig_finder.find_unitigs()
         out_graph = self.unitig_graph.copy()
         for unitig_graph, data in self.unitig_graph.nodes.data():
             assert data['is_unitig']
@@ -230,28 +263,4 @@ class UnitigCollapser(object):
             short_kmer_name = ''.join(short_kmer_name)
             out_graph.nodes[unitig_graph]['repr'] = short_kmer_name
         self.unitig_graph = out_graph
-        return self
-
-    def find_unitigs(self):
-        """Finds unitigs of one or more nodes and replaces them by a subgraph containing the
-        unitig nodes.
-
-        Unitigs are described in :py:func:`find_unitig_from`.
-
-        returns a graph containing unitig subgraphs
-        """
-
-        self.unitig_graph = self.graph.copy()
-        visited_nodes = set()
-        for start_node in self.graph:
-            if start_node in visited_nodes:
-                continue
-            unitig = find_unitig_from(start_node, self.graph, colors=self.colors,
-                                      test_coverage=self.test_coverage)
-            unitig_graph_set = set(unitig.graph)
-            assert visited_nodes & unitig_graph_set == set(), "{} is not disjoint from {}".format(
-                visited_nodes, unitig_graph_set)
-            visited_nodes |= unitig_graph_set
-
-            self.unitig_graph = replace_unitig_nodes_with_unitig(self.unitig_graph, unitig)
         return self

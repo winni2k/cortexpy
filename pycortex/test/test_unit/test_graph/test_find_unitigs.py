@@ -1,11 +1,10 @@
 from unittest.mock import Mock
 
 import networkx as nx
-from hypothesis import given, assume, settings
+from hypothesis import given, settings
 from hypothesis import strategies as s
 
-from pycortex.graph.serializer import find_unitig_from, is_unitig_end, \
-    EdgeTraversalOrientation
+from pycortex.graph.serializer import EdgeTraversalOrientation
 from pycortex.test.builder.graph.networkx import add_kmers_to_graph
 from pycortex.test.driver.graph.find_unitigs import FindUnitigsTestDriver
 
@@ -174,12 +173,14 @@ class Test(object):
 class TestIsUnitigEnd(object):
     def test_single_node_is_end_from_both_sides(self):
         # given
-        graph = FindUnitigsTestDriver().graph
+        driver = FindUnitigsTestDriver()
+        graph = driver.graph
         graph.add_node(0)
+        driver.build()
 
         # when/then
         for orientation in EdgeTraversalOrientation:
-            assert is_unitig_end(0, graph, orientation)
+            assert driver.finder.is_unitig_end(0, orientation)
 
     @given(s.integers(min_value=1, max_value=3))
     @settings(max_examples=3)
@@ -189,13 +190,13 @@ class TestIsUnitigEnd(object):
         graph = driver.graph
         for color in range(num_edges):
             graph.add_edge(0, 1, key=color)
-        driver.run()
+        finder = driver.build()
 
         # when/then
-        assert is_unitig_end(0, graph, EdgeTraversalOrientation.reverse)
-        assert not is_unitig_end(0, graph, EdgeTraversalOrientation.original)
-        assert not is_unitig_end(1, graph, EdgeTraversalOrientation.reverse)
-        assert is_unitig_end(1, graph, EdgeTraversalOrientation.original)
+        assert finder.is_unitig_end(0, EdgeTraversalOrientation.reverse)
+        assert not finder.is_unitig_end(0, EdgeTraversalOrientation.original)
+        assert not finder.is_unitig_end(1, EdgeTraversalOrientation.reverse)
+        assert finder.is_unitig_end(1, EdgeTraversalOrientation.original)
 
     def test_two_edges_into_one_node(self):
         # given
@@ -203,12 +204,12 @@ class TestIsUnitigEnd(object):
         graph = driver.graph
         graph.add_edge(0, 1)
         graph.add_edge(2, 1)
-        driver.run()
+        finder = driver.build()
 
         # when/then
         for node in range(3):
             for orientation in EdgeTraversalOrientation:
-                assert is_unitig_end(node, graph, orientation)
+                assert finder.is_unitig_end(node, orientation)
 
     def test_two_edges_out_of_one_node(self):
         # given
@@ -216,24 +217,24 @@ class TestIsUnitigEnd(object):
         graph = driver.graph
         graph.add_edge(0, 1)
         graph.add_edge(0, 2)
-        driver.run()
+        finder = driver.build()
 
         # when/then
         for node in range(3):
             for orientation in EdgeTraversalOrientation:
-                assert is_unitig_end(node, graph, orientation)
+                assert finder.is_unitig_end(node, orientation)
 
     def test_middle_unconnected_node_in_two_color_graph(self):
         # given
-        driver = FindUnitigsTestDriver()
+        driver = FindUnitigsTestDriver().with_colors(0, 1)
         graph = driver.graph
         nx.add_path(graph, range(3), key=0)
-        driver.run()
+        finder = driver.build()
 
         # when/then
         for node in range(3):
             for orientation in EdgeTraversalOrientation:
-                assert is_unitig_end(node, graph, orientation, colors=[0, 1])
+                assert finder.is_unitig_end(node, orientation)
 
 
 class TestFindUnitigFromTwoColorGraph(object):
@@ -247,10 +248,11 @@ class TestFindUnitigFromTwoColorGraph(object):
             kmer_mock.coverage = (node + 1, 1)
             graph.node[node]['kmer'] = kmer_mock
             graph.node[node]['bla'] = node * 3
+        finder = driver.builder.build()
 
         # when
         for start_node in range(3):
-            unitig = find_unitig_from(start_node, graph)
+            unitig = finder.find_unitig_from(start_node)
 
             # then
             assert unitig.left_node == 0
@@ -260,28 +262,6 @@ class TestFindUnitigFromTwoColorGraph(object):
             for node in range(3):
                 assert unitig.graph.node[node]['kmer'].coverage == (node + 1, 1)
                 assert unitig.graph.node[node]['bla'] == node * 3
-
-    @given(s.sampled_from(((0, 1), (1, 0), (1, 1), (0, 0), (0,), (1,), tuple())),
-           s.sampled_from(((0, 1), (1, 0), (1, 1), (0, 0), (0,), (1,), tuple())))
-    def test_two_node_path_with_differing_missing_kmers_are_joined(self, coverage0, coverage1):
-        # given
-        assume(len(coverage0) == len(coverage1))
-        driver = FindUnitigsTestDriver()
-        driver.graph.add_edge(0, 1)
-
-        # when
-        driver.run()
-
-        for node, coverage in zip(range(2), [coverage0, coverage1]):
-            driver.graph.node[node]['kmer'].coverage = coverage
-
-        # then
-        for start_node in range(2):
-            unitig = find_unitig_from(start_node, driver.graph)
-            assert unitig.left_node == 0
-            assert unitig.right_node == 1
-            assert len(unitig.graph) == 2
-            assert len(unitig.graph.edges) == 1
 
 
 class TestUnitigGraphCoverage(object):
@@ -297,10 +277,12 @@ class TestUnitigGraphCoverage(object):
         driver = FindUnitigsTestDriver()
         driver.graph.add_nodes_from([0, 1])
         colors = [0, 1]
+        driver.with_colors(*colors)
+
         for color, link_exists in zip(colors, [link_color_0_exists, link_color_1_exists]):
             if link_exists:
                 driver.graph.add_edge(0, 1, key=color)
-        driver.run()
+        driver.build()
 
         kmers = [driver.graph.node[r]['kmer'] for r in range(2)]
         kmers[0].coverage = kmer_coverages[0]
@@ -308,7 +290,7 @@ class TestUnitigGraphCoverage(object):
 
         for start_node in range(2):
             # when
-            unitig = find_unitig_from(start_node, driver.graph, colors=colors, test_coverage=True)
+            unitig = driver.finder.find_unitig_from(start_node)
 
             # then
             if ((link_color_0_exists and link_color_1_exists) or
