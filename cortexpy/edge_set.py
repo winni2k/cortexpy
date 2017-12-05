@@ -1,21 +1,13 @@
 import attr
 import numpy as np
 
-from cortexpy.utils import revcomp
+from cortexpy.utils import revcomp, lexlo
 
 EDGE_SET_LENGTH = 8
 EDGE_SET_ORDERED_LETTERS = 'acgtACGT'
 EDGE_SET_LETTER_LOOKUP = {letter: idx for idx, letter in enumerate(EDGE_SET_ORDERED_LETTERS)}
 
 EDGE_IDX_TO_LETTER = ['A', 'C', 'G', 'T']
-
-
-def lexlo(kmer_string):
-    """Returns the lexicographically lowest version of the kmer string"""
-    alt_kmer_string = revcomp(kmer_string)
-    if alt_kmer_string < kmer_string:
-        return alt_kmer_string
-    return kmer_string
 
 
 @attr.s(slots=True, cmp=False)

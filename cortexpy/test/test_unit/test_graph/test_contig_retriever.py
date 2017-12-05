@@ -1,37 +1,6 @@
-import attr
-
-import cortexpy.test.builder as builder
 import cortexpy.graph as graph
-from cortexpy.test.expectation.kmer import KmerNodeExpectation
-
-
-@attr.s(slots=True)
-class KmerGraphExpectation(object):
-    graph = attr.ib()
-
-    def with_node(self, node):
-        assert node in self.graph
-        return KmerNodeExpectation(self.graph.node[node])
-
-    def has_n_nodes(self, n):
-        assert len(self.graph) == n
-        return self
-
-    def has_n_edges(self, n):
-        assert len(self.graph.edges) == n
-        return self
-
-    def has_nodes(self, *nodes):
-        assert set(self.graph.nodes) == set(nodes)
-        return self
-
-    def has_edges(self, *edges):
-        assert set(self.graph.edges) == set(edges)
-        return self
-
-    def has_edge(self, source, target, color):
-        assert (source, target, color) in self.graph.edges
-        return self
+import cortexpy.test.builder as builder
+from cortexpy.test.expectation.graph import KmerGraphExpectation
 
 
 class TestGetKmers(object):
@@ -69,7 +38,7 @@ class TestGetKmerGraph(object):
         # then
         (expect.has_n_nodes(1)
          .has_n_edges(0)
-         .with_node('AAA')
+         .has_node('AAA')
          .has_coverages(0, 1))
 
     def test_with_one_kmer_returns_one_kmer(self):

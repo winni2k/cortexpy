@@ -7,7 +7,7 @@ import attr
 import cortexpy.graph.parser.header
 from cortexpy.graph.parser.kmer import KmerByStringComparator, Kmer, KmerData
 from cortexpy.graph.parser.streaming import kmer_generator_from_stream_and_header
-from cortexpy.utils import revcomp
+from cortexpy.utils import lexlo
 
 
 class RandomAccessError(KeyError):
@@ -56,10 +56,7 @@ class RandomAccess(Mapping):
 
     def get_kmer_for_string(self, kmer_string):
         """Will compute the revcomp of kmer string before getting a kmer"""
-        kmer_string_revcomp = revcomp(kmer_string)
-        if kmer_string < kmer_string_revcomp:
-            return self[kmer_string]
-        return self[kmer_string_revcomp]
+        return self[lexlo(kmer_string)]
 
 
 # copied from https://docs.python.org/3.6/library/bisect.html
