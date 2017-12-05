@@ -6,6 +6,19 @@ import collections
 import numpy as np
 
 
+@attr.s(slots=True)
+class KmerGraphExpectation(object):
+    graph = attr.ib()
+
+    def has_n_nodes(self, n):
+        assert len(self.graph) == n
+        return self
+
+    def has_n_edges(self, n):
+        assert len(self.graph.edges) == n
+        return self
+
+
 @attr.s
 class CollapsedKmerNodeExpectation(object):
     kmer_node = attr.ib()
@@ -44,6 +57,7 @@ class CollapsedKmerUnitgGraphExpectation(object):
     graph = attr.ib()
     repr_counts = attr.ib(attr.Factory(collections.Counter))
     nodes_by_repr = attr.ib(attr.Factory(dict))
+    graph_expectation = attr.ib(init=False)
 
     def __attrs_post_init__(self):
         pprint.pprint([self.graph.node[n] for n in self.graph.nodes])
@@ -52,9 +66,10 @@ class CollapsedKmerUnitgGraphExpectation(object):
         for node, data in self.graph.nodes.data():
             if self.repr_counts[data['repr']] == 1:
                 self.nodes_by_repr[data['repr']] = node
+        self.graph_expectation = KmerGraphExpectation(self.graph)
 
     def has_n_nodes(self, n):
-        assert len(self.graph) == n
+        self.graph_expectation.has_n_nodes(n)
         return self
 
     def has_n_missing_kmers(self, n):
@@ -78,7 +93,7 @@ class CollapsedKmerUnitgGraphExpectation(object):
         return CollapsedKmerNodeExpectation(self.graph.node[self.nodes_by_repr[kmer_repr]])
 
     def has_n_edges(self, n):
-        assert len(self.graph.edges) == n
+        self.graph_expectation.has_n_edges(n)
         return self
 
     def has_n_missing_edges(self, n):
