@@ -1,4 +1,5 @@
 import attr
+import pytest
 
 import cortexpy.graph.parser
 import cortexpy.test.builder as builder
@@ -31,17 +32,13 @@ class BranchTestDriver(object):
 
 
 class Test(object):
-    def test_on_empty_graph_returns_empty_graph(self):
+    def test_raises_on_empty_graph_returns_empty_graph(self):
         # given
         driver = BranchTestDriver().with_kmer_size(3).with_start_kmer_string('AAA')
 
         # when
-        expect = driver.run()
-
-        # then
-        (expect
-         .has_n_nodes(0)
-         .has_n_edges(0))
+        with pytest.raises(KeyError):
+            driver.run()
 
     def test_two_unconnected_kmers_returns_graph_with_one_kmer(self):
         # given
@@ -56,4 +53,19 @@ class Test(object):
 
         # then
         (expect.has_nodes('AAA')
+         .has_n_edges(0))
+
+    def test_two_connected_kmers_returns_graph_with_two_kmers(self):
+        # given
+        driver = (BranchTestDriver()
+                  .with_kmer_size(3)
+                  .with_kmer('AAA', 0, '.......T')
+                  .with_kmer('AAT', 0, 'a.......')
+                  .with_start_kmer_string('AAA'))
+
+        # when
+        expect = driver.run()
+
+        # then
+        (expect.has_nodes('AAA', 'AAT')
          .has_n_edges(0))

@@ -42,6 +42,12 @@ class EdgeSet(object):
     def incoming(self):
         return self.data[:EDGE_SET_LENGTH // 2]
 
+    def num_outgoing(self):
+        return sum(self.outgoing)
+
+    def num_incoming(self):
+        return sum(self.incoming)
+
     def _get_kmer_strings(self, sub_kmer_string, is_incoming, is_lexlo):
         kmers = []
         edge_funcs = [self.incoming, self.outgoing]
