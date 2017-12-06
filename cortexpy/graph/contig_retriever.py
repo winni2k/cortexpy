@@ -53,8 +53,8 @@ class ContigRetriever(object):
             kmer_graph.add_node(kmer_string, kmer=kmer)
         for kmer_idx, (kmer, kmer_string) in enumerate(kmers):
             incoming_kmers, outgoing_kmers = get_incoming_and_outgoing_kmers(kmer)
-            is_revcomp = kmer.kmer != kmer_string
-            if is_revcomp:
+            not_lexlo = kmer.kmer != kmer_string
+            if not_lexlo:
                 incoming_kmers, outgoing_kmers = outgoing_kmers, incoming_kmers
             if 0 < kmer_idx:
                 prev_kmer, prev_kmer_string = kmers[kmer_idx - 1]

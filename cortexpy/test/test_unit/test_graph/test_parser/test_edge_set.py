@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from cortexpy.edge_set import EdgeSet
 
@@ -68,10 +69,27 @@ class TestIncomingOutgoingKmers(object):
         es.add_edge('t')
         assert es.get_incoming_kmers('TAA') == ['TAA']
 
+    def test_incoming_strings_does_not_return_lexicographically_lowest_kmers(self):
+        es = EdgeSet(np.zeros(8))
+        es.add_edge('t')
+        assert es.get_incoming_kmer_strings('TAA') == ['TTA']
+
     def test_outgoing_returns_lexicographically_lowest_kmers(self):
         es = EdgeSet(np.zeros(8))
-        es.add_edge('T')
-        assert es.get_outgoing_kmers('CGG') == ['ACC']
+        es.add_edge('G')
+        assert es.get_outgoing_kmers('ACG') == ['CCG']
+
+    def test_outgoing_strings_does_not_return_lexicographically_lowest_kmer(self):
+        es = EdgeSet(np.zeros(8))
+        es.add_edge('G')
+        assert es.get_outgoing_kmer_strings('ACG') == ['CGG']
+
+    def test_raises_on_non_lexlo_kmer(self):
+        es = EdgeSet(np.zeros(8))
+        with pytest.raises(AssertionError):
+            es.get_outgoing_kmers('TTT')
+        with pytest.raises(AssertionError):
+            es.get_incoming_kmers('TTT')
 
 
 class TestStr(object):

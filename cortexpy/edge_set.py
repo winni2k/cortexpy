@@ -42,21 +42,47 @@ class EdgeSet(object):
     def incoming(self):
         return self.data[:EDGE_SET_LENGTH // 2]
 
-    def get_incoming_kmers(self, kmer_string):
+    def _get_kmer_strings(self, sub_kmer_string, is_incoming, is_lexlo):
         kmers = []
-        kmer_suffix = kmer_string[:-1]
-        for edge_idx, edge in enumerate(self.incoming):
+        edge_funcs = [self.incoming, self.outgoing]
+        if is_incoming:
+            edge_funcs = list(reversed(edge_funcs))
+        if not is_lexlo:
+            edges = edge_funcs[0][::-1]
+        else:
+            edges = edge_funcs[1]
+        for edge_idx, edge in enumerate(edges):
             if edge:
-                kmers.append(lexlo(EDGE_IDX_TO_LETTER[edge_idx] + kmer_suffix))
+                if is_incoming:
+                    new_kmer_string = EDGE_IDX_TO_LETTER[edge_idx] + sub_kmer_string
+                else:
+                    new_kmer_string = sub_kmer_string + EDGE_IDX_TO_LETTER[edge_idx]
+                kmers.append(new_kmer_string)
         return kmers
 
+    def get_incoming_kmer_strings(self, kmer_string, is_lexlo=None):
+        if is_lexlo is None:
+            is_lexlo = bool(kmer_string == lexlo(kmer_string))
+        sub_kmer_string = kmer_string[:-1]
+        return self._get_kmer_strings(sub_kmer_string, True, is_lexlo)
+
+    def get_outgoing_kmer_strings(self, kmer_string, is_lexlo=None):
+        if is_lexlo is None:
+            is_lexlo = bool(kmer_string == lexlo(kmer_string))
+        sub_kmer_string = kmer_string[1:]
+        return self._get_kmer_strings(sub_kmer_string, False, is_lexlo)
+
+    def get_incoming_kmers(self, kmer_string):
+        lexlo_string = lexlo(kmer_string)
+        assert lexlo_string == kmer_string
+        return [lexlo(kmer_string) for kmer_string in
+                self.get_incoming_kmer_strings(kmer_string, is_lexlo=True)]
+
     def get_outgoing_kmers(self, kmer_string):
-        kmers = []
-        kmer_prefix = kmer_string[1:]
-        for edge_idx, edge in enumerate(self.outgoing):
-            if edge:
-                kmers.append(lexlo(kmer_prefix + EDGE_IDX_TO_LETTER[edge_idx]))
-        return kmers
+        lexlo_string = lexlo(kmer_string)
+        assert lexlo_string == kmer_string
+        return [lexlo(kmer_string) for kmer_string in
+                self.get_outgoing_kmer_strings(kmer_string, is_lexlo=True)]
 
     def to_str(self, *, as_revcomp=False):
         es_letters = []
