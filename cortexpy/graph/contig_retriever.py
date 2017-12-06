@@ -3,7 +3,6 @@ from collections import defaultdict
 import attr
 import networkx as nx
 
-import cortexpy as cp
 from cortexpy.graph import parser as parser
 from cortexpy.graph.parser.kmer import EmptyKmerBuilder, flip_kmer_string_to_match
 
@@ -49,10 +48,9 @@ class ContigRetriever(object):
 
     def get_kmer_graph(self, contig):
         kmer_graph = nx.MultiDiGraph()
-        graph_builder = cp.graph.Builder(kmer_graph, colors_to_link=self.non_contig_colors)
         kmers = list(self.get_kmers(contig))
         for kmer, kmer_string in kmers:
-            graph_builder.add_kmer(kmer, kmer_string)
+            kmer_graph.add_node(kmer_string, kmer=kmer)
         for kmer_idx, (kmer, kmer_string) in enumerate(kmers):
             incoming_kmers, outgoing_kmers = get_incoming_and_outgoing_kmers(kmer)
             not_lexlo = kmer.kmer != kmer_string
@@ -70,10 +68,7 @@ class ContigRetriever(object):
                             kmer_string,
                             flip_is_after_reference_kmer=not is_incoming
                         )
-                        if (
-                                        neighbor_kmer_string not in kmer_graph or
-                                        'kmer' not in kmer_graph.node[neighbor_kmer_string]
-                        ):
+                        if neighbor_kmer_string not in kmer_graph:
                             kmer_graph.add_node(
                                 neighbor_kmer_string,
                                 kmer=self.empty_kmer_builder.build_or_get(neighbor_kmer_string)
