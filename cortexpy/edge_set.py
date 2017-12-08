@@ -1,6 +1,7 @@
 import attr
 import numpy as np
 
+from cortexpy.graph.serializer import EdgeTraversalOrientation
 from cortexpy.utils import revcomp, lexlo
 
 EDGE_SET_LENGTH = 8
@@ -20,7 +21,7 @@ class EdgeSet(object):
         assert len(value) == EDGE_SET_LENGTH
 
     def is_edge(self, letter):
-        return self.data[EDGE_SET_LETTER_LOOKUP[letter]]
+        return self.data[EDGE_SET_LETTER_LOOKUP[letter]] == 1
 
     def add_edge(self, letter):
         self.data[EDGE_SET_LETTER_LOOKUP[letter]] = 1
@@ -102,6 +103,31 @@ class EdgeSet(object):
             es_letters = revcomp(es_letters)
         return es_letters
 
+    def oriented(self, orientation):
+        return OrientedEdgeSet(self, orientation)
+
 
 def empty():
     return EdgeSet(np.zeros(EDGE_SET_LENGTH, dtype=np.uint8))
+
+
+@attr.s(slots=True)
+class OrientedEdgeSet(object):
+    edge_set = attr.ib()
+    orientation = attr.ib()
+    neighbor_kmers = attr.ib(init=False)
+    neighbor = attr.ib(init=False)
+    num_neighbor = attr.ib(init=False)
+    neighbor_kmer_strings = attr.ib(init=False)
+
+    def __attrs_post_init__(self):
+        if self.orientation == EdgeTraversalOrientation.original:
+            self.neighbor_kmers = self.edge_set.get_outgoing_kmers
+            self.neighbor = self.edge_set.outgoing
+            self.num_neighbor = self.edge_set.num_outgoing
+            self.neighbor_kmer_strings = self.edge_set.get_outgoing_kmer_strings
+        else:
+            self.neighbor_kmers = self.edge_set.get_incoming_kmers
+            self.neighbor = self.edge_set.incoming
+            self.num_neighbor = self.edge_set.num_incoming
+            self.neighbor_kmer_strings = self.edge_set.get_incoming_kmer_strings
