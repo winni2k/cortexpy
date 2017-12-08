@@ -57,7 +57,8 @@ class Test(object):
         expect = driver.run()
 
         # then
-        (expect.has_nodes('AAA')
+        (expect
+         .has_nodes('AAA')
          .has_n_edges(0))
 
     def test_two_connected_kmers_returns_graph_with_two_kmers(self):
@@ -72,7 +73,8 @@ class Test(object):
         expect = driver.run()
 
         # then
-        (expect.has_nodes('AAA', 'AAT')
+        (expect
+         .has_nodes('AAA', 'AAT')
          .has_n_edges(1))
 
     def test_two_connected_kmers_with_other_edges_returns_graph_with_two_kmers(self):
@@ -87,7 +89,8 @@ class Test(object):
         expect = driver.run()
 
         # then
-        (expect.has_nodes('AAA', 'AAT')
+        (expect
+         .has_nodes('AAA', 'AAT')
          .has_n_edges(1))
 
     def test_raises_when_two_connected_kmers_with_missing_exiting_kmer(self):
@@ -115,7 +118,8 @@ class Test(object):
         expect = driver.run()
 
         # then
-        (expect.has_nodes('AAA', 'AAT', 'ATC')
+        (expect
+         .has_nodes('AAA', 'AAT', 'ATC')
          .has_n_edges(2))
 
     def test_three_connected_kmers_returns_graph_with_three_kmers_as_revcomp(self):
@@ -131,5 +135,24 @@ class Test(object):
         expect = driver.run()
 
         # then
-        (expect.has_nodes('GAT', 'ATT', 'TTT')
+        (expect
+         .has_nodes('GAT', 'ATT', 'TTT')
          .has_n_edges(2))
+
+    def test_four_kmers_one_revcomp_returns_graph_with_four_kmers_as_revcomp(self):
+        # given
+        driver = (BranchTestDriver()
+                  .with_kmer_size(3)
+                  .with_kmer('AAA', 0, '.......T')
+                  .with_kmer('AAT', 0, 'a....C..')
+                  .with_kmer('ATC', 0, 'a.....G.')
+                  .with_kmer('CGA', 0, '.......T')
+                  .with_start_kmer_string('CGA'))
+
+        # when
+        expect = driver.run()
+
+        # then
+        (expect
+         .has_nodes('CGA', 'GAT', 'ATT', 'TTT')
+         .has_n_edges(3))

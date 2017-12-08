@@ -5,6 +5,8 @@ import attr
 import networkx as nx
 from networkx.readwrite import json_graph
 
+SERIALIZER_GRAPH = nx.MultiDiGraph
+
 
 @attr.s(slots=True)
 class Serializer(object):
@@ -172,7 +174,7 @@ class UnitigFinder(object):
 
         In addition, the colors of the in-edges and out-edges must match.
         """
-        unitig_graph = nx.MultiDiGraph()
+        unitig_graph = SERIALIZER_GRAPH()
         unitig_graph.add_node(start_node)
         end_nodes = {EdgeTraversalOrientation.original: start_node,
                      EdgeTraversalOrientation.reverse: start_node}
@@ -234,7 +236,7 @@ class UnitigCollapser(object):
 
     @graph.validator
     def is_a_multi_di_graph(self, attribute, value):  # noqa
-        assert isinstance(value, nx.MultiDiGraph)
+        assert isinstance(value, SERIALIZER_GRAPH)
 
     def collapse_kmer_unitigs(self):
         """Collapses unitig kmers into a single graph node.

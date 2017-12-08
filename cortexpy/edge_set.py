@@ -50,14 +50,8 @@ class EdgeSet(object):
         return sum(self.incoming)
 
     def _get_kmer_strings(self, sub_kmer_string, is_incoming, is_lexlo):
+        edges = self._get_edges_for_kmer_strings(is_incoming, is_lexlo)
         kmers = []
-        edge_funcs = [self.incoming, self.outgoing]
-        if is_incoming:
-            edge_funcs = list(reversed(edge_funcs))
-        if not is_lexlo:
-            edges = edge_funcs[0][::-1]
-        else:
-            edges = edge_funcs[1]
         for edge_idx, edge in enumerate(edges):
             if edge:
                 if is_incoming:
@@ -66,6 +60,15 @@ class EdgeSet(object):
                     new_kmer_string = sub_kmer_string + EDGE_IDX_TO_LETTER[edge_idx]
                 kmers.append(new_kmer_string)
         return kmers
+
+    def _get_edges_for_kmer_strings(self, is_incoming, is_lexlo):
+        if is_incoming:
+            edge_funcs = [self.outgoing, self.incoming]
+        else:
+            edge_funcs = [self.incoming, self.outgoing]
+        if is_lexlo:
+            return edge_funcs[1]
+        return edge_funcs[0][::-1]
 
     def get_incoming_kmer_strings(self, kmer_string, is_lexlo=None):
         if is_lexlo is None:
@@ -131,3 +134,6 @@ class OrientedEdgeSet(object):
             self.neighbor = self.edge_set.incoming
             self.num_neighbor = self.edge_set.num_incoming
             self.neighbor_kmer_strings = self.edge_set.get_incoming_kmer_strings
+
+    def other_orientation(self):
+        return OrientedEdgeSet(self.edge_set, EdgeTraversalOrientation.other(self.orientation))
