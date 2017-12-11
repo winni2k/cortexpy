@@ -20,6 +20,7 @@ class KmerGraphExpectation(object):
 
     def has_nodes(self, *nodes):
         assert set(self.graph.nodes) == set(nodes)
+        assert len(self.graph.nodes) == len(set(nodes))
         return self
 
     def has_edges(self, *edges):
