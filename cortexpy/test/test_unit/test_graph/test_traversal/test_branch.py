@@ -4,6 +4,7 @@ import pytest
 import cortexpy.graph.parser
 import cortexpy.test.builder as builder
 import cortexpy.test.expectation as expectation
+from cortexpy.graph.serializer import EdgeTraversalOrientation
 
 
 @attr.s(slots=True)
@@ -38,6 +39,7 @@ class BranchTestDriver(object):
     graph_builder = attr.ib(attr.Factory(builder.Graph))
     start_kmer_string = attr.ib(None)
     traversal_color = attr.ib(0)
+    traversal_orientation = attr.ib(EdgeTraversalOrientation.original)
     parent_graph = attr.ib(attr.Factory(set))
 
     def with_kmer(self, *args):
@@ -60,12 +62,19 @@ class BranchTestDriver(object):
         self.parent_graph = set(graph_nodes)
         return self
 
+    def with_reverse_traversal_orientation(self):
+        self.traversal_orientation = EdgeTraversalOrientation.reverse
+        return self
+
     def run(self):
         assert self.start_kmer_string is not None
         random_access_parser = cortexpy.graph.parser.RandomAccess(self.graph_builder.build())
         traversed_branch = (cortexpy.graph.traversal
-                            .Branch(random_access_parser, self.traversal_color)
-                            .traverse_from(self.start_kmer_string, parent_graph=self.parent_graph))
+                            .Branch(random_access_parser,
+                                    self.traversal_color)
+                            .traverse_from(self.start_kmer_string,
+                                           parent_graph=self.parent_graph,
+                                           orientation=self.traversal_orientation))
         return BranchExpectation(traversed_branch, start_kmer_string=self.start_kmer_string)
 
 
@@ -108,7 +117,7 @@ class Test(object):
         # then
         (expect
          .has_nodes('AAA', 'AAT')
-         .has_n_edges(1))
+         .has_edges(('AAA', 'AAT', 0)))
 
     def test_two_connected_kmers_with_other_edges_returns_graph_with_two_kmers(self):
         # given
@@ -228,3 +237,24 @@ class Test(object):
          .has_first_kmer_string(None)
          .has_nodes()
          .has_n_edges(0))
+
+
+class TestReverseOrientation(object):
+    def test_two_connected_kmers_returns_graph_with_two_kmers(self):
+        # given
+        driver = (BranchTestDriver()
+                  .with_kmer_size(3)
+                  .with_kmer('AAA', 0, '.......T')
+                  .with_kmer('AAT', 0, 'a.......')
+                  .with_start_kmer_string('AAT')
+                  .with_reverse_traversal_orientation())
+
+        # when
+        expect = driver.run()
+
+        # then
+        (expect
+         .has_last_kmer_string('AAA')
+         .has_nodes('AAA', 'AAT')
+         .has_edges(('AAA', 'AAT', 0))
+         .has_n_edges(1))

@@ -4,6 +4,7 @@ import pytest
 import cortexpy.graph.parser
 import cortexpy.test.builder as builder
 import cortexpy.test.expectation as expectation
+from cortexpy.graph.traversal.engine import EngineTraversalOrientation
 
 
 @attr.s(slots=True)
@@ -11,6 +12,7 @@ class EngineTestDriver(object):
     graph_builder = attr.ib(attr.Factory(builder.Graph))
     start_kmer_string = attr.ib(None)
     max_nodes = attr.ib(1000)
+    traversal_orientation = attr.ib(EngineTraversalOrientation.original)
 
     def with_kmer(self, *args):
         self.graph_builder.with_kmer(*args)
@@ -28,10 +30,16 @@ class EngineTestDriver(object):
         self.max_nodes = max_nodes
         return self
 
+    def with_traversal_orientation(self, orientation):
+        self.traversal_orientation = EngineTraversalOrientation[orientation]
+        return self
+
     def run(self):
         random_access_parser = cortexpy.graph.parser.RandomAccess(self.graph_builder.build())
         graph = (cortexpy.graph.traversal
-                 .Engine(random_access_parser, max_nodes=self.max_nodes)
+                 .Engine(random_access_parser,
+                         max_nodes=self.max_nodes,
+                         orientation=self.traversal_orientation)
                  .traverse_from(self.start_kmer_string))
         return expectation.graph.KmerGraphExpectation(graph)
 
@@ -164,6 +172,68 @@ class Test(object):
          .has_n_edges(8))
 
 
+class TestReverseOrientation(object):
+    def test_three_connected_kmers_returns_graph_with_three_kmers(self):
+        # given
+        driver = (EngineTestDriver()
+                  .with_kmer_size(3)
+                  .with_kmer('AAA', 0, '.......T')
+                  .with_kmer('AAT', 0, 'a....C..')
+                  .with_kmer('ATC', 0, 'a.......')
+                  .with_start_kmer_string('ATC')
+                  .with_traversal_orientation('reverse'))
+
+        # when
+        expect = driver.run()
+
+        # then
+        (expect
+         .has_nodes('AAA', 'AAT', 'ATC')
+         .has_edges(('AAA', 'AAT', 0), ('AAT', 'ATC', 0)))
+
+    def test_cycle_is_traversed_once(self):
+        # given
+        driver = (EngineTestDriver()
+                  .with_kmer_size(3)
+                  .with_kmer('CAA', 0, '....A...')
+                  .with_kmer('AAA', 0, '.c.t...T')
+                  .with_kmer('AAT', 0, 'a...A...')
+                  .with_kmer('ATA', 0, 'a...A...')
+                  .with_kmer('TAA', 0, 'a...A...')
+                  .with_traversal_orientation('reverse')
+                  .with_start_kmer_string('AAA'))
+
+        # when
+        expect = driver.run()
+
+        # then
+        (expect
+         .has_nodes('CAA', 'AAA', 'AAT', 'ATA', 'TAA')
+         .has_n_edges(5))
+
+
+class TestBothOrientation(object):
+    def test_cycle_is_traversed_once(self):
+        # given
+        driver = (EngineTestDriver()
+                  .with_kmer_size(3)
+                  .with_kmer('CAA', 0, '....A...')
+                  .with_kmer('AAA', 0, '.c.t...T')
+                  .with_kmer('AAT', 0, 'a...A...')
+                  .with_kmer('ATA', 0, 'a...A...')
+                  .with_kmer('TAA', 0, 'a...A...')
+                  .with_traversal_orientation('both')
+                  .with_start_kmer_string('AAA'))
+
+        # when
+        expect = driver.run()
+
+        # then
+        (expect
+         .has_nodes('CAA', 'AAA', 'AAT', 'ATA', 'TAA')
+         .has_n_edges(5))
+
+
 class TestMaxNodes(object):
     def test_of_two_raises_with_three_connected_kmers(self):
         # given
@@ -171,10 +241,15 @@ class TestMaxNodes(object):
                   .with_kmer_size(3)
                   .with_max_nodes(2)
                   .with_kmer('AAA', 0, '.......T')
-                  .with_kmer('AAT', 0, 'a....C..')
+                  .with_kmer('AAT', 0, 'a....CG.')
                   .with_kmer('ATC', 0, 'a.......')
+                  .with_kmer('ATG', 0, 'a.......')
                   .with_start_kmer_string('AAA'))
 
-        # when/then
-        with pytest.raises(OverflowError):
-            driver.run()
+        # when
+        expect = driver.run()
+
+        # then
+        (expect
+         .has_nodes('AAA', 'AAT')
+         .has_n_edges(1))

@@ -28,7 +28,7 @@ class Branch(object):
         try:
             self._add_kmer_string_to_graph_and_get_kmer()
         except NextKmerStringAlreadySeen:
-            return TraversedBranch(self.graph)
+            return TraversedBranch(self.graph, orientation=self.orientation)
 
         while True:
             oriented_edge_set = self.kmer.edges[self.traversal_color].oriented(self.orientation)
@@ -40,6 +40,7 @@ class Branch(object):
                 break
 
         return TraversedBranch(self.graph,
+                               orientation=self.orientation,
                                first_kmer_string=first_kmer_string,
                                last_kmer_string=self.kmer_string,
                                neighbor_kmer_strings=self._get_neighbors(oriented_edge_set))
@@ -63,7 +64,10 @@ class Branch(object):
         except NextKmerStringAlreadySeen:
             self.kmer_string = prev_kmer_string
             raise
-        self.graph.add_edge(prev_kmer_string, self.kmer_string, key=self.traversal_color)
+        first, second = prev_kmer_string, self.kmer_string
+        if self.orientation == EdgeTraversalOrientation.reverse:
+            first, second = second, first
+        self.graph.add_edge(first, second, key=self.traversal_color)
 
     def _add_kmer_string_to_graph_and_get_kmer(self):
         if self.kmer_string in self.graph or self.kmer_string in self.parent_graph:
@@ -75,6 +79,7 @@ class Branch(object):
 @attr.s(slots=True)
 class TraversedBranch(object):
     graph = attr.ib()
+    orientation = attr.ib()
     first_kmer_string = attr.ib(None)
     last_kmer_string = attr.ib(None)
     neighbor_kmer_strings = attr.ib(attr.Factory(list))
