@@ -24,6 +24,10 @@ class EngineTestDriver(object):
         self.graph_builder.with_kmer_size(n)
         return self
 
+    def with_num_colors(self, n):
+        self.graph_builder.with_num_colors(n)
+        return self
+
     def with_start_kmer_string(self, start_kmer_string):
         self.start_kmer_string = start_kmer_string
         return self
@@ -73,6 +77,29 @@ class Test(object):
         (expect
          .has_nodes('AAA', 'AAT', 'ATC')
          .has_edges('AAA AAT 0', 'AAT ATC 0'))
+
+    def test_three_connected_kmers_returns_graph_with_three_kmers_for_two_colors(self):
+        # given
+        driver = (EngineTestDriver()
+                  .with_kmer_size(3)
+                  .with_num_colors(2)
+                  .with_start_kmer_string('AAA'))
+        (driver
+         .with_kmer('AAA 1 1 .......T .......T')
+         .with_kmer('AAT 1 1 a....C.. a....C..')
+         .with_kmer('ATC 1 1 a....... a.......'))
+
+        # when
+        expect = driver.run()
+
+        # then
+        for node in ['AAA', 'AAT', 'ATC']:
+            expect.has_node(node).has_coverages(1, 1)
+        expect.has_n_nodes(3)
+        expect.has_edges('AAA AAT 0',
+                         'AAA AAT 1',
+                         'AAT ATC 0',
+                         'AAT ATC 1')
 
     def test_four_connected_kmers_in_star_returns_graph_with_four_kmers(self):
         # given
@@ -264,18 +291,19 @@ class TestBothOrientation(object):
                     ('TAA', 'AAA', 0)))
 
     @given(s.data())
-    def test_star(self, data):
+    def test_star_with_two_colors(self, data):
         kmers = ('CAA', 'GAA', 'AAA', 'AAT', 'AAC')
         start_kmer_string = data.draw(s.sampled_from(kmers))
 
         # given
         driver = (EngineTestDriver()
                   .with_kmer_size(3)
-                  .with_kmer('CAA 0 ....A...')
-                  .with_kmer('GAA 0 ....A...')
-                  .with_kmer('AAA 0 .cg..C.T')
-                  .with_kmer('AAT 0 a.......')
-                  .with_kmer('AAC 0 a.......')
+                  .with_num_colors(2)
+                  .with_kmer('CAA 1 1 ....A... ....A...')
+                  .with_kmer('GAA 1 1 ....A... ....A...')
+                  .with_kmer('AAA 1 1 .cg..C.T .cg.....')
+                  .with_kmer('AAT 1 0 a....... ........')
+                  .with_kmer('AAC 1 0 a....... ........')
                   .with_traversal_orientation('both')
                   .with_start_kmer_string(start_kmer_string))
 
@@ -283,10 +311,16 @@ class TestBothOrientation(object):
         expect = driver.run()
 
         # then
+        for node in ['CAA', 'GAA', 'AAA']:
+            expect.has_node(node).has_coverages(1, 1)
+        for node in ['AAT', 'AAC']:
+            expect.has_node(node).has_coverages(1, 0)
         (expect
-         .has_nodes(*kmers)
+         .has_n_nodes(len(kmers))
          .has_edges('CAA AAA 0',
+                    'CAA AAA 1',
                     'GAA AAA 0',
+                    'GAA AAA 1',
                     'AAA AAT 0',
                     'AAA AAC 0'))
 

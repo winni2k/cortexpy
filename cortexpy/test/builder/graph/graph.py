@@ -10,6 +10,7 @@ class Graph(object):
     header = attr.ib(attr.Factory(Header))
     body = attr.ib(attr.Factory(Body))
     kmer_size_is_set = attr.ib(False, init=False)
+    num_colors_is_set = attr.ib(False, init=False)
 
     def __attrs_post_init__(self):
         self.header.num_colors = 1
@@ -27,8 +28,15 @@ class Graph(object):
 
     def with_kmer(self, kmer_string, color_coverage=0, edges='........'):
         if ' ' in kmer_string:
-            kmer_string, color_coverage, edges = kmer_string.split(' ')
-            color_coverage = int(color_coverage)
+            assert '  ' not in kmer_string
+            num_words = kmer_string.count(' ')
+            kmer_words = kmer_string.split(' ')
+            kmer_string = kmer_words.pop(0)
+            assert num_words % 2 == 0
+            num_colors = num_words // 2
+            self.with_num_colors(num_colors)
+            color_coverage = [int(word) for word in kmer_words[0:num_colors]]
+            edges = kmer_words[num_colors:]
         revcomp = str(Seq(kmer_string).reverse_complement())
         if revcomp < kmer_string:
             raise Exception("kmer_string '{}' is not lexlow.  Please fix.".format(kmer_string))
@@ -47,7 +55,11 @@ class Graph(object):
 
     def with_num_colors(self, n_colors):
         assert n_colors > 0
-        self.header.with_num_colors(n_colors)
+        if self.num_colors_is_set:
+            assert n_colors == self.header.num_colors
+        else:
+            self.header.with_num_colors(n_colors)
+            self.num_colors_is_set = True
         return self
 
     def build(self):

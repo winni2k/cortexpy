@@ -57,6 +57,10 @@ class BranchTestDriver(object):
         self.graph_builder.with_kmer_size(n)
         return self
 
+    def with_num_colors(self, n):
+        self.graph_builder.with_num_colors(n)
+        return self
+
     def with_start_kmer_string(self, start_kmer_string):
         self.start_kmer_string = start_kmer_string
         return self
@@ -127,6 +131,23 @@ class Test(object):
         (expect
          .has_nodes('AAA', 'AAT')
          .has_edges(('AAA', 'AAT', 0)))
+
+    def test_two_connected_kmers_returns_graph_with_two_kmers_and_two_colors(self):
+        # given
+        driver = (BranchTestDriver()
+                  .with_kmer_size(3)
+                  .with_kmer('AAA 1 1 .......T .......T')
+                  .with_kmer('AAT 1 1 a....... a.......')
+                  .with_start_kmer_string('AAA'))
+
+        # when
+        expect = driver.run()
+
+        # then
+        expect.has_node('AAA').has_coverages(1, 1)
+        expect.has_node('AAT').has_coverages(1, 1)
+        expect.has_n_nodes(2)
+        expect.has_edges('AAA AAT 0', 'AAA AAT 1')
 
     def test_two_connected_kmers_with_other_edges_returns_graph_with_two_kmers(self):
         # given
