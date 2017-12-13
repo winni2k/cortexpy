@@ -18,13 +18,21 @@ class KmerGraphExpectation(object):
         assert len(self.graph.edges) == n
         return self
 
-    def has_nodes(self, *nodes):
-        assert set(self.graph.nodes) == set(nodes)
-        assert len(self.graph.nodes) == len(set(nodes))
+    def has_nodes(self, *expected_nodes):
+        expected_nodes = set(expected_nodes)
+        assert set(self.graph.nodes) == expected_nodes
+        assert len(self.graph.nodes) == len(expected_nodes)
         return self
 
     def has_edges(self, *edges):
-        assert set(self.graph.edges) == set(edges)
+        expected_edges = []
+        for edge in edges:
+            if isinstance(edge, str):
+                edge = edge.split(' ')
+                edge[2] = int(edge[2])
+            expected_edges.append(tuple(edge))
+
+        assert set(self.graph.edges) == set(expected_edges)
         return self
 
     def has_edge(self, source, target, color):

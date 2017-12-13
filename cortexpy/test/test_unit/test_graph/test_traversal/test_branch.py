@@ -1,5 +1,6 @@
 import attr
 import pytest
+from hypothesis import given, strategies as s
 
 import cortexpy.graph.parser
 import cortexpy.test.builder as builder
@@ -33,6 +34,11 @@ class BranchExpectation(object):
         assert set(self.traversed_branch.neighbor_kmer_strings) == set(neighbor_kmer_strings)
         return self
 
+    def has_reverse_neighbor_kmer_strings(self, *neighbor_kmer_strings):
+        assert set(self.traversed_branch.reverse_neighbor_kmer_strings) == set(
+            neighbor_kmer_strings)
+        return self
+
 
 @attr.s(slots=True)
 class BranchTestDriver(object):
@@ -41,6 +47,7 @@ class BranchTestDriver(object):
     traversal_color = attr.ib(0)
     traversal_orientation = attr.ib(EdgeTraversalOrientation.original)
     parent_graph = attr.ib(attr.Factory(set))
+    expected_start_kmer_string = attr.ib(None)
 
     def with_kmer(self, *args):
         self.graph_builder.with_kmer(*args)
@@ -67,7 +74,8 @@ class BranchTestDriver(object):
         return self
 
     def run(self):
-        assert self.start_kmer_string is not None
+        if self.expected_start_kmer_string is None:
+            self.expected_start_kmer_string = self.start_kmer_string
         random_access_parser = cortexpy.graph.parser.RandomAccess(self.graph_builder.build())
         traversed_branch = (cortexpy.graph.traversal
                             .Branch(random_access_parser,
@@ -75,7 +83,8 @@ class BranchTestDriver(object):
                             .traverse_from(self.start_kmer_string,
                                            parent_graph=self.parent_graph,
                                            orientation=self.traversal_orientation))
-        return BranchExpectation(traversed_branch, start_kmer_string=self.start_kmer_string)
+        return BranchExpectation(traversed_branch,
+                                 start_kmer_string=self.expected_start_kmer_string)
 
 
 class Test(object):
@@ -132,9 +141,10 @@ class Test(object):
 
         # then
         (expect
-         .has_neighbor_kmer_strings('ATC', 'ATT')
-         .has_nodes('AAA', 'AAT')
-         .has_n_edges(1))
+         .has_neighbor_kmer_strings('AAT')
+         .has_reverse_neighbor_kmer_strings('AAA', 'CAA')
+         .has_nodes('AAA')
+         .has_n_edges(0))
 
     def test_raises_when_two_connected_kmers_with_missing_exiting_kmer(self):
         # given
@@ -201,25 +211,27 @@ class Test(object):
          .has_nodes('CGA', 'GAT', 'ATT', 'TTT')
          .has_n_edges(3))
 
-    def test_cycle_is_traversed_once(self):
+    @given(s.sampled_from(('AAA', 'AAT', 'ATA', 'TAA')), s.booleans())
+    def test_cycle_is_traversed_once(self, start_kmer_string, reverse_orientation):
         # given
         driver = (BranchTestDriver()
                   .with_kmer_size(3)
-                  .with_kmer('CAA', 0, '....A...')
-                  .with_kmer('AAA', 0, '.c.t...T')
+                  .with_kmer('AAA', 0, '...t...T')
                   .with_kmer('AAT', 0, 'a...A...')
                   .with_kmer('ATA', 0, 'a...A...')
                   .with_kmer('TAA', 0, 'a...A...')
-                  .with_start_kmer_string('CAA'))
+                  .with_start_kmer_string(start_kmer_string))
+
+        if reverse_orientation:
+            driver.with_reverse_traversal_orientation()
 
         # when
         expect = driver.run()
 
         # then
         (expect
-         .has_last_kmer_string('TAA')
-         .has_nodes('CAA', 'AAA', 'AAT', 'ATA', 'TAA')
-         .has_n_edges(4))
+         .has_nodes('AAA', 'AAT', 'ATA', 'TAA')
+         .has_n_edges(3))
 
     def test_one_seen_kmer_returns_empty_graph(self):
         # given
@@ -257,4 +269,82 @@ class TestReverseOrientation(object):
          .has_last_kmer_string('AAA')
          .has_nodes('AAA', 'AAT')
          .has_edges(('AAA', 'AAT', 0))
+         .has_n_edges(1))
+
+
+class TestJunctions(object):
+    def test_stops_at_junction_with_two_in_one_out(self):
+        # given
+        driver = (BranchTestDriver()
+                  .with_kmer_size(3)
+                  .with_kmer('CAA', 0, '....A...')
+                  .with_kmer('TAA', 0, '....A...')
+                  .with_kmer('AAA', 0, '.c.t...T')
+                  .with_kmer('AAT', 0, 'a.......')
+                  .with_start_kmer_string('CAA'))
+        expected_nodes = ['AAA', 'CAA']
+        expected_neighbor_kmer_strings = ['AAT']
+        expected_reverse_neighbor_kmer_strings = ['TAA']
+
+        # when
+        expect = driver.run()
+
+        # then
+        expect.has_nodes(*expected_nodes)
+        (expect
+         .has_last_kmer_string('AAA')
+         .has_neighbor_kmer_strings(*expected_neighbor_kmer_strings)
+         .has_reverse_neighbor_kmer_strings(*expected_reverse_neighbor_kmer_strings)
+         .has_n_edges(len(expected_nodes) - 1))
+
+        if len(expected_nodes) == 2:
+            expect.has_edges(('CAA', 'AAA', 0))
+
+    def test_when_reverse_traverse_stops_at_junction_with_two_out_one_in(self):
+        # given
+        driver = (BranchTestDriver()
+                  .with_kmer_size(3)
+                  .with_kmer('TAA', 0, '....A...')
+                  .with_kmer('AAA', 0, '...t.C.T')
+                  .with_kmer('AAT', 0, 'a.......')
+                  .with_kmer('AAC', 0, 'a.......')
+                  .with_reverse_traversal_orientation()
+                  .with_start_kmer_string('AAC'))
+        expected_nodes = ['AAA', 'AAC']
+        expected_neighbor_kmer_strings = ['TAA']
+        expected_reverse_neighbor_kmer_strings = ['AAT']
+
+        # when
+        expect = driver.run()
+
+        # then
+        expect.has_nodes(*expected_nodes)
+        (expect
+         .has_last_kmer_string('AAA')
+         .has_neighbor_kmer_strings(*expected_neighbor_kmer_strings)
+         .has_reverse_neighbor_kmer_strings(*expected_reverse_neighbor_kmer_strings)
+         .has_n_edges(len(expected_nodes) - 1))
+
+        if len(expected_nodes) == 2:
+            expect.has_edges(('AAA', 'AAC', 0))
+
+    def test_stops_at_junction_with_two_in(self):
+        # given
+        driver = (BranchTestDriver()
+                  .with_kmer_size(3)
+                  .with_kmer('CAA', 0, '....A...')
+                  .with_kmer('TAA', 0, '....A...')
+                  .with_kmer('AAA', 0, '.c.t....')
+                  .with_start_kmer_string('CAA'))
+        expected_reverse_neighbor_kmer_strings = ['TAA']
+
+        # when
+        expect = driver.run()
+
+        # then
+        expect.has_nodes('CAA', 'AAA')
+        (expect
+         .has_last_kmer_string('AAA')
+         .has_neighbor_kmer_strings()
+         .has_reverse_neighbor_kmer_strings(*expected_reverse_neighbor_kmer_strings)
          .has_n_edges(1))

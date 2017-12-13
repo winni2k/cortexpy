@@ -26,6 +26,9 @@ class Graph(object):
         return self
 
     def with_kmer(self, kmer_string, color_coverage=0, edges='........'):
+        if ' ' in kmer_string:
+            kmer_string, color_coverage, edges = kmer_string.split(' ')
+            color_coverage = int(color_coverage)
         revcomp = str(Seq(kmer_string).reverse_complement())
         if revcomp < kmer_string:
             raise Exception("kmer_string '{}' is not lexlow.  Please fix.".format(kmer_string))

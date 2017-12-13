@@ -120,20 +120,27 @@ class OrientedEdgeSet(object):
     orientation = attr.ib()
     neighbor_kmers = attr.ib(init=False)
     neighbor = attr.ib(init=False)
-    num_neighbor = attr.ib(init=False)
     neighbor_kmer_strings = attr.ib(init=False)
+    _num_neighbor = attr.ib(init=False)
 
     def __attrs_post_init__(self):
         if self.orientation == EdgeTraversalOrientation.original:
             self.neighbor_kmers = self.edge_set.get_outgoing_kmers
             self.neighbor = self.edge_set.outgoing
-            self.num_neighbor = self.edge_set.num_outgoing
+            self._num_neighbor = self.edge_set.num_outgoing
             self.neighbor_kmer_strings = self.edge_set.get_outgoing_kmer_strings
         else:
             self.neighbor_kmers = self.edge_set.get_incoming_kmers
             self.neighbor = self.edge_set.incoming
-            self.num_neighbor = self.edge_set.num_incoming
+            self._num_neighbor = self.edge_set.num_incoming
             self.neighbor_kmer_strings = self.edge_set.get_incoming_kmer_strings
 
     def other_orientation(self):
         return OrientedEdgeSet(self.edge_set, EdgeTraversalOrientation.other(self.orientation))
+
+    def num_neighbor(self, kmer_string):
+        lexlo_kmer_string = lexlo(kmer_string)
+        if lexlo_kmer_string != kmer_string:
+            return self.other_orientation().num_neighbor(lexlo(kmer_string))
+        else:
+            return self._num_neighbor()
