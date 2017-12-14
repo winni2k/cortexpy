@@ -37,16 +37,23 @@ class Mccortex(object):
 
 
 @attr.s(slots=True)
-class cortexpy(object):
+class Cortexpy(object):
     spawn_process = attr.ib(False)
 
-    def view(self, args):
-        return self.run(['view'] + args)
+    def view_graph(self, graph):
+        return self.run(['view', 'graph', graph])
+
+    def view_contig(self, contig, graph, output_type=None, other_args=()):
+        run_args = []
+        if output_type is not None:
+            run_args.extend(['--output-type', output_type])
+        run_args += list(other_args)
+        return self.run(['view', 'contig', graph, contig] + run_args)
 
     def run(self, args):
+        logger.info('Running with args: {}'.format(args))
         if self.spawn_process:
             command = [sys.executable, '-m', 'cortexpy'] + args
-            print('Running: ' + ' '.join(command))
             return subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         else:
             main(args)

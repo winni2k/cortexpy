@@ -1,8 +1,9 @@
 from enum import Enum
 
-from cortexpy.graph import ContigRetriever
+from cortexpy.graph import ContigRetriever, parser as g_parser
 from cortexpy.graph.parser.streaming import kmer_generator_from_stream
 from cortexpy.graph.serializer import Serializer
+from cortexpy.graph.traversal.engine import EngineTraversalOrientation
 
 
 class ViewChoice(Enum):
@@ -16,29 +17,58 @@ class ArgparseError(ValueError):
 
 
 def add_subparser_to(subparsers):
-    parser = subparsers.add_parser('view', help='Show contig')
-    parser.add_argument('graph')
-    parser.add_argument('--record', help='Returns record with unitigs collapsed in json format')
-    parser.add_argument('--output-type', default='term',
-                        choices=[v.name for v in ViewChoice])
-    parser.set_defaults(func=view)
+    parent_parser = subparsers.add_parser('view', help='Display a subset of a Cortex graph')
+    subparsers = parent_parser.add_subparsers()
+    child_parsers = []
+
+    graph_parser = subparsers.add_parser('graph', help='List graph records')
+    contig_parser = subparsers.add_parser('contig', help='Display a contig from a Cortex graph')
+    traversal_parser = subparsers.add_parser('traversal', help='Display a Cortex graph traversal')
+
+    child_parsers.append(graph_parser)
+    child_parsers.append(contig_parser)
+    child_parsers.append(traversal_parser)
+
+    for parser in child_parsers:
+        parser.add_argument('graph', help='Input Cortex graph')
+
+    graph_parser.set_defaults(func=view_graph)
+    contig_parser.set_defaults(func=view_contig)
+    traversal_parser.set_defaults(func=view_traversal)
+
+    contig_parser.add_argument('contig', help='Contig to retrieve records for')
+
+    for parser in [contig_parser, traversal_parser]:
+        parser.add_argument('--output-type', default='term',
+                            choices=[v.name for v in ViewChoice])
+
+    traversal_parser.add_argument('--traversal-orientation', default='both',
+                                  choices=[o.name for o in EngineTraversalOrientation])
 
 
-def view(args):
-    with open(args.graph, 'rb') as graph_handle:
-        if args.record is None and args.output_type == ViewChoice.term.name:
-            print_cortex_file(graph_handle)
+def get_file_handle(graph):
+    return open(graph, 'rb')
+
+
+def view_graph(args):
+    print_cortex_file(get_file_handle(args.graph))
+
+
+def view_contig(args):
+    contig_retriever = ContigRetriever(get_file_handle(args.graph))
+    if args.output_type == ViewChoice.term.name:
+        print_contig(contig_retriever, args.contig)
+    else:
+        serializer = Serializer(contig_retriever.get_kmer_graph(args.contig),
+                                colors=contig_retriever.colors)
+        if args.output_type == ViewChoice.json.name:
+            print(serializer.to_json())
         else:
-            contig_retriever = ContigRetriever(graph_handle)
-            if args.output_type == ViewChoice.term.name:
-                print_contig(contig_retriever, args.record)
-            else:
-                serializer = Serializer(contig_retriever.get_kmer_graph(args.record),
-                                        colors=contig_retriever.colors)
-                if args.output_type == ViewChoice.json.name:
-                    print(serializer.to_json())
-                else:
-                    raise ArgparseError
+            raise ArgparseError
+
+
+def view_traversal(args):
+    ra_parser = g_parser.RandomAccess(get_file_handle(args.graph)) # noqa
 
 
 def print_cortex_file(graph_handle):

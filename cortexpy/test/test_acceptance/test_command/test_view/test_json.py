@@ -3,6 +3,7 @@ import sys
 from collections import defaultdict
 
 import attr
+import pytest
 
 from cortexpy.test import builder as builder, runner as runner
 
@@ -103,8 +104,8 @@ class Test(object):
 
         # when
         completed_process = (runner
-                             .cortexpy(True)
-                             .view(['--record', record, '--output-type', 'json', output_graph]))
+                             .Cortexpy(True)
+                             .view_contig(output_type='json', graph=output_graph, contig=record))
         stdout = completed_process.stdout.decode()
 
         # then
@@ -126,10 +127,10 @@ class Test(object):
 
         # when
         completed_process = (runner
-                             .cortexpy(True)
-                             .view(['--record', record1,
-                                    '--output-type', 'json',
-                                    output_graph]))
+                             .Cortexpy(True)
+                             .view_contig(contig=record1,
+                                          output_type='json',
+                                          graph=output_graph))
 
         # then
         expect_zero_return_code(completed_process)
@@ -148,6 +149,45 @@ class Test(object):
             expect.has_repr_edge(*edge)
         expect.has_n_edges(5)
 
+    @pytest.mark.skip
+    def test_collapse_kmer_unitigs_option_with_initial_kmers(self, tmpdir):
+        # given
+        record1 = 'AAACCCGAA'
+        record2 = 'ACCG'
+        kmer_size = 3
+        output_graph = (builder.Mccortex()
+                        .with_dna_sequence(record1)
+                        .with_dna_sequence(record2)
+                        .with_kmer_size(kmer_size)
+                        .build(tmpdir))
+        runner.Mccortex(kmer_size).view(output_graph)
+
+        # when
+        completed_process = (runner
+                             .Cortexpy(True)
+                             .view_contig(['--initial-kmers', record2,
+                                           '--output-type', 'json',
+                                           output_graph]))
+
+        # then
+        expect_zero_return_code(completed_process)
+
+        stdout = completed_process.stdout.decode()
+        expect = JsonGraphExpectation(json.loads(stdout))
+
+        expect.has_n_nodes(4)
+        expect.has_node_repr('AAACC').has_coverages([1, 1], [1, 1], [2, 1])
+        expect.has_node_repr('C').has_coverages([1, 1])
+        expect.has_node_repr('GAA').has_coverages([2, 1], [1, 1], [1, 1])
+        expect.has_node_repr('G').has_coverages([0, 1])
+
+        for color in [0, 1]:
+            for edge in [['AAACC', 'C'], ['C', 'GAA']]:
+                expect.has_repr_edge(edge[0], edge[1], color)
+        expect.has_repr_edge('GAA', 'G', 1)
+        expect.has_repr_edge('AAACC', 'GAA', 0)
+        expect.has_n_edges(6)
+
     def test_collapse_kmer_unitigs_option_with_missing_kmers(self, tmpdir):
         # given
         record1 = 'AAACCCGAA'
@@ -163,10 +203,10 @@ class Test(object):
 
         # when
         completed_process = (runner
-                             .cortexpy(True)
-                             .view(['--record', query_record,
-                                    '--output-type', 'json',
-                                    output_graph]))
+                             .Cortexpy(True)
+                             .view_contig(contig=query_record,
+                                          output_type='json',
+                                          graph=output_graph))
 
         # then
         expect_zero_return_code(completed_process)

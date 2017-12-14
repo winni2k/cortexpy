@@ -4,7 +4,7 @@ import io
 import attr
 
 import cortexpy.test.builder as builder
-from cortexpy.__main__ import main
+from cortexpy.test import runner
 
 
 @attr.s(slots=True)
@@ -53,7 +53,7 @@ class Test(object):
         # when
         cortexpy_output = io.StringIO()
         with contextlib.redirect_stdout(cortexpy_output):
-            main(['view', output_graph])
+            runner.Cortexpy().view_graph(output_graph)
 
         # then
         assert expected_kmers == CortexpyPrintOutputParser(
@@ -74,7 +74,7 @@ class TestTermWithRecord(object):
         # when
         cortexpy_output = io.StringIO()
         with contextlib.redirect_stdout(cortexpy_output):
-            main(['view', output_graph, '--record', 'CAA'])
+            runner.Cortexpy().view_contig(graph=output_graph, contig='CAA')
 
         # then
         assert [expected_kmer] == CortexpyPrintOutputParser(
@@ -94,7 +94,7 @@ class TestTermWithRecord(object):
         # when
         cortexpy_output = io.StringIO()
         with contextlib.redirect_stdout(cortexpy_output):
-            main(['view', output_graph, '--record', record])
+            runner.Cortexpy().view_contig(graph=output_graph, contig=record)
 
         # then
         assert [expected_kmer] == CortexpyPrintOutputParser(
@@ -117,7 +117,7 @@ class TestTermWithRecord(object):
         # when
         cortexpy_output = io.StringIO()
         with contextlib.redirect_stdout(cortexpy_output):
-            main(['view', output_graph, '--record', record])
+            runner.Cortexpy().view_contig(graph=output_graph, contig=record)
 
         # then
         assert expected_kmers == CortexpyPrintOutputParser(
@@ -141,7 +141,7 @@ class TestTermWithRecord(object):
         # when
         cortexpy_output = io.StringIO()
         with contextlib.redirect_stdout(cortexpy_output):
-            main(['view', output_graph, '--record', record])
+            runner.Cortexpy().view_contig(graph=output_graph, contig=record)
 
         # then
         assert expected_kmers == CortexpyPrintOutputParser(
@@ -165,7 +165,7 @@ class TestTermWithRecord(object):
         # when
         cortexpy_output = io.StringIO()
         with contextlib.redirect_stdout(cortexpy_output):
-            main(['view', output_graph, '--record', search_record])
+            runner.Cortexpy().view_contig(graph=output_graph, contig=search_record)
         expect = ViewExpectation(cortexpy_output.getvalue())
 
         # then
