@@ -39,7 +39,7 @@ class Engine(object):
         assert len(contig) >= kmer_size
         graph = SERIALIZER_GRAPH()
         for start in range(len(contig) - kmer_size + 1):
-            graph = nx.compose(graph, self.traverse_from(contig[start:kmer_size]))
+            graph = nx.compose(graph, self.traverse_from(contig[start:(start + kmer_size)]))
         return graph
 
     def traverse_from(self, start_string):

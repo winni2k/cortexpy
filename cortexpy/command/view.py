@@ -43,7 +43,8 @@ def add_subparser_to(subparsers):
     contig_parser.add_argument('--output-type', default='term',
                                choices=[v.name for v in ViewChoice])
 
-    traversal_parser.add_argument('initial_kmer', help='Kmer from which to start traversal')
+    traversal_parser.add_argument('initial_contig',
+                                  help='Start traversal from every kmer in this contig')
     traversal_parser.add_argument('--orientation', default='both',
                                   choices=[o.name for o in traversal.EngineTraversalOrientation])
     traversal_parser.add_argument('--color', default=0, type=int)
@@ -78,7 +79,7 @@ def view_traversal(args):
         orientation=traversal.EngineTraversalOrientation[args.orientation],
         max_nodes=args.max_nodes,
     )
-    graph = traverser.traverse_from(args.initial_kmer)
+    graph = traverser.traverse_from_each_kmer_in(args.initial_contig)
     serializer = Serializer(
         graph,
         colors=traverser.ra_parser.header.colors

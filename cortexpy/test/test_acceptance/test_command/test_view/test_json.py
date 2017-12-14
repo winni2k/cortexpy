@@ -1,3 +1,4 @@
+import os
 import json
 import sys
 from collections import defaultdict
@@ -5,7 +6,10 @@ import attr
 
 from cortexpy.test import builder as builder, runner as runner
 
-SPAWN_PROCESS = False
+if os.environ.get('CI'):
+    SPAWN_PROCESS = True
+else:
+    SPAWN_PROCESS = False
 
 
 def expect_zero_return_code(completed_process):
@@ -195,31 +199,35 @@ class TestTraversal(object):
         record1 = 'AAACCCGAA'
         record2 = 'ACCG'
         kmer_size = 3
-        output_graph = (builder.Mccortex()
-                        .with_dna_sequence(record1)
-                        .with_dna_sequence(record2)
-                        .with_kmer_size(kmer_size)
-                        .build(tmpdir))
-        runner.Mccortex(kmer_size).view(output_graph)
+        for query_string_idx, query_string in enumerate(['CCC', record1, record2]):
+            query_dir = tmpdir.join(str(query_string_idx))
+            query_dir.ensure(dir=True)
 
-        # when
-        completed_process = (runner
-                             .Cortexpy(SPAWN_PROCESS)
-                             .view_traversal(contig='CCC', graph=output_graph, color=0))
+            output_graph = (builder.Mccortex()
+                            .with_dna_sequence(record1)
+                            .with_dna_sequence(record2)
+                            .with_kmer_size(kmer_size)
+                            .build(query_dir))
+            runner.Mccortex(kmer_size).view(output_graph)
 
-        # then
-        expect_zero_return_code(completed_process)
+            # when
+            completed_process = (runner
+                                 .Cortexpy(SPAWN_PROCESS)
+                                 .view_traversal(contig=query_string, graph=output_graph, color=0))
 
-        stdout = completed_process.stdout
-        expect = JsonGraphExpectation(json.loads(stdout))
+            # then
+            expect_zero_return_code(completed_process)
 
-        expect.has_n_nodes(3)
-        expect.has_node_repr('C').has_coverages([1])
-        expect.has_node_repr('AAACC').has_coverages([1], [1], [2])
-        expect.has_node_repr('GAA').has_coverages([2], [1], [1])
+            stdout = completed_process.stdout
+            expect = JsonGraphExpectation(json.loads(stdout))
 
-        for color in [0]:
-            for edge in [['AAACC', 'C'], ['C', 'GAA']]:
-                expect.has_repr_edge(edge[0], edge[1], color)
-        expect.has_repr_edge('AAACC', 'GAA', 0)
-        expect.has_n_edges(3)
+            expect.has_n_nodes(3)
+            expect.has_node_repr('C').has_coverages([1])
+            expect.has_node_repr('AAACC').has_coverages([1], [1], [2])
+            expect.has_node_repr('GAA').has_coverages([2], [1], [1])
+
+            for color in [0]:
+                for edge in [['AAACC', 'C'], ['C', 'GAA']]:
+                    expect.has_repr_edge(edge[0], edge[1], color)
+            expect.has_repr_edge('AAACC', 'GAA', 0)
+            expect.has_n_edges(3)
