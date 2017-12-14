@@ -6,7 +6,8 @@ import networkx as nx
 
 from cortexpy import graph
 from .branch import Branch
-from cortexpy.graph.serializer import SERIALIZER_GRAPH, EdgeTraversalOrientation
+from cortexpy.graph.serializer import SERIALIZER_GRAPH
+from cortexpy.graph.constants import EdgeTraversalOrientation
 
 
 @attr.s(slots=True)

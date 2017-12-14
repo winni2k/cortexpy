@@ -1,7 +1,7 @@
 import attr
 import numpy as np
 
-from cortexpy.graph.serializer import EdgeTraversalOrientation
+from cortexpy.graph.constants import EdgeTraversalOrientation
 from cortexpy.utils import revcomp, lexlo
 
 EDGE_SET_LENGTH = 8

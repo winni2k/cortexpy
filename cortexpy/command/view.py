@@ -82,7 +82,8 @@ def view_traversal(args):
     graph = traverser.traverse_from_each_kmer_in(args.initial_contig)
     serializer = Serializer(
         graph,
-        colors=traverser.ra_parser.header.colors
+        colors=traverser.ra_parser.header.colors,
+        annotate_graph_edges=True,
     )
     print(serializer.to_json())
 

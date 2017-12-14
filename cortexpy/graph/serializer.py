@@ -1,9 +1,11 @@
 import json
-from enum import Enum
 
 import attr
 import networkx as nx
 from networkx.readwrite import json_graph
+
+from cortexpy.graph.constants import EdgeTraversalOrientation
+from cortexpy.graph.parser.kmer import EmptyKmerBuilder
 
 SERIALIZER_GRAPH = nx.MultiDiGraph
 
@@ -14,6 +16,7 @@ class Serializer(object):
     graph = attr.ib()
     colors = attr.ib()
     collapse_unitigs = attr.ib(True)
+    annotate_graph_edges = attr.ib(False)
     unitig_graph = attr.ib(init=False)
 
     def to_unitig_graph(self):
@@ -21,11 +24,30 @@ class Serializer(object):
         self.unitig_graph = collapser.unitig_graph
 
     def to_json(self):
+        if self.annotate_graph_edges:
+            self.graph = self.to_graph_with_annotated_edges()
         if self.collapse_unitigs:
             self.to_unitig_graph()
             self._make_unitig_graph_json_representable()
         serializable = json_graph.node_link_data(self.unitig_graph, attrs={'link': 'edges'})
         return json.dumps(serializable)
+
+    def to_graph_with_annotated_edges(self):
+        new_graph = self.graph.copy()
+        for kmer_string, kmer in self.graph.nodes(data='kmer'):
+            for color in self.colors:
+                for new_kmer_string in kmer.edges[color].get_outgoing_kmer_strings(kmer_string):
+                    new_graph.add_edge(kmer_string, new_kmer_string, key=color)
+                for new_kmer_string in kmer.edges[color].get_incoming_kmer_strings(kmer_string):
+                    new_graph.add_edge(new_kmer_string, kmer_string, key=color)
+        self.graph = new_graph
+        new_graph = new_graph.copy()
+        kmer_builder = EmptyKmerBuilder(num_colors=len(self.colors))
+        for kmer_string, data in self.graph.nodes(data=True):
+            if 'kmer' not in data:
+                new_graph.add_node(kmer_string, kmer=kmer_builder.build_or_get(kmer_string), **data)
+        self.graph = new_graph
+        return self.graph
 
     def _make_unitig_graph_json_representable(self):
         """Makes the unitig graph json representable"""
@@ -66,17 +88,6 @@ class Unitig(object):
                 coverage.append(self.graph.node[target]['kmer'].coverage)
             self._coverage = coverage
         return self._coverage
-
-
-class EdgeTraversalOrientation(Enum):
-    original = 0
-    reverse = 1
-
-    @classmethod
-    def other(cls, orientation):
-        if orientation == cls.original:
-            return cls.reverse
-        return cls.original
 
 
 @attr.s(slots=True)

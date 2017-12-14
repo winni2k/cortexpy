@@ -3,7 +3,6 @@ import json
 import sys
 from collections import defaultdict
 import attr
-import pytest
 
 from cortexpy.test import builder as builder, runner as runner
 
@@ -233,7 +232,6 @@ class TestTraversal(object):
             expect.has_repr_edge('AAACC', 'GAA', 0)
             expect.has_n_edges(3)
 
-    @pytest.mark.skip
     def test_with_peripheral_edges_creates_unitigs_(self, tmpdir):
         # given
         record1 = 'AAACCCGAA'
@@ -260,11 +258,11 @@ class TestTraversal(object):
         stdout = completed_process.stdout
         expect = JsonGraphExpectation(json.loads(stdout))
 
-        expect.has_n_nodes(3)
         expect.has_node_repr('C').has_coverages([1, 1])
         expect.has_node_repr('AAACC').has_coverages([1, 1], [1, 1], [2, 1])
         expect.has_node_repr('GAA').has_coverages([2, 1], [1, 1], [1, 1])
         expect.has_node_repr('G').has_coverages([0, 0])
+        expect.has_n_nodes(4)
 
         for color in [0, 1]:
             for edge in [['AAACC', 'C'], ['C', 'GAA']]:
