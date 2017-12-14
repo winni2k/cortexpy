@@ -1,10 +1,17 @@
 import attr
+import networkx as nx
 import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @attr.s(slots=True)
 class KmerGraphExpectation(object):
     graph = attr.ib()
+
+    def __attrs_post_init__(self):
+        logger.info(nx.node_link_data(self.graph))
 
     def has_node(self, node):
         assert node in self.graph
