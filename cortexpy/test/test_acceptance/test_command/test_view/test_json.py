@@ -3,6 +3,7 @@ import json
 import sys
 from collections import defaultdict
 import attr
+import pytest
 
 from cortexpy.test import builder as builder, runner as runner
 
@@ -194,7 +195,7 @@ class TestContig(object):
 
 
 class TestTraversal(object):
-    def test_collapse_kmer_unitigs_option_with_initial_kmers(self, tmpdir):
+    def test_with_initial_kmers(self, tmpdir):
         # given
         record1 = 'AAACCCGAA'
         record2 = 'ACCG'
@@ -231,3 +232,43 @@ class TestTraversal(object):
                     expect.has_repr_edge(edge[0], edge[1], color)
             expect.has_repr_edge('AAACC', 'GAA', 0)
             expect.has_n_edges(3)
+
+    @pytest.mark.skip
+    def test_with_peripheral_edges_creates_unitigs_(self, tmpdir):
+        # given
+        record1 = 'AAACCCGAA'
+        record2 = 'ACCG'
+        record3 = record1 + 'G'
+        kmer_size = 3
+
+        output_graph = (builder.Mccortex()
+                        .with_dna_sequence(record1)
+                        .with_dna_sequence(record2)
+                        .with_dna_sequence(record3, name='sample_1')
+                        .with_kmer_size(kmer_size)
+                        .build(tmpdir))
+        runner.Mccortex(kmer_size).view(output_graph)
+
+        # when
+        completed_process = (runner
+                             .Cortexpy(SPAWN_PROCESS)
+                             .view_traversal(contig='CCC', graph=output_graph, color=0))
+
+        # then
+        expect_zero_return_code(completed_process)
+
+        stdout = completed_process.stdout
+        expect = JsonGraphExpectation(json.loads(stdout))
+
+        expect.has_n_nodes(3)
+        expect.has_node_repr('C').has_coverages([1, 1])
+        expect.has_node_repr('AAACC').has_coverages([1, 1], [1, 1], [2, 1])
+        expect.has_node_repr('GAA').has_coverages([2, 1], [1, 1], [1, 1])
+        expect.has_node_repr('G').has_coverages([0, 0])
+
+        for color in [0, 1]:
+            for edge in [['AAACC', 'C'], ['C', 'GAA']]:
+                expect.has_repr_edge(edge[0], edge[1], color)
+        expect.has_repr_edge('AAACC', 'GAA', 0)
+        expect.has_repr_edge('GAA', 'G', 1)
+        expect.has_n_edges(6)

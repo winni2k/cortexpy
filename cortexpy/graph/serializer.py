@@ -13,23 +13,24 @@ class Serializer(object):
     """A class for serializing kmer graphs."""
     graph = attr.ib()
     colors = attr.ib()
-    unitig_graph = attr.ib(None)
+    collapse_unitigs = attr.ib(True)
+    unitig_graph = attr.ib(init=False)
 
-    def to_json_serializable(self):
+    def to_unitig_graph(self):
         collapser = UnitigCollapser(self.graph, colors=self.colors).collapse_kmer_unitigs()
         self.unitig_graph = collapser.unitig_graph
-        self.unitig_graph = nx.convert_node_labels_to_integers(self.unitig_graph,
-                                                               label_attribute='node_key')
-        self._make_graph_json_representable()
 
     def to_json(self):
-        if self.unitig_graph is None:
-            self.to_json_serializable()
+        if self.collapse_unitigs:
+            self.to_unitig_graph()
+            self._make_unitig_graph_json_representable()
         serializable = json_graph.node_link_data(self.unitig_graph, attrs={'link': 'edges'})
         return json.dumps(serializable)
 
-    def _make_graph_json_representable(self):
+    def _make_unitig_graph_json_representable(self):
         """Makes the unitig graph json representable"""
+        self.unitig_graph = nx.convert_node_labels_to_integers(self.unitig_graph,
+                                                               label_attribute='node_key')
         self.unitig_graph.graph['colors'] = self.colors
         for _, node_data in self.unitig_graph.nodes.items():
             if isinstance(node_data.get('node_key'), nx.Graph):
