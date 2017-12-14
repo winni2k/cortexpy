@@ -26,17 +26,26 @@ class EngineTraversalOrientation(Enum):
 @attr.s(slots=True)
 class Engine(object):
     ra_parser = attr.ib()
-    traversal_color = attr.ib(0)
+    color = attr.ib(0)
     orientation = attr.ib(EngineTraversalOrientation.original)
-    graph = attr.ib(attr.Factory(SERIALIZER_GRAPH))
     max_nodes = attr.ib(1000)
     branch_queue = attr.ib(attr.Factory(collections.deque))
+    graph = attr.ib(init=False)
     queuer = attr.ib(init=False)
     branch_traverser = attr.ib(init=False)
 
+    def traverse_from_each_kmer_in(self, contig):
+        kmer_size = self.ra_parser.header.kmer_size
+        assert len(contig) >= kmer_size
+        graph = SERIALIZER_GRAPH()
+        for start in range(len(contig) - kmer_size + 1):
+            graph = nx.compose(graph, self.traverse_from(contig[start:kmer_size]))
+        return graph
+
     def traverse_from(self, start_string):
+        assert len(start_string) == self.ra_parser.header.kmer_size
         self.graph = SERIALIZER_GRAPH()
-        self.branch_traverser = Branch(self.ra_parser, self.traversal_color)
+        self.branch_traverser = Branch(self.ra_parser, self.color)
         self.queuer = BranchQueuer(self.branch_queue, self.orientation)
 
         self._process_initial_branch(start_string)
@@ -53,7 +62,7 @@ class Engine(object):
         self._traverse_a_branch_from_queue()
         if self.orientation == EngineTraversalOrientation.both:
             start_kmer = self.ra_parser.get_kmer_for_string(start_string)
-            oriented_edge_set = start_kmer.edges[self.traversal_color].oriented(
+            oriented_edge_set = start_kmer.edges[self.color].oriented(
                 EdgeTraversalOrientation.reverse)
             kmer_strings = oriented_edge_set.neighbor_kmer_strings(start_string)
             if len(kmer_strings) == 1:

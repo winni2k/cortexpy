@@ -1,6 +1,3 @@
-import contextlib
-import io
-
 import attr
 
 import cortexpy.test.builder as builder
@@ -51,13 +48,10 @@ class Test(object):
         ]
 
         # when
-        cortexpy_output = io.StringIO()
-        with contextlib.redirect_stdout(cortexpy_output):
-            runner.Cortexpy().view_graph(output_graph)
+        stdout = runner.Cortexpy().view_graph(output_graph).stdout
 
         # then
-        assert expected_kmers == CortexpyPrintOutputParser(
-            cortexpy_output.getvalue()).get_kmer_strings()
+        assert expected_kmers == CortexpyPrintOutputParser(stdout).get_kmer_strings()
 
 
 class TestTermWithRecord(object):
@@ -72,13 +66,10 @@ class TestTermWithRecord(object):
         expected_kmer = 'CAA: CAA 1 1 .c...... ........'
 
         # when
-        cortexpy_output = io.StringIO()
-        with contextlib.redirect_stdout(cortexpy_output):
-            runner.Cortexpy().view_contig(graph=output_graph, contig='CAA')
+        stdout = runner.Cortexpy().view_contig(graph=output_graph, contig='CAA').stdout
 
         # then
-        assert [expected_kmer] == CortexpyPrintOutputParser(
-            cortexpy_output.getvalue()).get_kmer_strings()
+        assert [expected_kmer] == CortexpyPrintOutputParser(stdout).get_kmer_strings()
 
     def test_prints_one_missing_kmer(self, tmpdir):
         # given
@@ -92,13 +83,10 @@ class TestTermWithRecord(object):
         expected_kmer = 'CCC: GGG 0 1 ........ ........'
 
         # when
-        cortexpy_output = io.StringIO()
-        with contextlib.redirect_stdout(cortexpy_output):
-            runner.Cortexpy().view_contig(graph=output_graph, contig=record)
+        stdout = runner.Cortexpy().view_contig(graph=output_graph, contig=record).stdout
 
         # then
-        assert [expected_kmer] == CortexpyPrintOutputParser(
-            cortexpy_output.getvalue()).get_kmer_strings()
+        assert [expected_kmer] == CortexpyPrintOutputParser(stdout).get_kmer_strings()
 
     def test_prints_three_kmers(self, tmpdir):
         # given
@@ -115,13 +103,10 @@ class TestTermWithRecord(object):
         ]
 
         # when
-        cortexpy_output = io.StringIO()
-        with contextlib.redirect_stdout(cortexpy_output):
-            runner.Cortexpy().view_contig(graph=output_graph, contig=record)
+        stdout = runner.Cortexpy().view_contig(graph=output_graph, contig=record).stdout
 
         # then
-        assert expected_kmers == CortexpyPrintOutputParser(
-            cortexpy_output.getvalue()).get_kmer_strings()
+        assert expected_kmers == CortexpyPrintOutputParser(stdout).get_kmer_strings()
 
     def test_prints_three_kmers_including_one_revcomp(self, tmpdir):
         # given
@@ -139,13 +124,10 @@ class TestTermWithRecord(object):
         ]
 
         # when
-        cortexpy_output = io.StringIO()
-        with contextlib.redirect_stdout(cortexpy_output):
-            runner.Cortexpy().view_contig(graph=output_graph, contig=record)
+        stdout = runner.Cortexpy().view_contig(graph=output_graph, contig=record).stdout
 
         # then
-        assert expected_kmers == CortexpyPrintOutputParser(
-            cortexpy_output.getvalue()).get_kmer_strings()
+        assert expected_kmers == CortexpyPrintOutputParser(stdout).get_kmer_strings()
 
     def test_prints_one_missing_and_one_revcomp_kmer(self, tmpdir):
         # given
@@ -163,10 +145,8 @@ class TestTermWithRecord(object):
         ]
 
         # when
-        cortexpy_output = io.StringIO()
-        with contextlib.redirect_stdout(cortexpy_output):
-            runner.Cortexpy().view_contig(graph=output_graph, contig=search_record)
-        expect = ViewExpectation(cortexpy_output.getvalue())
+        stdout = runner.Cortexpy().view_contig(graph=output_graph, contig=search_record).stdout
+        expect = ViewExpectation(stdout)
 
         # then
         (expect

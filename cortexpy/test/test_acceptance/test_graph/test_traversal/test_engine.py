@@ -17,7 +17,7 @@ class TestTraverseFrom(object):
 
         traverser = traversal.Engine(
             RandomAccess(open(output_graph, 'rb')),
-            traversal_color=0,
+            color=0,
             orientation=EngineTraversalOrientation.both
         )
 

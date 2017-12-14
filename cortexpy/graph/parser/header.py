@@ -27,6 +27,10 @@ class Header(object):
     def record_size(self):
         return UINT64_T * self.kmer_container_size + (UINT32_T + UINT8_T) * self.num_colors
 
+    @property
+    def colors(self):
+        return tuple(range(self.num_colors))
+
 
 @attr.s(slots=True)
 class HeaderFromStreamBuilder(object):

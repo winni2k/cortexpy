@@ -344,3 +344,13 @@ class TestMaxNodes(object):
         (expect
          .has_nodes('AAA', 'AAT')
          .has_n_edges(1))
+
+
+class TestStartStringSize(object):
+    def test_raises_when_string_wrong_size(self):
+        for start_string in ['AAA', 'AAAAAAA']:
+            # given
+            driver = EngineTestDriver().with_kmer_size(5).with_start_kmer_string(start_string)
+
+            with pytest.raises(AssertionError):
+                driver.run()

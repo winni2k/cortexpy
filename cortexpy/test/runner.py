@@ -1,3 +1,5 @@
+import contextlib
+import io
 import os
 import subprocess
 
@@ -50,11 +52,22 @@ class Cortexpy(object):
         run_args += list(other_args)
         return self.run(['view', 'contig', graph, contig] + run_args)
 
+    def view_traversal(self, contig, graph, orientation='both', color=0):
+        return self.run(['view', 'traversal', graph, contig, '--color', str(color)])
+
     def run(self, args):
         logger.info('Running with args: {}'.format(args))
         if self.spawn_process:
             command = [sys.executable, '-m', 'cortexpy'] + args
-            return subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            return subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                  universal_newlines=True)
         else:
-            main(args)
-            return subprocess.CompletedProcess(args, 0)
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                with contextlib.redirect_stderr(stderr):
+                    main(args)
+            return subprocess.CompletedProcess(args,
+                                               0,
+                                               stdout=stdout.getvalue(),
+                                               stderr=stderr.getvalue())

@@ -1,9 +1,12 @@
 from enum import Enum
 
-from cortexpy.graph import ContigRetriever, parser as g_parser
+import logging
+
+from cortexpy.graph import ContigRetriever, parser as g_parser, traversal
 from cortexpy.graph.parser.streaming import kmer_generator_from_stream
 from cortexpy.graph.serializer import Serializer
-from cortexpy.graph.traversal.engine import EngineTraversalOrientation
+
+logger = logging.getLogger('cortexpy.view')
 
 
 class ViewChoice(Enum):
@@ -37,13 +40,14 @@ def add_subparser_to(subparsers):
     traversal_parser.set_defaults(func=view_traversal)
 
     contig_parser.add_argument('contig', help='Contig to retrieve records for')
+    contig_parser.add_argument('--output-type', default='term',
+                               choices=[v.name for v in ViewChoice])
 
-    for parser in [contig_parser, traversal_parser]:
-        parser.add_argument('--output-type', default='term',
-                            choices=[v.name for v in ViewChoice])
-
-    traversal_parser.add_argument('--traversal-orientation', default='both',
-                                  choices=[o.name for o in EngineTraversalOrientation])
+    traversal_parser.add_argument('initial_kmer', help='Kmer from which to start traversal')
+    traversal_parser.add_argument('--orientation', default='both',
+                                  choices=[o.name for o in traversal.EngineTraversalOrientation])
+    traversal_parser.add_argument('--color', default=0, type=int)
+    traversal_parser.add_argument('--max-nodes', default=1000, type=int)
 
 
 def get_file_handle(graph):
@@ -68,7 +72,18 @@ def view_contig(args):
 
 
 def view_traversal(args):
-    ra_parser = g_parser.RandomAccess(get_file_handle(args.graph)) # noqa
+    traverser = traversal.Engine(
+        g_parser.RandomAccess(get_file_handle(args.graph)),
+        color=args.color,
+        orientation=traversal.EngineTraversalOrientation[args.orientation],
+        max_nodes=args.max_nodes,
+    )
+    graph = traverser.traverse_from(args.initial_kmer)
+    serializer = Serializer(
+        graph,
+        colors=traverser.ra_parser.header.colors
+    )
+    print(serializer.to_json())
 
 
 def print_cortex_file(graph_handle):
