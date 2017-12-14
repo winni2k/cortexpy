@@ -1,5 +1,5 @@
 import cortexpy.test.runner as runner
-from collections import defaultdict
+from collections import OrderedDict
 
 import attr
 from Bio.Seq import Seq
@@ -10,13 +10,15 @@ from attr import Factory
 @attr.s
 class Mccortex(object):
     kmer_size = attr.ib(3)
-    sequences = attr.ib(Factory(lambda: defaultdict(list)))
+    sequences = attr.ib(Factory(OrderedDict))
 
     def with_kmer_size(self, kmer_size):
         self.kmer_size = kmer_size
         return self
 
     def with_dna_sequence(self, sequence, *, name='sample_0'):
+        if name not in self.sequences:
+            self.sequences[name] = []
         self.sequences[name].append(sequence)
         return self
 
