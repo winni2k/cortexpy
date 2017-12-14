@@ -4,6 +4,7 @@ import attr
 import collections
 import networkx as nx
 
+from cortexpy import graph
 from .branch import Branch
 from cortexpy.graph.serializer import SERIALIZER_GRAPH, EdgeTraversalOrientation
 
@@ -90,10 +91,13 @@ class Engine(object):
                 else:
                     self.queuer.add_from_traversed_branch(traversed_branch)
 
-    def _add_edge_in_orientation(self, first, second, orientation):
+    def _add_edge_in_orientation(self, kmer1_string, kmer2_string, orientation):
         if orientation == EdgeTraversalOrientation.reverse:
-            first, second = second, first
-        self.graph.add_edge(first, second, key=self.traversal_color)
+            kmer1_string, kmer2_string = kmer2_string, kmer1_string
+        kmer1 = self.ra_parser.get_kmer_for_string(kmer1_string)
+        kmer2 = self.ra_parser.get_kmer_for_string(kmer2_string)
+        interactor = graph.Interactor(self.graph, kmer1.colors)
+        interactor.add_edge_to_graph_for_kmer_pair(kmer1, kmer2, kmer1_string, kmer2_string)
 
 
 @attr.s(slots=True)

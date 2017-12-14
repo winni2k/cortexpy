@@ -207,6 +207,42 @@ class Kmer(object):
     def __eq__(self, other):
         return kmer_eq(self, other)
 
+    @property
+    def colors(self):
+        return range(self.num_colors)
+
+    def has_outgoing_edge_to_kmer_in_color(self, other, color):
+        if self.kmer[1:] == other.kmer[:-1]:
+            other_kmer_letter = other.kmer[-1]
+            this_kmer_letter = self.kmer[0].lower()
+        else:
+            other_kmer_revcomp = revcomp(other.kmer)
+            if self.kmer[1:] == other_kmer_revcomp[:-1]:
+                other_kmer_letter = other_kmer_revcomp[-1]
+                this_kmer_letter = revcomp(self.kmer[0])
+            else:
+                raise ValueError('Kmers are not neighbors')
+        edge_set = self.edges[color]
+        if edge_set.is_edge(other_kmer_letter) != other.edges[color].is_edge(this_kmer_letter):
+            raise ValueError('Kmers do not agree on connection')
+        return edge_set.is_edge(other_kmer_letter)
+
+    def has_incoming_edge_from_kmer_in_color(self, other, color):
+        if self.kmer[:-1] == other.kmer[1:]:
+            other_kmer_letter = other.kmer[0].lower()
+            this_kmer_letter = self.kmer[-1]
+        else:
+            other_kmer_revcomp = revcomp(other.kmer)
+            if self.kmer[:-1] == other_kmer_revcomp[1:]:
+                other_kmer_letter = other_kmer_revcomp[0].lower()
+                this_kmer_letter = revcomp(self.kmer[-1]).lower()
+            else:
+                raise ValueError('Kmers are not neighbors')
+        edge_set = self.edges[color]
+        if edge_set.is_edge(other_kmer_letter) != other.edges[color].is_edge(this_kmer_letter):
+            raise ValueError('Kmers do not agree on connection')
+        return edge_set.is_edge(other_kmer_letter)
+
 
 class KmerByStringComparator(object):
     def __init__(self, *, kmer=None, kmer_object=None):

@@ -153,39 +153,108 @@ class TestConnectKmers(object):
                                                              add_letter_to_revcomp):
         # given
         builder = EmptyKmerBuilder(num_colors)
-        first_kmer = builder.build_or_get(data.draw(kmer_strings()))
-        assert first_kmer.kmer < reverse_complement(first_kmer.kmer)
+        kmer1 = builder.build_or_get(data.draw(kmer_strings()))
+        assert kmer1.kmer < reverse_complement(kmer1.kmer)
 
         if add_letter_to_revcomp:
-            first_kmer_string = reverse_complement(first_kmer.kmer)
+            kmer1_string = reverse_complement(kmer1.kmer)
         else:
-            first_kmer_string = first_kmer.kmer
+            kmer1_string = kmer1.kmer
 
         if add_letter_to_end:
-            second_kmer_string = first_kmer_string[1:] + letter
+            kmer2_string = kmer1_string[1:] + letter
         else:
-            second_kmer_string = letter + first_kmer_string[:-1]
+            kmer2_string = letter + kmer1_string[:-1]
 
-        second_kmer = builder.build_or_get(second_kmer_string)
+        kmer2 = builder.build_or_get(kmer2_string)
 
         for color in range(num_colors):
             # when
-            connect_kmers(first_kmer, second_kmer, color)
+            connect_kmers(kmer1, kmer2, color)
 
             # then
             if add_letter_to_revcomp:
-                first_kmer_edge_letter = reverse_complement(letter)
+                kmer1_edge_letter = reverse_complement(letter)
             else:
-                first_kmer_edge_letter = letter.lower()
+                kmer1_edge_letter = letter.lower()
 
             if add_letter_to_end:
-                first_kmer_edge_letter = first_kmer_edge_letter.swapcase()
-                second_kmer_edge_letter = first_kmer_string[0].lower()
+                kmer1_edge_letter = kmer1_edge_letter.swapcase()
+                kmer2_edge_letter = kmer1_string[0].lower()
             else:
-                second_kmer_edge_letter = first_kmer_string[-1]
+                kmer2_edge_letter = kmer1_string[-1]
 
-            if reverse_complement(second_kmer_string) < second_kmer_string:
-                second_kmer_edge_letter = reverse_complement(second_kmer_edge_letter).swapcase()
+            if reverse_complement(kmer2_string) < kmer2_string:
+                kmer2_edge_letter = reverse_complement(kmer2_edge_letter).swapcase()
 
-            assert first_kmer.edges[color].is_edge(first_kmer_edge_letter)
-            assert second_kmer.edges[color].is_edge(second_kmer_edge_letter)
+            assert kmer1.edges[color].is_edge(kmer1_edge_letter)
+            assert kmer2.edges[color].is_edge(kmer2_edge_letter)
+
+            # let's also test connected check
+            if not add_letter_to_revcomp == add_letter_to_end:
+                assert kmer1.has_outgoing_edge_to_kmer_in_color(kmer2, color)
+            else:
+                assert kmer1.has_incoming_edge_from_kmer_in_color(kmer2, color)
+
+
+class TestHasEdgeTo(object):
+    @given(s.integers(min_value=0, max_value=2))
+    def test_is_true_for_two_connected_kmers(self, color):
+        # given
+        kmer1 = EmptyKmerBuilder(3).build_or_get('AAA')
+        kmer2 = EmptyKmerBuilder(3).build_or_get('AAT')
+        kmer1.edges[color].add_edge('T')
+        kmer2.edges[color].add_edge('a')
+
+        # when/then
+        assert kmer1.has_outgoing_edge_to_kmer_in_color(kmer2, color)
+        assert kmer2.has_incoming_edge_from_kmer_in_color(kmer1, color)
+
+    @given(s.booleans())
+    def test_raises_if_connection_is_unidirectional(self, connect_first):
+        # given
+        kmer1 = EmptyKmerBuilder(1).build_or_get('AAA')
+        kmer2 = EmptyKmerBuilder(1).build_or_get('AAT')
+        if connect_first:
+            kmer1.edges[0].add_edge('T')
+        else:
+            kmer2.edges[0].add_edge('a')
+
+        # when/then
+        with pytest.raises(ValueError):
+            kmer1.has_outgoing_edge_to_kmer_in_color(kmer2, 0)
+        with pytest.raises(ValueError):
+            kmer2.has_incoming_edge_from_kmer_in_color(kmer1, 0)
+
+    def test_is_false_for_unconnected_neighbor_kmers(self):
+        # given
+        kmer1 = EmptyKmerBuilder(1).build_or_get('AAA')
+        kmer2 = EmptyKmerBuilder(1).build_or_get('AAT')
+
+        # when/then
+        assert not kmer1.has_outgoing_edge_to_kmer_in_color(kmer2, 0)
+        assert not kmer2.has_incoming_edge_from_kmer_in_color(kmer1, 0)
+
+    def test_raises_for_for_non_neighbor_kmers(self):
+        # given
+        kmer1 = EmptyKmerBuilder(1).build_or_get('AAA')
+        kmer2 = EmptyKmerBuilder(1).build_or_get('ACC')
+
+        # when/then
+        with pytest.raises(ValueError):
+            kmer1.has_outgoing_edge_to_kmer_in_color(kmer2, 0)
+        with pytest.raises(ValueError):
+            kmer2.has_incoming_edge_from_kmer_in_color(kmer1, 0)
+
+    @given(s.integers(min_value=0, max_value=2), s.integers(min_value=0, max_value=2))
+    def test_is_false_for_non_connection_color(self, color_to_link, color_to_check):
+        # given
+        assume(color_to_check != color_to_link)
+        kmer1 = EmptyKmerBuilder(3).build_or_get('AAA')
+        kmer2 = EmptyKmerBuilder(3).build_or_get('AAT')
+        kmer1.edges[color_to_link].add_edge('T')
+        kmer2.edges[color_to_link].add_edge('a')
+
+        # when/then
+        assert not kmer1.has_outgoing_edge_to_kmer_in_color(kmer2, color_to_check)
+        assert not kmer2.has_incoming_edge_from_kmer_in_color(kmer1, color_to_check)
