@@ -62,6 +62,11 @@ class Graph(object):
             self.num_colors_is_set = True
         return self
 
+    def with_color_names(self, *color_names):
+        self.with_num_colors(len(color_names))
+        self.header.with_color_names(*color_names)
+        return self
+
     def build(self):
         if not self.kmer_size_is_set:
             self.with_kmer_size(1)

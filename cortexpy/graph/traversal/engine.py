@@ -52,7 +52,12 @@ class Engine(object):
         self._process_initial_branch(start_string)
         while 0 < len(self.branch_queue) and len(self.graph) < self.max_nodes:
             self._traverse_a_branch_from_queue()
+        self._add_graph_metadata()
         return self.graph
+
+    def _add_graph_metadata(self):
+        self.graph.graph['colors'] = self.ra_parser.header.colors
+        self.graph.graph['sample_names'] = [n.decode() for n in self.ra_parser.header.sample_names]
 
     def _process_initial_branch(self, start_string):
         if self.orientation == EngineTraversalOrientation.both:

@@ -64,8 +64,7 @@ def view_contig(args):
     if args.output_type == ViewChoice.term.name:
         print_contig(contig_retriever, args.contig)
     else:
-        serializer = Serializer(contig_retriever.get_kmer_graph(args.contig),
-                                colors=contig_retriever.colors)
+        serializer = Serializer(contig_retriever.get_kmer_graph(args.contig))
         if args.output_type == ViewChoice.json.name:
             print(serializer.to_json())
         else:
@@ -80,11 +79,7 @@ def view_traversal(args):
         max_nodes=args.max_nodes,
     )
     graph = traverser.traverse_from_each_kmer_in(args.initial_contig)
-    serializer = Serializer(
-        graph,
-        colors=traverser.ra_parser.header.colors,
-        annotate_graph_edges=True,
-    )
+    serializer = Serializer(graph, annotate_graph_edges=True, )
     print(serializer.to_json())
 
 

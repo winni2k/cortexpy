@@ -6,6 +6,8 @@ import networkx as nx
 from cortexpy.graph import parser as parser
 from cortexpy.graph.parser.kmer import EmptyKmerBuilder, flip_kmer_string_to_match
 
+RETRIEVED_CONTIG_NAME = 'retrieved_contig'
+
 
 @attr.s(slots=True)
 class ContigRetriever(object):
@@ -77,8 +79,18 @@ class ContigRetriever(object):
                             kmer_graph.add_edge(neighbor_kmer_string, kmer_string, key=color)
                         else:
                             kmer_graph.add_edge(kmer_string, neighbor_kmer_string, key=color)
+
+        # todo: remove this for loop and see if things still work
         for kmer_node in kmer_graph:
             kmer_graph.nodes[kmer_node]['repr'] = kmer_node
+
+        return self._add_metadata_to_graph(kmer_graph)
+
+    def _add_metadata_to_graph(self, kmer_graph):
+        kmer_graph.graph['colors'] = tuple(self.colors)
+        sample_names = [n.decode() for n in self.graph_parser.header.sample_names]
+        sample_names.append(RETRIEVED_CONTIG_NAME)
+        kmer_graph.graph['sample_names'] = sample_names
         return kmer_graph
 
 

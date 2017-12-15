@@ -112,7 +112,7 @@ class TestHeaderParser(object):
                .with_num_colors(num_colors)
                .with_mean_read_lengths(mean_read_lengths)
                .with_total_sequence(total_sequence)
-               .with_color_names(color_names)
+               .with_color_names(*color_names)
                .with_error_rates(*[data.draw(s.binary(min_size=16, max_size=16))
                                    for _ in range(num_colors)]))
 

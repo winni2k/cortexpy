@@ -14,10 +14,13 @@ SERIALIZER_GRAPH = nx.MultiDiGraph
 class Serializer(object):
     """A class for serializing kmer graphs."""
     graph = attr.ib()
-    colors = attr.ib()
     collapse_unitigs = attr.ib(True)
     annotate_graph_edges = attr.ib(False)
     unitig_graph = attr.ib(init=False)
+    colors = attr.ib(init=False)
+
+    def __attrs_post_init__(self):
+        self.colors = self.graph.graph['colors']
 
     def to_unitig_graph(self):
         collapser = UnitigCollapser(self.graph, colors=self.colors).collapse_kmer_unitigs()
@@ -149,8 +152,12 @@ def replace_unitig_nodes_with_unitig(out_graph, unitig):
 @attr.s(slots=True)
 class UnitigFinder(object):
     graph = attr.ib()
-    colors = attr.ib((0,))
+    colors = attr.ib(None)
     test_coverage = attr.ib(True)
+
+    def __attrs_post_init__(self):
+        if 'colors' in self.graph.graph:
+            self.colors = self.graph.graph['colors']
 
     def find_unitigs(self):
         """Finds unitigs of one or more nodes and replaces them by a subgraph containing the

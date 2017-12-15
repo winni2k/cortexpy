@@ -106,7 +106,9 @@ class Header(object):
         self._total_sequence = total_sequence
         return self
 
-    def with_color_names(self, color_names):
+    def with_color_names(self, *color_names):
+        if any([isinstance(name, str) for name in color_names]):
+            color_names = [name.encode('utf-8') for name in color_names]
         self._color_names = color_names
         return self
 
@@ -129,9 +131,9 @@ class Header(object):
         assert len(self.color_names) == len(self.color_information_blocks)
         assert len(self.color_names) == self.num_colors
 
-        for color in self.color_names:
-            header_string += pack('I', len(color))
-            header_string += color
+        for color_name in self.color_names:
+            header_string += pack('I', len(color_name))
+            header_string += color_name
 
         if self.error_rates is None:
             self.error_rates = [bytes(16) for _ in self.color_names]
