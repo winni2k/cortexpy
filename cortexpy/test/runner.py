@@ -52,8 +52,10 @@ class Cortexpy(object):
         run_args += list(other_args)
         return self.run(['view', 'contig', graph, contig] + run_args)
 
-    def view_traversal(self, contig, graph, orientation='both', color=0):
-        return self.run(['view', 'traversal', graph, contig, '--color', str(color)])
+    def view_traversal(self, contig, graph, output_type='json', orientation='both', color=0):
+        return self.run(
+            ['view', 'traversal', graph, contig, '--output-type', output_type, '--color',
+             str(color)])
 
     def run(self, args):
         logger.info('Running with args: {}'.format(args))

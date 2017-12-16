@@ -2,6 +2,11 @@ from enum import Enum
 
 import logging
 
+import attr
+import sys
+
+from Bio import SeqIO
+
 from cortexpy.graph import ContigRetriever, parser as g_parser, traversal
 from cortexpy.graph.parser.streaming import kmer_generator_from_stream
 from cortexpy.graph.serializer import Serializer
@@ -9,9 +14,14 @@ from cortexpy.graph.serializer import Serializer
 logger = logging.getLogger('cortexpy.view')
 
 
-class ViewChoice(Enum):
+class ViewContigChoice(Enum):
     term = 0
     json = 1
+
+
+class ViewTraversalChoice(Enum):
+    json = 1
+    fasta = 2
 
 
 class ArgparseError(ValueError):
@@ -26,29 +36,45 @@ def add_subparser_to(subparsers):
 
     graph_parser = subparsers.add_parser('graph', help='List graph records')
     contig_parser = subparsers.add_parser('contig', help='Display a contig from a Cortex graph')
-    traversal_parser = subparsers.add_parser('traversal', help='Display a Cortex graph traversal')
+    traversal = ViewTraversal(subparsers)
 
     child_parsers.append(graph_parser)
     child_parsers.append(contig_parser)
-    child_parsers.append(traversal_parser)
+    child_parsers.append(traversal.parser)
 
     for parser in child_parsers:
         parser.add_argument('graph', help='Input Cortex graph')
 
     graph_parser.set_defaults(func=view_graph)
     contig_parser.set_defaults(func=view_contig)
-    traversal_parser.set_defaults(func=view_traversal)
 
     contig_parser.add_argument('contig', help='Contig to retrieve records for')
     contig_parser.add_argument('--output-type', default='term',
-                               choices=[v.name for v in ViewChoice])
+                               choices=[v.name for v in ViewContigChoice])
 
-    traversal_parser.add_argument('initial_contig',
-                                  help='Start traversal from every kmer in this contig')
-    traversal_parser.add_argument('--orientation', default='both',
-                                  choices=[o.name for o in traversal.EngineTraversalOrientation])
-    traversal_parser.add_argument('--color', default=0, type=int)
-    traversal_parser.add_argument('--max-nodes', default=1000, type=int)
+    traversal.add_arguments()
+
+
+@attr.s(slots=True)
+class ViewTraversal(object):
+    subparsers = attr.ib()
+    parser = attr.ib(init=False)
+
+    def __attrs_post_init__(self):
+        self.parser = self.subparsers.add_parser('traversal',
+                                                 help='Display a Cortex graph traversal')
+
+    def add_arguments(self):
+        parser = self.parser
+        parser.set_defaults(func=view_traversal)
+        parser.add_argument('initial_contig',
+                            help='Start traversal from every kmer in this contig')
+        parser.add_argument('--orientation', default='both',
+                            choices=[o.name for o in traversal.EngineTraversalOrientation])
+        parser.add_argument('--color', default=0, type=int)
+        parser.add_argument('--max-nodes', default=1000, type=int)
+        parser.add_argument('--output-type', default='term',
+                            choices=[v.name for v in ViewTraversalChoice])
 
 
 def get_file_handle(graph):
@@ -61,11 +87,11 @@ def view_graph(args):
 
 def view_contig(args):
     contig_retriever = ContigRetriever(get_file_handle(args.graph))
-    if args.output_type == ViewChoice.term.name:
+    if args.output_type == ViewContigChoice.term.name:
         print_contig(contig_retriever, args.contig)
     else:
         serializer = Serializer(contig_retriever.get_kmer_graph(args.contig))
-        if args.output_type == ViewChoice.json.name:
+        if args.output_type == ViewContigChoice.json.name:
             print(serializer.to_json())
         else:
             raise ArgparseError
@@ -79,8 +105,12 @@ def view_traversal(args):
         max_nodes=args.max_nodes,
     )
     graph = traverser.traverse_from_each_kmer_in(args.initial_contig)
-    serializer = Serializer(graph, annotate_graph_edges=True, )
-    print(serializer.to_json())
+    if args.output_type == ViewTraversalChoice.json.name:
+        serializer = Serializer(graph, annotate_graph_edges=True)
+        print(serializer.to_json())
+    elif args.output_type == ViewTraversalChoice.fasta.name:
+        serializer = Serializer(graph, annotate_graph_edges=False, collapse_unitigs=False)
+        SeqIO.write(serializer.to_seq_records(), sys.stdout, 'fasta')
 
 
 def print_cortex_file(graph_handle):

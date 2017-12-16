@@ -2,6 +2,9 @@ import json
 
 import attr
 import networkx as nx
+
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 from networkx.readwrite import json_graph
 
 from cortexpy.graph.constants import EdgeTraversalOrientation
@@ -26,14 +29,21 @@ class Serializer(object):
         collapser = UnitigCollapser(self.graph, colors=self.colors).collapse_kmer_unitigs()
         self.unitig_graph = collapser.unitig_graph
 
-    def to_json(self):
+    def _preprocess_graph(self):
         if self.annotate_graph_edges:
-            self.graph = self.to_graph_with_annotated_edges()
+            self.to_graph_with_annotated_edges()
         if self.collapse_unitigs:
             self.to_unitig_graph()
             self._make_unitig_graph_json_representable()
+
+    def to_json(self):
+        self._preprocess_graph()
         serializable = json_graph.node_link_data(self.unitig_graph, attrs={'link': 'edges'})
         return json.dumps(serializable)
+
+    def to_seq_records(self):
+        self._preprocess_graph()
+        return (SeqRecord(Seq(str(node))) for node in self.graph.nodes())
 
     def to_graph_with_annotated_edges(self):
         new_graph = self.graph.copy()
