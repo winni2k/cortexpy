@@ -78,7 +78,8 @@ class ViewTraversal(object):
                             choices=[o.name for o in traversal.EngineTraversalOrientation])
         parser.add_argument('--color', default=0, type=int)
         parser.add_argument('--max-nodes', default=1000, type=int)
-        parser.add_argument('--output-type', default=ViewTraversalOutputType.kmers.name)
+        parser.add_argument('--output-type', default=ViewTraversalOutputType.kmers.name,
+                            choices=[v.name for v in ViewTraversalOutputType])
         parser.add_argument('--output-format', default=ViewTraversalOutputFormat.fasta.name,
                             choices=[v.name for v in ViewTraversalOutputFormat])
 
