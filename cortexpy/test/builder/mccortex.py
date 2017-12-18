@@ -6,7 +6,9 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from attr import Factory
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 @attr.s
 class Mccortex(object):
