@@ -109,7 +109,7 @@ class TestContig(object):
         # when
         completed_process = (runner
                              .Cortexpy(SPAWN_PROCESS)
-                             .view_contig(output_type='json', graph=output_graph, contig=record))
+                             .view_contig(output_format='json', graph=output_graph, contig=record))
         stdout = completed_process.stdout
 
         # then
@@ -133,7 +133,7 @@ class TestContig(object):
         completed_process = (runner
                              .Cortexpy(SPAWN_PROCESS)
                              .view_contig(contig=record1,
-                                          output_type='json',
+                                          output_format='json',
                                           graph=output_graph))
 
         # then
@@ -170,7 +170,7 @@ class TestContig(object):
         completed_process = (runner
                              .Cortexpy(SPAWN_PROCESS)
                              .view_contig(contig=query_record,
-                                          output_type='json',
+                                          output_format='json',
                                           graph=output_graph))
 
         # then

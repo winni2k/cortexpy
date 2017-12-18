@@ -45,17 +45,22 @@ class Cortexpy(object):
     def view_graph(self, graph):
         return self.run(['view', 'graph', graph])
 
-    def view_contig(self, contig, graph, output_type=None, other_args=()):
+    def view_contig(self, contig, graph, output_format=None, other_args=()):
         run_args = []
-        if output_type is not None:
-            run_args.extend(['--output-type', output_type])
+        if output_format is not None:
+            run_args.extend(['--output-format', output_format])
         run_args += list(other_args)
         return self.run(['view', 'contig', graph, contig] + run_args)
 
-    def view_traversal(self, contig, graph, output_type='json', orientation='both', color=0):
+    def view_traversal(self, contig, graph, output_format='json', output_type='kmers',
+                       orientation='both', color=0):
         return self.run(
-            ['view', 'traversal', graph, contig, '--output-type', output_type, '--color',
-             str(color)])
+            ['view', 'traversal',
+             graph, contig,
+             '--output-format', output_format,
+             '--color', str(color),
+             '--output-type', output_type]
+        )
 
     def run(self, args):
         logger.info('Running with args: {}'.format(args))

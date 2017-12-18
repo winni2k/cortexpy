@@ -5,7 +5,8 @@ import attr
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from attr import Factory
-
+import logging
+logger = logging.getLogger(__name__)
 
 @attr.s
 class Mccortex(object):
@@ -35,5 +36,7 @@ class Mccortex(object):
         mccortex_args.append(output_graph)
 
         runner.Mccortex(self.kmer_size).run(mccortex_args)
+
+        runner.Mccortex(self.kmer_size).view(output_graph)
 
         return output_graph

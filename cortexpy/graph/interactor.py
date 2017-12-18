@@ -1,4 +1,9 @@
 import attr
+import networkx as nx
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+import logging
+logger = logging.getLogger(__name__)
 
 
 @attr.s(slots=True)
@@ -15,3 +20,43 @@ class Interactor(object):
                 add_edge = kmer1.has_outgoing_edge_to_kmer_in_color(kmer2, color)
             if add_edge:
                 self.graph.add_edge(kmer1_string, kmer2_string, key=color)
+
+
+def make_copy_of_color(graph, color, include_self_refs=False):
+    out_graph = graph.fresh_copy()
+    for u, v, key, data in graph.edges(keys=True, data=True):
+        if key == color:
+            if u == v and not include_self_refs:
+                continue
+            out_graph.add_edge(u, v, key=key, **data)
+    for node in list(out_graph):
+        out_graph.add_node(node, **graph.node[node])
+    return out_graph
+
+
+def convert_kmer_path_to_contig(path):
+    if len(path) == 0:
+        return ''
+    logger.info(path)
+    contig = [path[0]]
+    for kmer in path[1:]:
+        contig.append(kmer[-1])
+    return ''.join(contig)
+
+
+@attr.s(slots=True)
+class Contigs(object):
+    graph = attr.ib()
+    color = attr.ib()
+
+    def all_simple_paths(self):
+        graph = make_copy_of_color(self.graph, self.color, include_self_refs=False)
+        logger.info(graph.nodes)
+        for source in graph.nodes():
+            if graph.in_degree(source) > 0:
+                continue
+            for target in graph.nodes():
+                if source == target or graph.out_degree(target) != 0:
+                    continue
+                for path in nx.all_simple_paths(graph, source=source, target=target):
+                    yield SeqRecord(Seq(convert_kmer_path_to_contig(path)))

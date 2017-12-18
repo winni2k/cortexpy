@@ -1,5 +1,7 @@
 import os
 
+from Bio.Seq import reverse_complement
+
 from cortexpy.test import builder, runner, expectation
 
 if os.environ.get('CI'):
@@ -21,14 +23,107 @@ class Test(object):
         # when
         completed_process = (runner
                              .Cortexpy(SPAWN_PROCESS)
-                             .view_traversal(output_type='fasta', graph=output_graph,
+                             .view_traversal(output_format='fasta', graph=output_graph,
                                              contig=record))
         stdout = completed_process.stdout
 
         # then
         assert completed_process.returncode == 0, completed_process
         expect = expectation.Fasta(stdout)
-        (expect.has_n_records(3)
+        (expect
          .has_record('ATT')
          .has_record('TTC')
-         .has_record('TCC'))
+         .has_record('TCC')
+         .has_n_records(3))
+
+
+class TestContigs(object):
+    def test_outputs_multiple_combinations(self, tmpdir):
+        # given
+        records = [
+            'CAACC',
+            'AAACA',
+            'AAACT',
+        ]
+        kmer_size = 3
+        maker = builder.Mccortex().with_kmer_size(kmer_size)
+        for rec in records:
+            maker.with_dna_sequence(rec)
+
+        output_graph = maker.build(tmpdir)
+
+        # when
+        completed_process = (runner
+                             .Cortexpy(SPAWN_PROCESS)
+                             .view_traversal(output_format='fasta', graph=output_graph,
+                                             contig='AAA', output_type='contigs'))
+        stdout = completed_process.stdout
+
+        # then
+        assert completed_process.returncode == 0, completed_process
+        expect = expectation.Fasta(stdout)
+        for record in records:
+            expect.has_record(record)
+        expect.has_record('CAACT')
+        expect.has_record('CAACA')
+        expect.has_record('AAACC')
+        expect.has_n_records(6)
+
+    def test_outputs_contigs_for_bubble(self, tmpdir):
+        # given
+        records = [
+            'AAACCC',
+            'AAAGCC',
+        ]
+        kmer_size = 3
+        maker = builder.Mccortex().with_kmer_size(kmer_size)
+        for rec in records:
+            maker.with_dna_sequence(rec)
+
+        output_graph = maker.build(tmpdir)
+
+        # when
+        completed_process = (runner
+                             .Cortexpy(SPAWN_PROCESS)
+                             .view_traversal(output_format='fasta', graph=output_graph,
+                                             contig='AAA', output_type='contigs'))
+        stdout = completed_process.stdout
+
+        # then
+        assert completed_process.returncode == 0, completed_process
+        expect = expectation.Fasta(stdout)
+        for record in records:
+            expect.has_record(record)
+        expect.has_n_records(2)
+
+    def test_dal19_data(self, tmpdir):
+        # given
+        reverse_complement
+        records = [
+            'CCCCGAGGGAAGCTCTATGAATTCGCCAATCCCAGTATGCAAAAAATGTTGGAGAGGTATCAAAAGTATTCACAAGAAAGT',
+            'GTATGCAAAAAATGTTGGAGAGGTATCAAAAGTATTCACAAGAAAGTGACATA',
+            'TAAAAAATGTTGGAGAGGTATCAAAAGTATTCACAAGAAAGTGACATAGATAACACTACCAAAGAGCAAGACTATCAG'
+        ]
+        expected_records = [records[0] + records[1][47:] + records[2][48:], records[2]]
+        kmer_size = 47
+        maker = builder.Mccortex().with_kmer_size(kmer_size)
+        for rec in records:
+            maker.with_dna_sequence(rec)
+
+        output_graph = maker.build(tmpdir)
+
+        # when
+        completed_process = \
+            (runner.Cortexpy(SPAWN_PROCESS)
+             .view_traversal(output_format='fasta', graph=output_graph,
+                             contig='CAAAAAATGTTGGAGAGGTATCAAAAGTATTCACAAGAAAGTGACAT',
+                             output_type='contigs')
+             )
+        stdout = completed_process.stdout
+
+        # then
+        assert completed_process.returncode == 0, completed_process
+        expect = expectation.Fasta(stdout)
+        for record in expected_records:
+            expect.has_record(record)
+        expect.has_n_records(2)

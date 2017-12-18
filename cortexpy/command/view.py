@@ -7,21 +7,26 @@ import sys
 
 from Bio import SeqIO
 
-from cortexpy.graph import ContigRetriever, parser as g_parser, traversal
+from cortexpy.graph import ContigRetriever, parser as g_parser, traversal, interactor
 from cortexpy.graph.parser.streaming import kmer_generator_from_stream
 from cortexpy.graph.serializer import Serializer
 
 logger = logging.getLogger('cortexpy.view')
 
 
-class ViewContigChoice(Enum):
+class ViewContigOutputFormat(Enum):
     term = 0
     json = 1
 
 
-class ViewTraversalChoice(Enum):
+class ViewTraversalOutputFormat(Enum):
     json = 1
     fasta = 2
+
+
+class ViewTraversalOutputType(Enum):
+    kmers = 0
+    contigs = 1
 
 
 class ArgparseError(ValueError):
@@ -49,8 +54,8 @@ def add_subparser_to(subparsers):
     contig_parser.set_defaults(func=view_contig)
 
     contig_parser.add_argument('contig', help='Contig to retrieve records for')
-    contig_parser.add_argument('--output-type', default='term',
-                               choices=[v.name for v in ViewContigChoice])
+    contig_parser.add_argument('--output-format', default='term',
+                               choices=[v.name for v in ViewContigOutputFormat])
 
     traversal.add_arguments()
 
@@ -68,13 +73,14 @@ class ViewTraversal(object):
         parser = self.parser
         parser.set_defaults(func=view_traversal)
         parser.add_argument('initial_contig',
-                            help='Start traversal from every kmer in this contig')
+                            help='Start traversal from this kmer (contig to be added)')
         parser.add_argument('--orientation', default='both',
                             choices=[o.name for o in traversal.EngineTraversalOrientation])
         parser.add_argument('--color', default=0, type=int)
         parser.add_argument('--max-nodes', default=1000, type=int)
-        parser.add_argument('--output-type', default='term',
-                            choices=[v.name for v in ViewTraversalChoice])
+        parser.add_argument('--output-type', default=ViewTraversalOutputType.kmers.name)
+        parser.add_argument('--output-format', default=ViewTraversalOutputFormat.fasta.name,
+                            choices=[v.name for v in ViewTraversalOutputFormat])
 
 
 def get_file_handle(graph):
@@ -87,11 +93,11 @@ def view_graph(args):
 
 def view_contig(args):
     contig_retriever = ContigRetriever(get_file_handle(args.graph))
-    if args.output_type == ViewContigChoice.term.name:
+    if args.output_format == ViewContigOutputFormat.term.name:
         print_contig(contig_retriever, args.contig)
     else:
         serializer = Serializer(contig_retriever.get_kmer_graph(args.contig))
-        if args.output_type == ViewContigChoice.json.name:
+        if args.output_format == ViewContigOutputFormat.json.name:
             print(serializer.to_json())
         else:
             raise ArgparseError
@@ -105,12 +111,18 @@ def view_traversal(args):
         max_nodes=args.max_nodes,
     )
     graph = traverser.traverse_from_each_kmer_in(args.initial_contig)
-    if args.output_type == ViewTraversalChoice.json.name:
-        serializer = Serializer(graph, annotate_graph_edges=True)
+    serializer = Serializer(graph)
+    if args.output_format == ViewTraversalOutputFormat.json.name:
+        serializer.annotate_graph_edges = True
         print(serializer.to_json())
-    elif args.output_type == ViewTraversalChoice.fasta.name:
-        serializer = Serializer(graph, annotate_graph_edges=False, collapse_unitigs=False)
-        SeqIO.write(serializer.to_seq_records(), sys.stdout, 'fasta')
+    elif args.output_format == ViewTraversalOutputFormat.fasta.name:
+        serializer.annotate_graph_edges = False
+        serializer.collapse_unitigs = False
+        if args.output_type == ViewTraversalOutputType.contigs.name:
+            seq_record_generator = interactor.Contigs(graph, args.color).all_simple_paths()
+        else:
+            seq_record_generator = serializer.to_seq_records()
+        SeqIO.write(seq_record_generator, sys.stdout, 'fasta')
 
 
 def print_cortex_file(graph_handle):
