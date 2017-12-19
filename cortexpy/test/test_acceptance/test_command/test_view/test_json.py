@@ -232,7 +232,7 @@ class TestTraversal(object):
             expect.has_repr_edge('AAACC', 'GAA', 0)
             expect.has_n_edges(3)
 
-    def test_with_peripheral_edges_creates_unitigs_(self, tmpdir):
+    def test_with_peripheral_edges_creates_unitigs(self, tmpdir):
         # given
         record1 = 'AAACCCGAA'
         record2 = 'ACCG'
@@ -270,3 +270,28 @@ class TestTraversal(object):
         expect.has_repr_edge('AAACC', 'GAA', 0)
         expect.has_repr_edge('GAA', 'G', 1)
         expect.has_n_edges(6)
+
+    def test_with_non_matching_start_string_returns_empty_json(self, tmpdir):
+        # given
+        record1 = 'AAACCCGAA'
+        retrieval_contig = 'GCGC'
+        kmer_size = 3
+
+        output_graph = (builder.Mccortex()
+                        .with_dna_sequence(record1)
+                        .with_kmer_size(kmer_size)
+                        .build(tmpdir))
+        runner.Mccortex(kmer_size).view(output_graph)
+
+        # when
+        completed_process = (runner
+                             .Cortexpy(SPAWN_PROCESS)
+                             .view_traversal(contig=retrieval_contig, graph=output_graph, color=0))
+
+        # then
+        expect_zero_return_code(completed_process)
+
+        stdout = completed_process.stdout
+        expect = JsonGraphExpectation(json.loads(stdout))
+
+        expect.has_n_nodes(0)

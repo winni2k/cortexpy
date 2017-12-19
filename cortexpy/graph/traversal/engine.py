@@ -38,8 +38,12 @@ class Engine(object):
     queuer = attr.ib(init=False)
     branch_traverser = attr.ib(init=False)
 
+    def __attrs_post_init__(self):
+        self._add_graph_metadata()
+
     def clear(self):
         self.graph.clear()
+        self.__attrs_post_init__()
 
     def traverse_from_each_kmer_in(self, contig):
         kmer_size = self.ra_parser.header.kmer_size
@@ -65,7 +69,6 @@ class Engine(object):
         if len(self.graph) > self.max_nodes:
             logger.warning(
                 "Max nodes ({}) exceeded: {} nodes found".format(self.max_nodes, len(self.graph)))
-        self._add_graph_metadata()
         return self
 
     def _add_graph_metadata(self):
