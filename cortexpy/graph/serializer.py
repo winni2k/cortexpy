@@ -43,7 +43,10 @@ class Serializer(object):
 
     def to_seq_records(self):
         self._preprocess_graph()
-        return (SeqRecord(Seq(str(node))) for node in self.graph.nodes())
+        return (
+            SeqRecord(Seq(str(node)), id=str(node_idx)) for node_idx, node in
+            enumerate(self.graph.nodes())
+        )
 
     def to_graph_with_annotated_edges(self):
         new_graph = self.graph.copy()
