@@ -22,7 +22,7 @@ class TestTraverseFrom(object):
         )
 
         # when
-        expect = KmerGraphExpectation(traverser.traverse_from('ACA'))
+        expect = KmerGraphExpectation(traverser.traverse_from('ACA').graph)
 
         # then
         expect.has_node('AAA').has_coverages(2, 1)

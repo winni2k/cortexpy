@@ -6,6 +6,7 @@ from hypothesis import strategies as s
 import cortexpy.graph.parser
 import cortexpy.test.builder as builder
 import cortexpy.test.expectation as expectation
+from cortexpy.graph import traversal
 from cortexpy.graph.traversal.engine import EngineTraversalOrientation
 
 
@@ -13,8 +14,10 @@ from cortexpy.graph.traversal.engine import EngineTraversalOrientation
 class EngineTestDriver(object):
     graph_builder = attr.ib(attr.Factory(builder.Graph))
     start_kmer_string = attr.ib(None)
+    start_string = attr.ib(None)
     max_nodes = attr.ib(1000)
     traversal_orientation = attr.ib(EngineTraversalOrientation.original)
+    traverser = attr.ib(None)
 
     def with_kmer(self, *args):
         self.graph_builder.with_kmer(*args)
@@ -32,6 +35,10 @@ class EngineTestDriver(object):
         self.start_kmer_string = start_kmer_string
         return self
 
+    def with_start_string(self, start_string):
+        self.start_string = start_string
+        return self
+
     def with_max_nodes(self, max_nodes):
         self.max_nodes = max_nodes
         return self
@@ -42,12 +49,15 @@ class EngineTestDriver(object):
 
     def run(self):
         random_access_parser = cortexpy.graph.parser.RandomAccess(self.graph_builder.build())
-        graph = (cortexpy.graph.traversal
-                 .Engine(random_access_parser,
-                         max_nodes=self.max_nodes,
-                         orientation=self.traversal_orientation)
-                 .traverse_from(self.start_kmer_string))
-        return expectation.graph.KmerGraphExpectation(graph)
+        self.traverser = traversal.Engine(random_access_parser,
+                                          max_nodes=self.max_nodes,
+                                          orientation=self.traversal_orientation)
+        assert (self.start_string is None) != (self.start_kmer_string is None)
+        if self.start_string:
+            self.traverser.traverse_from_each_kmer_in(self.start_string)
+        else:
+            self.traverser.traverse_from(self.start_kmer_string)
+        return expectation.graph.KmerGraphExpectation(self.traverser.graph)
 
 
 class Test(object):
@@ -60,6 +70,8 @@ class Test(object):
         # when/then
         with pytest.raises(KeyError):
             driver.run()
+
+        assert len(driver.traverser.graph) == 0
 
     def test_three_connected_kmers_returns_graph_with_three_kmers(self):
         # given
@@ -263,7 +275,7 @@ class TestReverseOrientation(object):
 
 
 class TestBothOrientation(object):
-    @given(s.sampled_from(('CAA', 'AAA', 'AAT', 'ATA', 'TAA')))
+    @given(s.sampled_from(('CCA', 'CAA', 'AAA', 'AAT', 'ATA', 'TAA')))
     def test_cycle_and_branch_are_traversed_once(self, start_kmer_string):
         # given
         driver = (EngineTestDriver()
@@ -323,6 +335,46 @@ class TestBothOrientation(object):
                     'GAA AAA 1',
                     'AAA AAT 0',
                     'AAA AAC 0'))
+
+
+class TestTraverseFromEachKmerIn(object):
+    def test_does_not_raise_on_empty(self):
+        # given
+        driver = (EngineTestDriver()
+                  .with_kmer_size(3)
+                  .with_start_string('AAA'))
+
+        # when/then
+        driver.run()
+
+        assert len(driver.traverser.graph) == 0
+
+    def test_cycle_and_branch_are_traversed_once(self):
+        # given
+        start_string = 'CCAAATAA'
+        driver = (EngineTestDriver()
+                  .with_kmer_size(3)
+                  .with_kmer('CCA', 0, '....A...')
+                  .with_kmer('CAA', 0, '.c..A...')
+                  .with_kmer('AAA', 0, '.c.t...T')
+                  .with_kmer('AAT', 0, 'a...A...')
+                  .with_kmer('ATA', 0, 'a...A...')
+                  .with_kmer('TAA', 0, 'a...A...')
+                  .with_traversal_orientation('both')
+                  .with_start_string(start_string))
+
+        # when
+        expect = driver.run()
+
+        # then
+        (expect
+         .has_nodes('CCA', 'CAA', 'AAA', 'AAT', 'ATA', 'TAA')
+         .has_edges(('CCA', 'CAA', 0),
+                    ('CAA', 'AAA', 0),
+                    ('AAA', 'AAT', 0),
+                    ('AAT', 'ATA', 0),
+                    ('ATA', 'TAA', 0),
+                    ('TAA', 'AAA', 0)))
 
 
 class TestMaxNodes(object):

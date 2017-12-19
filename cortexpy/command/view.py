@@ -71,9 +71,9 @@ class ViewTraversal(object):
 
     def add_arguments(self):
         parser = self.parser
-        parser.set_defaults(func=view_traversal)
+        parser.set_defaults(func=self.run)
         parser.add_argument('initial_contig',
-                            help='Start traversal from this kmer (contig to be added)')
+                            help='Start traversal from each kmer in contig')
         parser.add_argument('--orientation', default='both',
                             choices=[o.name for o in traversal.EngineTraversalOrientation])
         parser.add_argument('--color', default=0, type=int)
@@ -82,6 +82,27 @@ class ViewTraversal(object):
                             choices=[v.name for v in ViewTraversalOutputType])
         parser.add_argument('--output-format', default=ViewTraversalOutputFormat.fasta.name,
                             choices=[v.name for v in ViewTraversalOutputFormat])
+
+    @classmethod
+    def run(cls, args):
+        graph = traversal.Engine(
+            g_parser.RandomAccess(get_file_handle(args.graph)),
+            color=args.color,
+            orientation=traversal.EngineTraversalOrientation[args.orientation],
+            max_nodes=args.max_nodes,
+        ).traverse_from_each_kmer_in(args.initial_contig).graph
+        serializer = Serializer(graph)
+        if args.output_format == ViewTraversalOutputFormat.json.name:
+            serializer.annotate_graph_edges = True
+            print(serializer.to_json())
+        elif args.output_format == ViewTraversalOutputFormat.fasta.name:
+            serializer.annotate_graph_edges = False
+            serializer.collapse_unitigs = False
+            if args.output_type == ViewTraversalOutputType.contigs.name:
+                seq_record_generator = interactor.Contigs(graph, args.color).all_simple_paths()
+            else:
+                seq_record_generator = serializer.to_seq_records()
+            SeqIO.write(seq_record_generator, sys.stdout, 'fasta')
 
 
 def get_file_handle(graph):
@@ -102,28 +123,6 @@ def view_contig(args):
             print(serializer.to_json())
         else:
             raise ArgparseError
-
-
-def view_traversal(args):
-    traverser = traversal.Engine(
-        g_parser.RandomAccess(get_file_handle(args.graph)),
-        color=args.color,
-        orientation=traversal.EngineTraversalOrientation[args.orientation],
-        max_nodes=args.max_nodes,
-    )
-    graph = traverser.traverse_from_each_kmer_in(args.initial_contig)
-    serializer = Serializer(graph)
-    if args.output_format == ViewTraversalOutputFormat.json.name:
-        serializer.annotate_graph_edges = True
-        print(serializer.to_json())
-    elif args.output_format == ViewTraversalOutputFormat.fasta.name:
-        serializer.annotate_graph_edges = False
-        serializer.collapse_unitigs = False
-        if args.output_type == ViewTraversalOutputType.contigs.name:
-            seq_record_generator = interactor.Contigs(graph, args.color).all_simple_paths()
-        else:
-            seq_record_generator = serializer.to_seq_records()
-        SeqIO.write(seq_record_generator, sys.stdout, 'fasta')
 
 
 def print_cortex_file(graph_handle):

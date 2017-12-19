@@ -8,6 +8,9 @@ from cortexpy import graph
 from .branch import Branch
 from cortexpy.graph.serializer import SERIALIZER_GRAPH
 from cortexpy.graph.constants import EdgeTraversalOrientation
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @attr.s(slots=True)
@@ -31,29 +34,39 @@ class Engine(object):
     orientation = attr.ib(EngineTraversalOrientation.original)
     max_nodes = attr.ib(1000)
     branch_queue = attr.ib(attr.Factory(collections.deque))
-    graph = attr.ib(init=False)
+    graph = attr.ib(attr.Factory(SERIALIZER_GRAPH))
     queuer = attr.ib(init=False)
     branch_traverser = attr.ib(init=False)
+
+    def clear(self):
+        self.graph.clear()
 
     def traverse_from_each_kmer_in(self, contig):
         kmer_size = self.ra_parser.header.kmer_size
         assert len(contig) >= kmer_size
-        graph = SERIALIZER_GRAPH()
         for start in range(len(contig) - kmer_size + 1):
-            graph = nx.compose(graph, self.traverse_from(contig[start:(start + kmer_size)]))
-        return graph
+            try:
+                self.graph = nx.compose(
+                    self.graph,
+                    self.traverse_from(contig[start:(start + kmer_size)]).graph
+                )
+            except KeyError:
+                pass
+        return self
 
     def traverse_from(self, start_string):
         assert len(start_string) == self.ra_parser.header.kmer_size
-        self.graph = SERIALIZER_GRAPH()
         self.branch_traverser = Branch(self.ra_parser, self.color)
         self.queuer = BranchQueuer(self.branch_queue, self.orientation)
 
         self._process_initial_branch(start_string)
         while 0 < len(self.branch_queue) and len(self.graph) < self.max_nodes:
             self._traverse_a_branch_from_queue()
+        if len(self.graph) > self.max_nodes:
+            logger.warning(
+                "Max nodes ({}) exceeded: {} nodes found".format(self.max_nodes, len(self.graph)))
         self._add_graph_metadata()
-        return self.graph
+        return self
 
     def _add_graph_metadata(self):
         self.graph.graph['colors'] = self.ra_parser.header.colors

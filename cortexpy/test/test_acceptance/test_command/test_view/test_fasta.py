@@ -127,3 +127,23 @@ class TestContigs(object):
         for record in expected_records:
             expect.has_record(record)
         expect.has_n_records(2)
+
+    def test_outputs_warning_on_max_nodes_succeeded(self, tmpdir):
+        # given
+        records = [
+            'CAACC',
+        ]
+        kmer_size = 3
+        maker = builder.Mccortex().with_kmer_size(kmer_size)
+        for rec in records:
+            maker.with_dna_sequence(rec)
+
+        output_graph = maker.build(tmpdir)
+
+        # when
+        stderr = (runner
+                  .Cortexpy(True)
+                  .view_traversal(graph=output_graph, contig='CAA', max_nodes=1)).stderr
+
+        # then
+        assert 'Max nodes (1) exceeded: 3 nodes found' in stderr

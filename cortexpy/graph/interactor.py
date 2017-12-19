@@ -23,6 +23,9 @@ class Interactor(object):
 
 
 def make_copy_of_color(graph, color, include_self_refs=False):
+    """Makes a copy of graph, but only copies over links with key=color.
+    Only copies over nodes that are linked by a link with key=color.
+    """
     out_graph = graph.fresh_copy()
     for u, v, key, data in graph.edges(keys=True, data=True):
         if key == color:

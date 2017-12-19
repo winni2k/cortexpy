@@ -53,14 +53,15 @@ class Cortexpy(object):
         return self.run(['view', 'contig', graph, contig] + run_args)
 
     def view_traversal(self, contig, graph, output_format='json', output_type='kmers',
-                       orientation='both', color=0):
-        return self.run(
-            ['view', 'traversal',
-             graph, contig,
-             '--output-format', output_format,
-             '--color', str(color),
-             '--output-type', output_type]
-        )
+                       orientation='both', color=0, max_nodes=None):
+        command = ['view', 'traversal',
+                   graph, contig,
+                   '--output-format', output_format,
+                   '--color', str(color),
+                   '--output-type', output_type]
+        if max_nodes is not None:
+            command.extend(['--max-nodes', str(max_nodes)])
+        return self.run(command)
 
     def run(self, args):
         logger.info('Running with args: {}'.format(args))
