@@ -30,11 +30,10 @@ class Test(object):
         # then
         assert completed_process.returncode == 0, completed_process
         expect = expectation.Fasta(stdout)
-        (expect
-         .has_record('ATT')
-         .has_record('TTC')
-         .has_record('TCC')
-         .has_n_records(3))
+        expect.has_record('ATT')
+        expect.has_record('TTC')
+        expect.has_record('TCC')
+        expect.has_n_records(3)
 
 
 class TestContigs(object):
@@ -45,6 +44,7 @@ class TestContigs(object):
             'AAACA',
             'AAACT',
         ]
+        n_paths = 6
         kmer_size = 3
         maker = builder.Mccortex().with_kmer_size(kmer_size)
         for rec in records:
@@ -62,11 +62,12 @@ class TestContigs(object):
         # then
         assert completed_process.returncode == 0, completed_process
         expect = expectation.Fasta(stdout)
+        ids = list(range(n_paths))
         for record in records:
-            expect.has_record(record)
-        expect.has_record('CAACT')
-        expect.has_record('CAACA')
-        expect.has_record('AAACC')
+            expect.has_record(record).has_id_in(*ids)
+        expect.has_record('CAACT').has_id_in(*ids)
+        expect.has_record('CAACA').has_id_in(*ids)
+        expect.has_record('AAACC').has_id_in(*ids)
         expect.has_n_records(6)
 
     def test_outputs_contigs_for_bubble(self, tmpdir):

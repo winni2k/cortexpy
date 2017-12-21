@@ -6,6 +6,16 @@ import attr
 
 
 @attr.s(slots=True)
+class BioSeqRecord(object):
+    record = attr.ib()
+
+    def has_id_in(self, *ids):
+        ids = {str(val) for val in ids}
+        assert self.record.id in ids
+        return self
+
+
+@attr.s(slots=True)
 class Fasta(object):
     fasta_string = attr.ib()
     fasta_records = attr.ib(init=False)
@@ -19,6 +29,7 @@ class Fasta(object):
         assert len(self.fasta_records) == n
         return self
 
-    def has_record(self, record):
-        assert next((rec for rec in self.fasta_records if rec.seq == record), None).seq == record
-        return self
+    def has_record(self, expected_record_seq):
+        record = next((rec for rec in self.fasta_records if rec.seq == expected_record_seq), None)
+        assert record.seq == expected_record_seq
+        return BioSeqRecord(record)

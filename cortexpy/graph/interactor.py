@@ -3,6 +3,7 @@ import networkx as nx
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -55,6 +56,7 @@ class Contigs(object):
     def all_simple_paths(self):
         graph = make_copy_of_color(self.graph, self.color, include_self_refs=False)
         logger.info(graph.nodes)
+        idx = 0
         for source in graph.nodes():
             if graph.in_degree(source) > 0:
                 continue
@@ -62,4 +64,6 @@ class Contigs(object):
                 if source == target or graph.out_degree(target) != 0:
                     continue
                 for path in nx.all_simple_paths(graph, source=source, target=target):
-                    yield SeqRecord(Seq(convert_kmer_path_to_contig(path)))
+                    yield SeqRecord(Seq(convert_kmer_path_to_contig(path)), id=str(idx),
+                                    description='')
+                    idx += 1
