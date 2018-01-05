@@ -2,7 +2,7 @@ import attr
 
 from cortexpy import graph
 from cortexpy.graph.serializer import SERIALIZER_GRAPH
-from cortexpy.graph.constants import EdgeTraversalOrientation
+from cortexpy.constants import EdgeTraversalOrientation
 
 
 class KmerStringAlreadySeen(Exception):

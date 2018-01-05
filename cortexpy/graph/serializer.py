@@ -7,7 +7,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from networkx.readwrite import json_graph
 
-from cortexpy.graph.constants import EdgeTraversalOrientation
+from cortexpy.constants import EdgeTraversalOrientation
 from cortexpy.graph.parser.kmer import EmptyKmerBuilder
 
 SERIALIZER_GRAPH = nx.MultiDiGraph

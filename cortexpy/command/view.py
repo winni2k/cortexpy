@@ -1,15 +1,27 @@
+"""
+Usage:
+  cortexpy view graph <graph> [--help]
+  cortexpy view contig <graph> <contig> [--help] [--output-format=<format>]
+  cortexpy view traversal <graph> <initial_contig> [options] [--output-format=<format>]
+
+Options:
+    -h, --help                    Display this help message.
+    --orientation <orientation>   Traversal orientation [default: both].
+    --color <color>               Color to traverse [default: 0].
+    --max-nodes <n>               Maximum number of nodes to traverse [default: 1000].
+    --output-type <type>          Output type [default: kmers].
+    --output-format <format>      Output format [default: term].
+
+Subcommands:
+    graph       Print all kmers in a cortex graph
+    contig      Retrieve all kmers in a contig from a cortex graph
+    traversal   Traverse a cortex graph starting from each kmer in an initial_contig
+                and return the subgraph
+"""
+from docopt import docopt
 from enum import Enum
-
 import logging
-
 import attr
-import sys
-
-from Bio import SeqIO
-
-from cortexpy.graph import ContigRetriever, parser as g_parser, traversal, interactor
-from cortexpy.graph.parser.streaming import kmer_generator_from_stream
-from cortexpy.graph.serializer import Serializer
 
 logger = logging.getLogger('cortexpy.view')
 
@@ -34,30 +46,18 @@ class ArgparseError(ValueError):
     pass
 
 
-def add_subparser_to(subparsers):
-    parent_parser = subparsers.add_parser('view', help='Display a subset of a Cortex graph')
-    subparsers = parent_parser.add_subparsers()
-    child_parsers = []
+def view(argv):
+    from cortexpy import VERSION_STRING
 
-    graph_parser = subparsers.add_parser('graph', help='List graph records')
-    contig_parser = subparsers.add_parser('contig', help='Display a contig from a Cortex graph')
-    traversal = ViewTraversal(subparsers)
-
-    child_parsers.append(graph_parser)
-    child_parsers.append(contig_parser)
-    child_parsers.append(traversal.parser)
-
-    for parser in child_parsers:
-        parser.add_argument('graph', help='Input Cortex graph')
-
-    graph_parser.set_defaults(func=view_graph)
-    contig_parser.set_defaults(func=view_contig)
-
-    contig_parser.add_argument('contig', help='Contig to retrieve records for')
-    contig_parser.add_argument('--output-format', default='term',
-                               choices=[v.name for v in ViewContigOutputFormat])
-
-    traversal.add_arguments()
+    args = docopt(__doc__, argv=argv, version=VERSION_STRING)
+    if args['graph']:
+        view_graph(args)
+    elif args['contig']:
+        view_contig(args)
+    elif args['traversal']:
+        ViewTraversal.run(args)
+    else:
+        raise ArgparseError
 
 
 @attr.s(slots=True)
@@ -69,37 +69,45 @@ class ViewTraversal(object):
         self.parser = self.subparsers.add_parser('traversal',
                                                  help='Display a Cortex graph traversal')
 
-    def add_arguments(self):
-        parser = self.parser
-        parser.set_defaults(func=self.run)
-        parser.add_argument('initial_contig',
-                            help='Start traversal from each kmer in contig')
-        parser.add_argument('--orientation', default='both',
-                            choices=[o.name for o in traversal.EngineTraversalOrientation])
-        parser.add_argument('--color', default=0, type=int)
-        parser.add_argument('--max-nodes', default=1000, type=int)
-        parser.add_argument('--output-type', default=ViewTraversalOutputType.kmers.name,
-                            choices=[v.name for v in ViewTraversalOutputType])
-        parser.add_argument('--output-format', default=ViewTraversalOutputFormat.fasta.name,
-                            choices=[v.name for v in ViewTraversalOutputFormat])
+    @classmethod
+    def validate(cls, args):
+        from cortexpy.graph import traversal
+        from schema import Schema, Use
+
+        schema = Schema({
+            '--orientation': lambda x: x in traversal.EngineTraversalOrientation.__members__.keys(),
+            '--color': Use(int),
+            '--max-nodes': Use(int),
+            '--output-type': lambda x: x in ViewTraversalOutputType.__members__.keys(),
+            '--output-format': lambda x: x in ViewTraversalOutputFormat.__members__.keys(),
+            str: object,
+        })
+        return schema.validate(args)
 
     @classmethod
     def run(cls, args):
+        from Bio import SeqIO
+        import sys
+        from cortexpy.graph import parser as g_parser, traversal, interactor
+        from cortexpy.graph.serializer import Serializer
+
+        args = cls.validate(args)
         graph = traversal.Engine(
-            g_parser.RandomAccess(get_file_handle(args.graph)),
-            color=args.color,
-            orientation=traversal.EngineTraversalOrientation[args.orientation],
-            max_nodes=args.max_nodes,
-        ).traverse_from_each_kmer_in(args.initial_contig).graph
+            g_parser.RandomAccess(get_file_handle(args['<graph>'])),
+            color=int(args['--color']),
+            orientation=traversal.EngineTraversalOrientation[args['--orientation']],
+            max_nodes=int(args['--max-nodes']),
+        ).traverse_from_each_kmer_in(args['<initial_contig>']).graph
         serializer = Serializer(graph)
-        if args.output_format == ViewTraversalOutputFormat.json.name:
+        if args['--output-format'] == ViewTraversalOutputFormat.json.name:
             serializer.annotate_graph_edges = True
             print(serializer.to_json())
-        elif args.output_format == ViewTraversalOutputFormat.fasta.name:
+        elif args['--output-format'] == ViewTraversalOutputFormat.fasta.name:
             serializer.annotate_graph_edges = False
             serializer.collapse_unitigs = False
-            if args.output_type == ViewTraversalOutputType.contigs.name:
-                seq_record_generator = interactor.Contigs(graph, args.color).all_simple_paths()
+            if args['--output-type'] == ViewTraversalOutputType.contigs.name:
+                seq_record_generator = interactor.Contigs(graph,
+                                                          int(args['--color'])).all_simple_paths()
             else:
                 seq_record_generator = serializer.to_seq_records()
             SeqIO.write(seq_record_generator, sys.stdout, 'fasta')
@@ -110,22 +118,26 @@ def get_file_handle(graph):
 
 
 def view_graph(args):
-    print_cortex_file(get_file_handle(args.graph))
+    print_cortex_file(get_file_handle(args['<graph>']))
 
 
 def view_contig(args):
-    contig_retriever = ContigRetriever(get_file_handle(args.graph))
-    if args.output_format == ViewContigOutputFormat.term.name:
-        print_contig(contig_retriever, args.contig)
+    from cortexpy.graph import ContigRetriever
+    from cortexpy.graph.serializer import Serializer
+
+    contig_retriever = ContigRetriever(get_file_handle(args['<graph>']))
+    if args['--output-format'] == ViewContigOutputFormat.term.name:
+        print_contig(contig_retriever, args['<contig>'])
+    elif args['--output-format'] == ViewContigOutputFormat.json.name:
+        serializer = Serializer(contig_retriever.get_kmer_graph(args['<contig>']))
+        print(serializer.to_json())
     else:
-        serializer = Serializer(contig_retriever.get_kmer_graph(args.contig))
-        if args.output_format == ViewContigOutputFormat.json.name:
-            print(serializer.to_json())
-        else:
-            raise ArgparseError
+        raise ArgparseError
 
 
 def print_cortex_file(graph_handle):
+    from cortexpy.graph.parser.streaming import kmer_generator_from_stream
+
     for kmer in kmer_generator_from_stream(graph_handle):
         print(kmer_to_cortex_jdk_print_string(kmer))
 

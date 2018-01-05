@@ -1,1 +1,2 @@
-__version__ = '0.0.14.dev0'
+__version__ = '0.0.15'
+VERSION_STRING = 'cortexpy version {}'.format(__version__)

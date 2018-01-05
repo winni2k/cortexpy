@@ -5,7 +5,7 @@ from hypothesis import given, strategies as s
 import cortexpy.graph.parser
 import cortexpy.test.builder as builder
 import cortexpy.test.expectation as expectation
-from cortexpy.graph.constants import EdgeTraversalOrientation
+from cortexpy.constants import EdgeTraversalOrientation
 
 
 @attr.s(slots=True)

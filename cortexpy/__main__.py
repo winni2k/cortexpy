@@ -1,24 +1,42 @@
-import argparse
-import sys
+"""
+Usage: cortexpy [--help] <command> [<args>...]
 
-import cortexpy
-import cortexpy.command.view as view
+Options:
+   -h, --help  Display this help message
+
+Allowed cortexpy commands are:
+   view       View a cortex graph
+
+See 'cortexpy <command>' for more information on a specific command.
+
+"""
+import sys
+from docopt import docopt
+from schema import SchemaError
+
+from cortexpy import VERSION_STRING
+
+
+def main_without_argv():
+    return main(sys.argv[1:])
 
 
 def main(argv):
-    parser = argparse.ArgumentParser(prog='cortexpy',
-                                     description='version {}'.format(cortexpy.__version__))
+    args = docopt(__doc__, argv=argv, version=VERSION_STRING, options_first=True)
 
-    # Copied from https://stackoverflow.com/a/26217957/528691
-    subparsers = parser.add_subparsers()
-    view.add_subparser_to(subparsers)
-
-    args = parser.parse_args(argv)
-    if getattr(args, 'func', False):
-        args.func(args)
+    argv = [args['<command>']] + args['<args>']
+    if args['<command>'] == 'view':
+        import cortexpy.command.view
+        try:
+            cortexpy.command.view.view(argv)
+        except SchemaError as e:
+            print(e)
+            return e
     else:
-        parser.print_help()
+        print("'{}' is not a cortexpy command. See 'cortexpy --help'.".format(args['<command>']))
+        return 1
+    return 0
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    exit(main_without_argv())

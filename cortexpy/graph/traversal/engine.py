@@ -7,7 +7,7 @@ import networkx as nx
 from cortexpy import graph
 from .branch import Branch
 from cortexpy.graph.serializer import SERIALIZER_GRAPH
-from cortexpy.graph.constants import EdgeTraversalOrientation
+from cortexpy.constants import EdgeTraversalOrientation
 import logging
 
 logger = logging.getLogger(__name__)

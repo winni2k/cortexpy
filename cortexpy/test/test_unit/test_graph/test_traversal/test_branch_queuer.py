@@ -2,7 +2,7 @@ import attr
 from hypothesis import given, strategies as s
 
 from cortexpy.graph.serializer import SERIALIZER_GRAPH
-from cortexpy.graph.constants import EdgeTraversalOrientation
+from cortexpy.constants import EdgeTraversalOrientation
 from cortexpy.graph.traversal.branch import TraversedBranch
 from cortexpy.graph.traversal.engine import BranchQueuer, \
     EngineTraversalOrientation

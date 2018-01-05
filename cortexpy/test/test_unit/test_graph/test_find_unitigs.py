@@ -4,7 +4,7 @@ import networkx as nx
 from hypothesis import given, settings
 from hypothesis import strategies as s
 
-from cortexpy.graph.constants import EdgeTraversalOrientation
+from cortexpy.constants import EdgeTraversalOrientation
 from cortexpy.test.builder.graph.networkx import add_kmers_to_graph
 from cortexpy.test.driver.graph.find_unitigs import FindUnitigsTestDriver
 

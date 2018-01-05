@@ -3,8 +3,8 @@ from collections import defaultdict
 import attr
 import networkx as nx
 
-from cortexpy.graph import parser as parser
-from cortexpy.graph.parser.kmer import EmptyKmerBuilder, flip_kmer_string_to_match
+from . import parser as parser
+from .parser.kmer import EmptyKmerBuilder, flip_kmer_string_to_match
 
 RETRIEVED_CONTIG_NAME = 'retrieved_contig'
 
