@@ -15,16 +15,16 @@ class Test(object):
         # given
         record = 'ATTCC'
         kmer_size = 3
-        output_graph = (builder.Mccortex()
-                        .with_dna_sequence(record)
-                        .with_kmer_size(kmer_size)
-                        .build(tmpdir))
+        output_graph = builder.Mccortex() \
+            .with_dna_sequence(record) \
+            .with_kmer_size(kmer_size) \
+            .build(tmpdir)
 
         # when
-        completed_process = (runner
-                             .Cortexpy(SPAWN_PROCESS)
-                             .view_traversal(output_format='fasta', graph=output_graph,
-                                             contig=record))
+        completed_process = (
+            runner.Cortexpy(SPAWN_PROCESS).view_traversal(output_format='fasta', graph=output_graph,
+                                                          contig=record)
+        )
         stdout = completed_process.stdout
 
         # then
@@ -53,10 +53,10 @@ class TestContigs(object):
         output_graph = maker.build(tmpdir)
 
         # when
-        completed_process = (runner
-                             .Cortexpy(SPAWN_PROCESS)
-                             .view_traversal(output_format='fasta', graph=output_graph,
-                                             contig='AAA', output_type='contigs'))
+        completed_process = (
+            runner.Cortexpy(SPAWN_PROCESS).view_traversal(output_format='fasta', graph=output_graph,
+                                                          contig='AAA', output_type='contigs')
+        )
         stdout = completed_process.stdout
 
         # then
@@ -84,10 +84,10 @@ class TestContigs(object):
         output_graph = maker.build(tmpdir)
 
         # when
-        completed_process = (runner
-                             .Cortexpy(SPAWN_PROCESS)
-                             .view_traversal(output_format='fasta', graph=output_graph,
-                                             contig='AAA', output_type='contigs'))
+        completed_process = (
+            runner.Cortexpy(SPAWN_PROCESS).view_traversal(output_format='fasta', graph=output_graph,
+                                                          contig='AAA', output_type='contigs')
+        )
         stdout = completed_process.stdout
 
         # then
@@ -114,12 +114,11 @@ class TestContigs(object):
         output_graph = maker.build(tmpdir)
 
         # when
-        completed_process = \
-            (runner.Cortexpy(SPAWN_PROCESS)
-             .view_traversal(output_format='fasta', graph=output_graph,
-                             contig='CAAAAAATGTTGGAGAGGTATCAAAAGTATTCACAAGAAAGTGACAT',
-                             output_type='contigs')
-             )
+        completed_process = runner.Cortexpy(SPAWN_PROCESS) \
+            .view_traversal(output_format='fasta',
+                            graph=output_graph,
+                            contig='CAAAAAATGTTGGAGAGGTATCAAAAGTATTCACAAGAAAGTGACAT',
+                            output_type='contigs')
         stdout = completed_process.stdout
 
         # then
@@ -131,9 +130,8 @@ class TestContigs(object):
 
     def test_outputs_warning_on_max_nodes_succeeded(self, tmpdir):
         # given
-        records = [
-            'CAACC',
-        ]
+        query = 'CAA'
+        records = ['CAACC']
         kmer_size = 3
         maker = builder.Mccortex().with_kmer_size(kmer_size)
         for rec in records:
@@ -142,9 +140,30 @@ class TestContigs(object):
         output_graph = maker.build(tmpdir)
 
         # when
-        stderr = (runner
-                  .Cortexpy(True)
-                  .view_traversal(graph=output_graph, contig='CAA', max_nodes=1)).stderr
+        stderr = (
+            runner.Cortexpy(True).view_traversal(graph=output_graph, contig=query,
+                                                 max_nodes=1).stderr
+        )
 
         # then
         assert 'Max nodes (1) exceeded: 3 nodes found' in stderr
+
+    def test_outputs_warning_with_kmer(self, tmpdir):
+        # given
+        query = 'CAACC'
+        records = [query]
+        kmer_size = 3
+        maker = builder.Mccortex().with_kmer_size(kmer_size)
+        for rec in records:
+            maker.with_dna_sequence(rec)
+
+        output_graph = maker.build(tmpdir)
+
+        # when
+        stderr = (
+            runner.Cortexpy(True).view_traversal(graph=output_graph, contig=query, max_nodes=1)
+        ).stderr
+
+        # then
+        assert ('Terminating contig traversal after kmer CAA'
+                ' because max node limit is reached') in stderr

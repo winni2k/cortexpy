@@ -49,16 +49,17 @@ class Engine(object):
         kmer_size = self.ra_parser.header.kmer_size
         assert len(contig) >= kmer_size
         for start in range(len(contig) - kmer_size + 1):
+            start_kmer = contig[start:(start + kmer_size)]
             try:
                 self.graph = nx.compose(
                     self.graph,
-                    self.traverse_from(contig[start:(start + kmer_size)]).graph
+                    self.traverse_from(start_kmer).graph
                 )
             except KeyError:
                 pass
             if len(self.graph) > self.max_nodes:
                 logger.warning(("Terminating contig traversal after kmer {}"
-                                " because max node limit is reached").format(start))
+                                " because max node limit is reached").format(start_kmer))
                 break
         return self
 
