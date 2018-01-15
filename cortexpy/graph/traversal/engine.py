@@ -56,6 +56,10 @@ class Engine(object):
                 )
             except KeyError:
                 pass
+            if len(self.graph) > self.max_nodes:
+                logger.warning(("Terminating contig traversal after kmer {}"
+                                " because max node limit is reached").format(start))
+                break
         return self
 
     def traverse_from(self, start_string):
