@@ -29,6 +29,10 @@ class JsonNodeExpectation(object):
     node = attr.ib()
     n_colors = attr.ib(None)
 
+    def has_coverages_by_color(self, *coverages):
+        coverages = list(listify_elements(coverages))  # allow integers as input
+        return self.has_coverages(*[list(i) for i in zip(*coverages)])
+
     def has_coverages(self, *coverages):
         coverages = list(listify_elements(coverages))
         for coverage in coverages:
@@ -101,15 +105,15 @@ class TestContig(object):
         # given
         record = 'ACCTT'
         kmer_size = 3
-        output_graph = (builder.Mccortex()
-                        .with_dna_sequence(record)
-                        .with_kmer_size(kmer_size)
-                        .build(tmpdir))
+        output_graph = builder.Mccortex() \
+            .with_dna_sequence(record) \
+            .with_kmer_size(kmer_size) \
+            .build(tmpdir)
 
         # when
-        completed_process = (runner
-                             .Cortexpy(SPAWN_PROCESS)
-                             .view_contig(output_format='json', graph=output_graph, contig=record))
+        completed_process = runner \
+            .Cortexpy(SPAWN_PROCESS) \
+            .view_contig(output_format='json', graph=output_graph, contig=record)
         stdout = completed_process.stdout
 
         # then
@@ -122,19 +126,19 @@ class TestContig(object):
         record1 = 'AAACCCGAA'
         record2 = 'ACCG'
         kmer_size = 3
-        output_graph = (builder.Mccortex()
-                        .with_dna_sequence(record1)
-                        .with_dna_sequence(record2)
-                        .with_kmer_size(kmer_size)
-                        .build(tmpdir))
+        output_graph = builder.Mccortex() \
+            .with_dna_sequence(record1) \
+            .with_dna_sequence(record2) \
+            .with_kmer_size(kmer_size) \
+            .build(tmpdir)
         runner.Mccortex(kmer_size).view(output_graph)
 
         # when
-        completed_process = (runner
-                             .Cortexpy(SPAWN_PROCESS)
-                             .view_contig(contig=record1,
-                                          output_format='json',
-                                          graph=output_graph))
+        completed_process = runner \
+            .Cortexpy(SPAWN_PROCESS) \
+            .view_contig(contig=record1,
+                         output_format='json',
+                         graph=output_graph)
 
         # then
         expect_zero_return_code(completed_process)
@@ -159,19 +163,19 @@ class TestContig(object):
         record2 = 'ACCG'
         query_record = record1 + 'G'
         kmer_size = 3
-        output_graph = (builder.Mccortex()
-                        .with_dna_sequence(record1)
-                        .with_dna_sequence(record2)
-                        .with_kmer_size(kmer_size)
-                        .build(tmpdir))
+        output_graph = builder.Mccortex() \
+            .with_dna_sequence(record1) \
+            .with_dna_sequence(record2) \
+            .with_kmer_size(kmer_size) \
+            .build(tmpdir)
         runner.Mccortex(kmer_size).view(output_graph)
 
         # when
-        completed_process = (runner
-                             .Cortexpy(SPAWN_PROCESS)
-                             .view_contig(contig=query_record,
-                                          output_format='json',
-                                          graph=output_graph))
+        completed_process = runner \
+            .Cortexpy(SPAWN_PROCESS) \
+            .view_contig(contig=query_record,
+                         output_format='json',
+                         graph=output_graph)
 
         # then
         expect_zero_return_code(completed_process)
@@ -203,17 +207,17 @@ class TestTraversal(object):
             query_dir = tmpdir.join(str(query_string_idx))
             query_dir.ensure(dir=True)
 
-            output_graph = (builder.Mccortex()
-                            .with_dna_sequence(record1)
-                            .with_dna_sequence(record2)
-                            .with_kmer_size(kmer_size)
-                            .build(query_dir))
+            output_graph = builder.Mccortex() \
+                .with_dna_sequence(record1) \
+                .with_dna_sequence(record2) \
+                .with_kmer_size(kmer_size) \
+                .build(query_dir)
             runner.Mccortex(kmer_size).view(output_graph)
 
             # when
-            completed_process = (runner
-                                 .Cortexpy(SPAWN_PROCESS)
-                                 .view_traversal(contig=query_string, graph=output_graph, color=0))
+            completed_process = runner \
+                .Cortexpy(SPAWN_PROCESS) \
+                .view_traversal(contig=query_string, graph=output_graph, color=0)
 
             # then
             expect_zero_return_code(completed_process)
@@ -239,18 +243,18 @@ class TestTraversal(object):
         record3 = record1 + 'G'
         kmer_size = 3
 
-        output_graph = (builder.Mccortex()
-                        .with_dna_sequence(record1)
-                        .with_dna_sequence(record2)
-                        .with_dna_sequence(record3, name='sample_1')
-                        .with_kmer_size(kmer_size)
-                        .build(tmpdir))
+        output_graph = builder.Mccortex() \
+            .with_dna_sequence(record1) \
+            .with_dna_sequence(record2) \
+            .with_dna_sequence(record3, name='sample_1') \
+            .with_kmer_size(kmer_size) \
+            .build(tmpdir)
         runner.Mccortex(kmer_size).view(output_graph)
 
         # when
-        completed_process = (runner
-                             .Cortexpy(SPAWN_PROCESS)
-                             .view_traversal(contig='CCC', graph=output_graph, color=0))
+        completed_process = runner \
+            .Cortexpy(SPAWN_PROCESS) \
+            .view_traversal(contig='CCC', graph=output_graph, color=0)
 
         # then
         expect_zero_return_code(completed_process)
@@ -277,16 +281,16 @@ class TestTraversal(object):
         retrieval_contig = 'GCGC'
         kmer_size = 3
 
-        output_graph = (builder.Mccortex()
-                        .with_dna_sequence(record1)
-                        .with_kmer_size(kmer_size)
-                        .build(tmpdir))
+        output_graph = builder.Mccortex() \
+            .with_dna_sequence(record1) \
+            .with_kmer_size(kmer_size) \
+            .build(tmpdir)
         runner.Mccortex(kmer_size).view(output_graph)
 
         # when
-        completed_process = (runner
-                             .Cortexpy(SPAWN_PROCESS)
-                             .view_traversal(contig=retrieval_contig, graph=output_graph, color=0))
+        completed_process = runner \
+            .Cortexpy(SPAWN_PROCESS) \
+            .view_traversal(contig=retrieval_contig, graph=output_graph, color=0)
 
         # then
         expect_zero_return_code(completed_process)
@@ -295,3 +299,41 @@ class TestTraversal(object):
         expect = JsonGraphExpectation(json.loads(stdout))
 
         expect.has_n_nodes(0)
+
+    def test_of_three_colors_returns_complete_graph(self, tmpdir):
+        # given
+        records = [
+            'AAAT',
+            'AAAGG',
+            'CAAA',
+        ]
+        kmer_size = 3
+
+        mc_builder = builder.Mccortex()
+        for idx, rec in enumerate(records):
+            mc_builder.with_dna_sequence(rec, name='samp_{}'.format(idx))
+        output_graph = mc_builder \
+            .with_kmer_size(kmer_size) \
+            .build(tmpdir)
+
+        # when
+        completed_process = runner \
+            .Cortexpy(SPAWN_PROCESS) \
+            .view_traversal(contig='AAA', graph=output_graph, colors=range(len(records)))
+
+        # then
+        expect_zero_return_code(completed_process)
+
+        stdout = completed_process.stdout
+        expect = JsonGraphExpectation(json.loads(stdout))
+
+        expect.has_node_repr('A').has_coverages_by_color(1, 1, 1)
+        expect.has_node_repr('CAA').has_coverages_by_color(0, 0, 1)
+        expect.has_node_repr('T').has_coverages_by_color(1, 0, 0)
+        expect.has_node_repr('GG').has_coverages_by_color([0, 0], [1, 1], [0, 0])
+        expect.has_n_nodes(4)
+
+        expect.has_repr_edge('A', 'T', 0)
+        expect.has_repr_edge('A', 'GG', 1)
+        expect.has_repr_edge('CAA', 'A', 2)
+        expect.has_n_edges(3)

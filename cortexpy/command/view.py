@@ -7,7 +7,9 @@ Usage:
 Options:
     -h, --help                    Display this help message.
     --orientation <orientation>   Traversal orientation [default: both].
-    --color <color>               Color to traverse [default: 0].
+    -c --colors <colors>          Colors to traverse [default: 0].
+           May take multiple color numbers separated by a comma (example: '0,2,3').
+           The traverser will follow all colors specified.
     --max-nodes <n>               Maximum number of nodes to traverse [default: 1000].
     --output-type <type>          Output type [default: kmers].
     --output-format <format>      Output format [default: term].
@@ -75,8 +77,10 @@ class ViewTraversal(object):
         from schema import Schema, Use
 
         schema = Schema({
-            '--orientation': lambda x: x in traversal.EngineTraversalOrientation.__members__.keys(),
-            '--color': Use(int),
+            '--orientation': (
+                lambda x: x in traversal.constants.EngineTraversalOrientation.__members__.keys()
+            ),
+            '--colors': Use(lambda colors: [int(color) for color in colors.split(',')]),
             '--max-nodes': Use(int),
             '--output-type': lambda x: x in ViewTraversalOutputType.__members__.keys(),
             '--output-format': lambda x: x in ViewTraversalOutputFormat.__members__.keys(),
@@ -93,10 +97,11 @@ class ViewTraversal(object):
 
         args = cls.validate(args)
         graph = traversal.Engine(
-            g_parser.RandomAccess(get_file_handle(args['<graph>'])),
-            color=int(args['--color']),
-            orientation=traversal.EngineTraversalOrientation[args['--orientation']],
-            max_nodes=int(args['--max-nodes']),
+                g_parser.RandomAccess(get_file_handle(args['<graph>'])),
+                traversal_colors=args['--colors'],
+                orientation=traversal.constants.EngineTraversalOrientation[
+                    args['--orientation']],
+                max_nodes=args['--max-nodes'],
         ).traverse_from_each_kmer_in(args['<initial_contig>']).graph
         serializer = Serializer(graph)
         if args['--output-format'] == ViewTraversalOutputFormat.json.name:
@@ -106,8 +111,9 @@ class ViewTraversal(object):
             serializer.annotate_graph_edges = False
             serializer.collapse_unitigs = False
             if args['--output-type'] == ViewTraversalOutputType.contigs.name:
-                seq_record_generator = interactor.Contigs(graph,
-                                                          int(args['--color'])).all_simple_paths()
+                seq_record_generator = interactor.Contigs(
+                        graph, int(args['--colors'][0])
+                ).all_simple_paths()
             else:
                 seq_record_generator = serializer.to_seq_records()
             SeqIO.write(seq_record_generator, sys.stdout, 'fasta')

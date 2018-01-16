@@ -1,6 +1,6 @@
 from cortexpy.graph import traversal
 from cortexpy.graph.parser import RandomAccess
-from cortexpy.graph.traversal.engine import EngineTraversalOrientation
+from cortexpy.graph.traversal import EngineTraversalOrientation
 from cortexpy.test import builder
 from cortexpy.test.expectation import KmerGraphExpectation
 
@@ -17,7 +17,7 @@ class TestTraverseFrom(object):
 
         traverser = traversal.Engine(
             RandomAccess(open(output_graph, 'rb')),
-            color=0,
+            traversal_colors=(0,),
             orientation=EngineTraversalOrientation.both
         )
 

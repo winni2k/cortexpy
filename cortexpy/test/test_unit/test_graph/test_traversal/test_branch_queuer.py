@@ -3,9 +3,8 @@ from hypothesis import given, strategies as s
 
 from cortexpy.graph.serializer import SERIALIZER_GRAPH
 from cortexpy.constants import EdgeTraversalOrientation
-from cortexpy.graph.traversal.branch import TraversedBranch
-from cortexpy.graph.traversal.engine import BranchQueuer, \
-    EngineTraversalOrientation
+from cortexpy.graph.traversal.branch import Traversed, Queuer
+from cortexpy.graph.traversal import EngineTraversalOrientation
 
 
 @attr.s(slots=True)
@@ -13,8 +12,8 @@ class TraversedBranchBuilder(object):
     traversed_branch = attr.ib(init=False)
 
     def __attrs_post_init__(self):
-        self.traversed_branch = TraversedBranch(SERIALIZER_GRAPH(),
-                                                EdgeTraversalOrientation.original)
+        self.traversed_branch = Traversed(SERIALIZER_GRAPH(),
+                                          EdgeTraversalOrientation.original)
 
     def with_first_kmer(self, kmer):
         self.traversed_branch.first_kmer_string = kmer
@@ -45,6 +44,7 @@ class BranchQueuerDriver(object):
     traversed_branches_in_queue = attr.ib(attr.Factory(list))
     traversed_branch_builders_to_queue = attr.ib(attr.Factory(list))
     engine_traversal_orientation = attr.ib(EngineTraversalOrientation.original)
+    traversal_colors = attr.ib((0,))
 
     def queue_from_traversed_branch(self):
         traversed_branch_builder_to_queue = TraversedBranchBuilder()
@@ -56,7 +56,9 @@ class BranchQueuerDriver(object):
         return self
 
     def run(self):
-        queuer = BranchQueuer(self.traversed_branches_in_queue, self.engine_traversal_orientation)
+        queuer = Queuer(self.traversed_branches_in_queue,
+                        traversal_colors=self.traversal_colors,
+                        engine_orientation=self.engine_traversal_orientation)
         for traversed_branch_builder in self.traversed_branch_builders_to_queue:
             traversed_branch = traversed_branch_builder.build()
             queuer.add_from_traversed_branch(traversed_branch)
@@ -96,18 +98,18 @@ class Test(object):
 
         driver = BranchQueuerDriver()
         (driver
-         .with_engine_traversal_orientation(engine_traversal_orientation_string)
-         .queue_from_traversed_branch()
-         .with_first_kmer(0)
-         .with_last_kmer(1)
-         .with_neighbors(2)
-         .with_reverse_neighbors(3)
-         .with_traversal_orientation(traversed_branch_orientation_string))
+            .with_engine_traversal_orientation(engine_traversal_orientation_string)
+            .queue_from_traversed_branch()
+            .with_first_kmer(0)
+            .with_last_kmer(1)
+            .with_neighbors(2)
+            .with_reverse_neighbors(3)
+            .with_traversal_orientation(traversed_branch_orientation_string))
 
         expected_setups = [(2, traversed_branch_orientation, 1)]
         if engine_traversal_orientation_string == 'both':
             expected_setups.append(
-                (3, EdgeTraversalOrientation.other(traversed_branch_orientation), 1))
+                    (3, EdgeTraversalOrientation.other(traversed_branch_orientation), 1))
 
         # when
         expect = driver.run()

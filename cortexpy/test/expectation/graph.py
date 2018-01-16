@@ -13,6 +13,17 @@ class KmerGraphExpectation(object):
     def __attrs_post_init__(self):
         logger.info(nx.node_link_data(self.graph))
 
+    def has_node_coverages(self, *node_coverage_strings):
+        for node_coverage_string in node_coverage_strings:
+            self.has_node_coverage(node_coverage_string)
+        self.has_n_nodes(len(node_coverage_strings))
+
+    def has_node_coverage(self, node_coverage_string):
+        node, *coverages = node_coverage_string.split()
+        coverages = [int(c) for c in coverages]
+        self.has_node(node).has_coverages(*coverages)
+        return self
+
     def has_node(self, node):
         assert node in self.graph
         return KmerNodeExpectation(self.graph.node[node])

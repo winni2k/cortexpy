@@ -3,6 +3,7 @@ import attr
 from cortexpy import graph
 from cortexpy.graph.serializer import SERIALIZER_GRAPH
 from cortexpy.constants import EdgeTraversalOrientation
+from .constants import EngineTraversalOrientation
 
 
 class KmerStringAlreadySeen(Exception):
@@ -10,7 +11,7 @@ class KmerStringAlreadySeen(Exception):
 
 
 @attr.s(slots=True)
-class Branch(object):
+class Traverser(object):
     ra_parser = attr.ib()
     traversal_color = attr.ib(0)
     graph = attr.ib(attr.Factory(SERIALIZER_GRAPH))
@@ -35,12 +36,12 @@ class Branch(object):
         try:
             self._get_kmer_and_add_kmer_string_to_graph()
         except KmerStringAlreadySeen:
-            return TraversedBranch(self.graph, orientation=self.orientation)
+            return Traversed(self.graph, orientation=self.orientation)
 
         while True:
             oriented_edge_set = self.kmer.edges[self.traversal_color].oriented(self.orientation)
             if (
-                            self._get_num_neighbors(oriented_edge_set) != 1
+                    self._get_num_neighbors(oriented_edge_set) != 1
                     or self._get_num_neighbors(oriented_edge_set.other_orientation()) > 1
             ):
                 break
@@ -51,15 +52,15 @@ class Branch(object):
                 break
 
         reverse_neighbor_kmer_strings = set(
-            self._get_neighbors(oriented_edge_set.other_orientation()))
+                self._get_neighbors(oriented_edge_set.other_orientation()))
         if self.prev_kmer_string is not None:
             reverse_neighbor_kmer_strings.remove(self.prev_kmer_string)
-        return TraversedBranch(self.graph,
-                               orientation=self.orientation,
-                               first_kmer_string=first_kmer_string,
-                               last_kmer_string=self.kmer_string,
-                               neighbor_kmer_strings=self._get_neighbors(oriented_edge_set),
-                               reverse_neighbor_kmer_strings=list(reverse_neighbor_kmer_strings))
+        return Traversed(self.graph,
+                         orientation=self.orientation,
+                         first_kmer_string=first_kmer_string,
+                         last_kmer_string=self.kmer_string,
+                         neighbor_kmer_strings=self._get_neighbors(oriented_edge_set),
+                         reverse_neighbor_kmer_strings=list(reverse_neighbor_kmer_strings))
 
     def _get_num_neighbors(self, oriented_edge_set):
         return oriented_edge_set.num_neighbor(self.kmer_string)
@@ -98,10 +99,61 @@ class Branch(object):
 
 
 @attr.s(slots=True)
-class TraversedBranch(object):
+class Traversed(object):
     graph = attr.ib()
     orientation = attr.ib()
     first_kmer_string = attr.ib(None)
     last_kmer_string = attr.ib(None)
     neighbor_kmer_strings = attr.ib(attr.Factory(list))
     reverse_neighbor_kmer_strings = attr.ib(attr.Factory(list))
+
+    def is_empty(self):
+        return len(self.graph) == 0
+
+
+@attr.s(slots=True)
+class TraversalSetup(object):
+    start_string = attr.ib()
+    orientation = attr.ib()
+    traversal_color = attr.ib()
+    connecting_node = attr.ib(None)
+
+
+@attr.s(slots=True)
+class Queuer(object):
+    queue = attr.ib()
+    traversal_colors = attr.ib()
+    engine_orientation = attr.ib(EngineTraversalOrientation.original)
+    _orientations = attr.ib(init=False)
+
+    def __attrs_post_init__(self):
+        if self.engine_orientation == EngineTraversalOrientation.both:
+            self._orientations = list(EdgeTraversalOrientation)
+        else:
+            self._orientations = [EdgeTraversalOrientation[self.engine_orientation.name]]
+
+    def add_from(self, start_string, orientation, connecting_node, traversal_color):
+        self.queue.append(
+                TraversalSetup(start_string=start_string,
+                               orientation=orientation,
+                               connecting_node=connecting_node,
+                               traversal_color=traversal_color)
+        )
+
+    def add_from_traversed_branch(self, traversed_branch):
+        orientation_neighbor_pairs = [
+            (traversed_branch.orientation, traversed_branch.neighbor_kmer_strings)]
+        if self.engine_orientation == EngineTraversalOrientation.both:
+            orientation_neighbor_pairs.append(
+                    (EdgeTraversalOrientation.other(traversed_branch.orientation),
+                     traversed_branch.reverse_neighbor_kmer_strings))
+        else:
+            assert EdgeTraversalOrientation[
+                       self.engine_orientation.name] == traversed_branch.orientation
+        for orientation, neighbor_strings in orientation_neighbor_pairs:
+            for neighbor_string in neighbor_strings:
+                for color in self.traversal_colors:
+                    self.add_from(start_string=neighbor_string,
+                                  orientation=orientation,
+                                  connecting_node=traversed_branch.last_kmer_string,
+                                  traversal_color=color)

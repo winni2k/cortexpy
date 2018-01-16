@@ -1,2 +1,2 @@
-from .branch import Branch  # noqa
-from .engine import Engine, EngineTraversalOrientation  # noqa
+from .engine import Engine  # noqa
+from .constants import EngineTraversalOrientation  # noqa
