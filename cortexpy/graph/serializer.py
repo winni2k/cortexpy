@@ -8,63 +8,46 @@ from Bio.SeqRecord import SeqRecord
 from networkx.readwrite import json_graph
 
 from cortexpy.constants import EdgeTraversalOrientation
-from cortexpy.graph.parser.kmer import EmptyKmerBuilder
 
 SERIALIZER_GRAPH = nx.MultiDiGraph
 
 
 @attr.s(slots=True)
+class Kmers(object):
+    """Serializes kmer graphs."""
+    graph = attr.ib()
+
+    def to_seq_records(self):
+        return (
+            SeqRecord(Seq(str(node)), id=str(node_idx)) for node_idx, node in
+            enumerate(self.graph.nodes())
+        )
+
+
+@attr.s(slots=True)
 class Serializer(object):
-    """A class for serializing kmer graphs."""
+    """Converts kmer graphs to unitig graphs."""
     graph = attr.ib()
     collapse_unitigs = attr.ib(True)
-    annotate_graph_edges = attr.ib(False)
     unitig_graph = attr.ib(init=False)
     colors = attr.ib(init=False)
 
     def __attrs_post_init__(self):
         self.colors = self.graph.graph['colors']
 
-    def to_unitig_graph(self):
-        collapser = UnitigCollapser(self.graph, colors=self.colors).collapse_kmer_unitigs()
-        self.unitig_graph = collapser.unitig_graph
-
-    def _preprocess_graph(self):
-        if self.annotate_graph_edges:
-            self.to_graph_with_annotated_edges()
-        if self.collapse_unitigs:
-            self.to_unitig_graph()
-            self._make_unitig_graph_json_representable()
-
     def to_json(self):
-        self._preprocess_graph()
+        self._collapse_graph_to_unitigs()
         serializable = json_graph.node_link_data(self.unitig_graph, attrs={'link': 'edges'})
         return json.dumps(serializable)
 
-    def to_seq_records(self):
-        self._preprocess_graph()
-        return (
-            SeqRecord(Seq(str(node)), id=str(node_idx)) for node_idx, node in
-            enumerate(self.graph.nodes())
-        )
+    def _collapse_graph_to_unitigs(self):
+        # self.graph = annotate_kmer_graph_edges(self.graph, self.colors)
+        self._collapse_kmer_graph()
+        self._make_unitig_graph_json_representable()
 
-    def to_graph_with_annotated_edges(self):
-        """Adds nodes to graph for kmer_strings that only exist as edges in a node's kmer."""
-        new_graph = self.graph.copy()
-        for kmer_string, kmer in self.graph.nodes(data='kmer'):
-            for color in self.colors:
-                for new_kmer_string in kmer.edges[color].get_outgoing_kmer_strings(kmer_string):
-                    new_graph.add_edge(kmer_string, new_kmer_string, key=color)
-                for new_kmer_string in kmer.edges[color].get_incoming_kmer_strings(kmer_string):
-                    new_graph.add_edge(new_kmer_string, kmer_string, key=color)
-        self.graph = new_graph
-        new_graph = new_graph.copy()
-        kmer_builder = EmptyKmerBuilder(num_colors=len(self.colors))
-        for kmer_string, data in self.graph.nodes(data=True):
-            if 'kmer' not in data:
-                new_graph.add_node(kmer_string, kmer=kmer_builder.build_or_get(kmer_string), **data)
-        self.graph = new_graph
-        return self.graph
+    def _collapse_kmer_graph(self):
+        collapser = UnitigCollapser(self.graph).collapse_kmer_unitigs()
+        self.unitig_graph = collapser.unitig_graph
 
     def _make_unitig_graph_json_representable(self):
         """Makes the unitig graph json representable"""
@@ -258,13 +241,12 @@ class UnitigFinder(object):
 @attr.s(slots=True)
 class UnitigCollapser(object):
     graph = attr.ib()
-    colors = attr.ib((0,))
     test_coverage = attr.ib(True)
     unitig_graph = attr.ib(None)
     unitig_finder = attr.ib(init=False)
 
     def __attrs_post_init__(self):
-        self.unitig_finder = UnitigFinder(self.graph, colors=self.colors,
+        self.unitig_finder = UnitigFinder(self.graph, colors=self.graph.graph['colors'],
                                           test_coverage=self.test_coverage)
 
     @graph.validator

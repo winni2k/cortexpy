@@ -3,11 +3,13 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as s
 
+import cortexpy.graph
 import cortexpy.graph.parser
-import cortexpy.test.builder as builder
-import cortexpy.test.expectation as expectation
 from cortexpy.graph import traversal
 from cortexpy.graph.traversal import EngineTraversalOrientation
+from cortexpy.test.expectation import KmerGraphExpectation
+import cortexpy.test.builder as builder
+import cortexpy.test.expectation as expectation
 
 
 @attr.s(slots=True)
@@ -445,7 +447,7 @@ class TestTraverseFromEachKmerIn(object):
 
 
 class TestMaxNodes(object):
-    def test_of_two_raises_with_three_connected_kmers(self):
+    def test_of_two_returns_with_two_nodes_plus_edges(self):
         # given
         driver = EngineTestDriver()
         (driver
@@ -453,8 +455,9 @@ class TestMaxNodes(object):
             .with_max_nodes(2)
             .with_kmer('AAA', 0, '.......T')
             .with_kmer('AAT', 0, 'a....CG.')
-            .with_kmer('ATC', 0, 'a.......')
+            .with_kmer('ATC', 0, 'a......T')
             .with_kmer('ATG', 0, 'a.......')
+            .with_kmer('AGA', 0, '.......T')
             .with_start_kmer_string('AAA'))
 
         # when
@@ -462,8 +465,8 @@ class TestMaxNodes(object):
 
         # then
         (expect
-            .has_nodes('AAA', 'AAT')
-            .has_n_edges(1))
+            .has_nodes('AAA', 'AAT', 'ATC', 'ATG')
+            .has_n_edges(3))
 
 
 class TestStartStringSize(object):
@@ -474,3 +477,45 @@ class TestStartStringSize(object):
 
             with pytest.raises(AssertionError):
                 driver.run()
+
+
+class TestEdgeAnnotation(object):
+    def test_with_single_kmer_and_link_annotates_etra_links(self):
+        driver = EngineTestDriver() \
+            .with_kmer_size(3) \
+            .with_kmer('AAA 1 1 ........ .c...C..') \
+            .with_start_kmer_string('AAA') \
+            .with_traversal_colors(0)
+
+        # when
+        graph_expectation = driver.run()
+        annotated_graph = cortexpy.graph.traversal.engine \
+            .annotate_kmer_graph_edges(graph_expectation.graph)
+        expect = KmerGraphExpectation(annotated_graph)
+
+        # then
+        expect.has_node('CAA').has_coverages(0, 0)
+        expect.has_node('AAA').has_coverages(1, 1)
+        expect.has_node('AAC').has_coverages(0, 0)
+        expect.has_n_nodes(3)
+        expect.has_edges('AAA AAC 1', 'CAA AAA 1')
+
+    def test_for_revcomp_with_single_kmer_and_link_annotates_etra_links(self):
+        driver = EngineTestDriver() \
+            .with_kmer_size(3) \
+            .with_kmer('AAA 1 1 ........ ..g..C..') \
+            .with_traversal_colors(0) \
+            .with_start_kmer_string('TTT')
+
+        # when
+        graph_expectation = driver.run()
+        annotated_graph = cortexpy.graph.traversal.engine \
+            .annotate_kmer_graph_edges(graph_expectation.graph)
+        expect = KmerGraphExpectation(annotated_graph)
+
+        # then
+        expect.has_node('TTC').has_coverages(0, 0)
+        expect.has_node('TTT').has_coverages(1, 1)
+        expect.has_node('GTT').has_coverages(0, 0)
+        expect.has_n_nodes(3)
+        expect.has_edges('TTT TTC 1', 'GTT TTT 1')

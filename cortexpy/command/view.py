@@ -93,29 +93,26 @@ class ViewTraversal(object):
         from Bio import SeqIO
         import sys
         from cortexpy.graph import parser as g_parser, traversal, interactor
-        from cortexpy.graph.serializer import Serializer
+        from cortexpy.graph import serializer
 
         args = cls.validate(args)
         graph = traversal.Engine(
-                g_parser.RandomAccess(get_file_handle(args['<graph>'])),
-                traversal_colors=args['--colors'],
-                orientation=traversal.constants.EngineTraversalOrientation[
-                    args['--orientation']],
-                max_nodes=args['--max-nodes'],
+            g_parser.RandomAccess(get_file_handle(args['<graph>'])),
+            traversal_colors=args['--colors'],
+            orientation=traversal.constants.EngineTraversalOrientation[
+                args['--orientation']],
+            max_nodes=args['--max-nodes'],
         ).traverse_from_each_kmer_in(args['<initial_contig>']).graph
-        serializer = Serializer(graph)
         if args['--output-format'] == ViewTraversalOutputFormat.json.name:
-            serializer.annotate_graph_edges = True
-            print(serializer.to_json())
+            print(serializer.Serializer(graph).to_json())
         elif args['--output-format'] == ViewTraversalOutputFormat.fasta.name:
-            serializer.annotate_graph_edges = False
-            serializer.collapse_unitigs = False
+            kmer_serializer = serializer.Kmers(graph)
             if args['--output-type'] == ViewTraversalOutputType.contigs.name:
                 seq_record_generator = interactor.Contigs(
-                        graph, int(args['--colors'][0])
+                    graph, int(args['--colors'][0])
                 ).all_simple_paths()
             else:
-                seq_record_generator = serializer.to_seq_records()
+                seq_record_generator = kmer_serializer.to_seq_records()
             SeqIO.write(seq_record_generator, sys.stdout, 'fasta')
 
 

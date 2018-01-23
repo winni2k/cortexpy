@@ -5,6 +5,7 @@ import collections
 import networkx as nx
 
 from cortexpy import graph
+from cortexpy.graph.parser.kmer import EmptyKmerBuilder
 from .constants import EngineTraversalOrientation
 from . import branch
 from cortexpy.graph.serializer import SERIALIZER_GRAPH
@@ -40,7 +41,7 @@ class Engine(object):
             try:
                 self.graph = nx.compose(
                         self.graph,
-                        self.traverse_from(start_kmer).graph
+                        self._traverse_from(start_kmer).graph
                 )
             except KeyError:
                 pass
@@ -48,9 +49,15 @@ class Engine(object):
                 logger.warning(("Terminating contig traversal after kmer {}"
                                 " because max node limit is reached").format(start_kmer))
                 break
+        self._post_process_graph()
         return self
 
     def traverse_from(self, start_string):
+        self._traverse_from(start_string)
+        self._post_process_graph()
+        return self
+
+    def _traverse_from(self, start_string):
         assert len(start_string) == self.ra_parser.header.kmer_size
         self.branch_traverser = {
             color: branch.Traverser(self.ra_parser, traversal_color=color)
@@ -68,6 +75,9 @@ class Engine(object):
                     "Max nodes ({}) exceeded: {} nodes found".format(self.max_nodes,
                                                                      len(self.graph)))
         return self
+
+    def _post_process_graph(self):
+        self.graph = annotate_kmer_graph_edges(self.graph)
 
     def _add_graph_metadata(self):
         self.graph.graph['colors'] = self.ra_parser.header.colors
@@ -160,3 +170,21 @@ class Engine(object):
         kmer2 = self.ra_parser.get_kmer_for_string(kmer2_string)
         interactor = graph.Interactor(self.graph, kmer1.colors)
         interactor.add_edge_to_graph_for_kmer_pair(kmer1, kmer2, kmer1_string, kmer2_string)
+
+
+def annotate_kmer_graph_edges(graph):
+    """Adds nodes to graph for kmer_strings that only exist as edges in a node's kmer."""
+    colors = graph.graph['colors']
+    graph2 = graph.copy()
+    for kmer_string, kmer in graph.nodes(data='kmer'):
+        for color in colors:
+            for new_kmer_string in kmer.edges[color].get_outgoing_kmer_strings(kmer_string):
+                graph2.add_edge(kmer_string, new_kmer_string, key=color)
+            for new_kmer_string in kmer.edges[color].get_incoming_kmer_strings(kmer_string):
+                graph2.add_edge(new_kmer_string, kmer_string, key=color)
+    graph3 = graph2.copy()
+    kmer_builder = EmptyKmerBuilder(num_colors=len(colors))
+    for kmer_string, data in graph2.nodes(data=True):
+        if 'kmer' not in data:
+            graph3.add_node(kmer_string, kmer=kmer_builder.build_or_get(kmer_string), **data)
+    return graph3
