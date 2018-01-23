@@ -61,7 +61,7 @@ class BranchQueuerDriver(object):
                         engine_orientation=self.engine_traversal_orientation)
         for traversed_branch_builder in self.traversed_branch_builders_to_queue:
             traversed_branch = traversed_branch_builder.build()
-            queuer.add_from_traversed_branch(traversed_branch)
+            queuer.add_from_branch(traversed_branch)
         return BranchQueueExpectation(queuer)
 
 

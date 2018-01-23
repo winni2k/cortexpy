@@ -49,6 +49,7 @@ class Serializer(object):
         )
 
     def to_graph_with_annotated_edges(self):
+        """Adds nodes to graph for kmer_strings that only exist as edges in a node's kmer."""
         new_graph = self.graph.copy()
         for kmer_string, kmer in self.graph.nodes(data='kmer'):
             for color in self.colors:
@@ -97,9 +98,9 @@ class Unitig(object):
         if self._coverage is None:
             coverage = [self.graph.node[self.left_node]['kmer'].coverage]
             for _, target, _ in nx.edge_dfs(
-                    self.graph,
-                    self.left_node,
-                    orientation=EdgeTraversalOrientation.original.name
+                self.graph,
+                self.left_node,
+                orientation=EdgeTraversalOrientation.original.name
             ):
                 coverage.append(self.graph.node[target]['kmer'].coverage)
             self._coverage = coverage

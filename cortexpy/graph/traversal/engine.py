@@ -80,7 +80,8 @@ class Engine(object):
             first_traversal_orientation = EdgeTraversalOrientation[self.orientation.name]
         self.queuer.add_from(start_string,
                              first_traversal_orientation,
-                             None, traversal_color=self.traversal_colors[0])
+                             connecting_node=None,
+                             traversal_color=self.traversal_colors[0])
         self._traverse_a_branch_from_queue()
         start_kmer = self.ra_parser.get_kmer_for_string(start_string)
         if self.orientation == EngineTraversalOrientation.both:
@@ -132,7 +133,7 @@ class Engine(object):
                                                   neighbor_string,
                                                   orientation)
                 else:
-                    self.queuer.add_from_traversed_branch(branch)
+                    self.queuer.add_from_branch(branch)
 
     def _add_neighbors_from_other_colors_to_branch(self, branch):
         if branch.is_empty():

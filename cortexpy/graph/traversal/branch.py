@@ -100,6 +100,7 @@ class Traverser(object):
 
 @attr.s(slots=True)
 class Traversed(object):
+    """A branch, the result of a branch traversal"""
     graph = attr.ib()
     orientation = attr.ib()
     first_kmer_string = attr.ib(None)
@@ -140,20 +141,20 @@ class Queuer(object):
                                traversal_color=traversal_color)
         )
 
-    def add_from_traversed_branch(self, traversed_branch):
+    def add_from_branch(self, branch):
         orientation_neighbor_pairs = [
-            (traversed_branch.orientation, traversed_branch.neighbor_kmer_strings)]
+            (branch.orientation, branch.neighbor_kmer_strings)]
         if self.engine_orientation == EngineTraversalOrientation.both:
             orientation_neighbor_pairs.append(
-                    (EdgeTraversalOrientation.other(traversed_branch.orientation),
-                     traversed_branch.reverse_neighbor_kmer_strings))
+                    (EdgeTraversalOrientation.other(branch.orientation),
+                     branch.reverse_neighbor_kmer_strings))
         else:
             assert EdgeTraversalOrientation[
-                       self.engine_orientation.name] == traversed_branch.orientation
+                       self.engine_orientation.name] == branch.orientation
         for orientation, neighbor_strings in orientation_neighbor_pairs:
             for neighbor_string in neighbor_strings:
                 for color in self.traversal_colors:
                     self.add_from(start_string=neighbor_string,
                                   orientation=orientation,
-                                  connecting_node=traversed_branch.last_kmer_string,
+                                  connecting_node=branch.last_kmer_string,
                                   traversal_color=color)

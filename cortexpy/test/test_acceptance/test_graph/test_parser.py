@@ -7,7 +7,7 @@ from cortexpy.test.builder.graph.body import KmerRecord, as_edge_set, print_kmer
 class TestHeaderFromStream(object):
     def test_parses_a_graph_header(self, tmpdir):
         # given
-        sample_name = b'sample_0'
+        sample_name = 'sample_0'
         dna_sequence = 'ACGTT'
         kmer_size = 3
 
@@ -24,7 +24,7 @@ class TestHeaderFromStream(object):
                                       'num_colors': 1,
                                       'mean_read_lengths': (len(dna_sequence),),
                                       'mean_total_sequence': (len(dna_sequence),),
-                                      'sample_names': (sample_name,)}
+                                      'sample_names': (sample_name.encode(),)}
 
         # when
         header = parser.header.from_stream(open(output_graph, 'rb'))

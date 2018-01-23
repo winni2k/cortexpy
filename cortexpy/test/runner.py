@@ -24,6 +24,14 @@ class Mccortex(object):
     def view(self, graph):
         return self.run(['view', '-k', graph])
 
+    def clean(self, graphs, out, *, clip_tips_shorter_than=0,
+              unitigs_with_mean_coverage_less_than=1):
+        if isinstance(graphs, str):
+            graphs = [graphs]
+        return self.run(['clean', '--tips={}'.format(str(clip_tips_shorter_than)),
+                         '--unitigs={}'.format(str(unitigs_with_mean_coverage_less_than)), '--out',
+                         out, *graphs])
+
     def run(self, mccortex_args):
         if self.kmer_size <= 31:
             mccortex_k = 31
@@ -34,8 +42,9 @@ class Mccortex(object):
                 'Kmer size ({}) too big for available mccortex binaries'.format(self.kmer_size))
         command = [self.mccortex_bin, str(mccortex_k)]
         command += mccortex_args
+        command = [str(arg) for arg in command]
 
-        return subprocess.check_call(command)
+        return subprocess.run(command, check=True)
 
 
 @attr.s(slots=True)
@@ -56,6 +65,8 @@ class Cortexpy(object):
                        orientation='both', color=0, max_nodes=None, colors=None):
         if colors is None:
             colors = [color]
+        if isinstance(colors, int):
+            colors = [colors]
         command = ['view', 'traversal',
                    graph, contig,
                    '--output-format', output_format,

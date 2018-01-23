@@ -25,6 +25,17 @@ def listify_elements(iterable):
 
 
 @attr.s(slots=True)
+class TraversalExpectation(object):
+    completed_process = attr.ib()
+
+    def __attrs_post_init__(self):
+        expect_zero_return_code(self.completed_process)
+
+    def returns_json_graph(self):
+        return JsonGraphExpectation(json.loads(self.completed_process.stdout))
+
+
+@attr.s(slots=True)
 class JsonNodeExpectation(object):
     node = attr.ib()
     n_colors = attr.ib(None)
@@ -317,15 +328,13 @@ class TestTraversal(object):
             .build(tmpdir)
 
         # when
-        completed_process = runner \
-            .Cortexpy(SPAWN_PROCESS) \
-            .view_traversal(contig='AAA', graph=output_graph, colors=range(len(records)))
+        expect = TraversalExpectation(runner
+                                      .Cortexpy(SPAWN_PROCESS)
+                                      .view_traversal(contig='AAA', graph=output_graph,
+                                                      colors=range(len(records))))
 
         # then
-        expect_zero_return_code(completed_process)
-
-        stdout = completed_process.stdout
-        expect = JsonGraphExpectation(json.loads(stdout))
+        expect = expect.returns_json_graph()
 
         expect.has_node_repr('A').has_coverages_by_color(1, 1, 1)
         expect.has_node_repr('CAA').has_coverages_by_color(0, 0, 1)
