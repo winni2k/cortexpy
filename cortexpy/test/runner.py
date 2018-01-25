@@ -67,14 +67,15 @@ class Cortexpy(object):
             colors = [color]
         if isinstance(colors, int):
             colors = [colors]
-        command = ['view', 'traversal',
+        command1 = ['traverse', str(graph), contig, '--colors', ','.join(str(c) for c in colors)]
+        if max_nodes is not None:
+            command1.extend(['--max-nodes', str(max_nodes)])
+        ret_val = self.run(command1)
+        command2 = ['view', 'traversal',
                    str(graph), contig,
                    '--output-format', output_format,
                    '--colors', ','.join(str(c) for c in colors),
                    '--output-type', output_type]
-        if max_nodes is not None:
-            command.extend(['--max-nodes', str(max_nodes)])
-        return self.run(command)
 
     def assemble(self, *, graph, initial_seqs):
         command = ['assemble', graph, initial_seqs]

@@ -8,7 +8,11 @@ Options:
 
 Allowed cortexpy commands are:
    view       View a cortex graph
+<<<<<<< HEAD
    assemble   Assemble from a cortex graph
+=======
+   traverse   Traverse a cortex graph
+>>>>>>> WIP
 
 See 'cortexpy <command>' for more information on a specific command.
 
@@ -29,22 +33,25 @@ def main(argv):
 
     argv = [args['<command>']] + args['<args>']
     if args['<command>'] == 'view':
-        import cortexpy.command.view
-        try:
-            cortexpy.command.view.view(argv)
-        except SchemaError as e:
-            print(e)
-            return e
+        from cortexpy.command.view import view
+        return run_command(view, argv)
     elif args['<command>'] == 'assemble':
-        import cortexpy.command.assemble
-        try:
-            cortexpy.command.assemble.assemble(argv)
-        except SchemaError as e:
-            print(e)
-            return e
+        import cortexpy.command.assemble as assemble
+        return run_command(assemble, argv)
+    elif args['<command>'] == 'traverse':
+        from cortexpy.command.traverse import traverse
+        return run_command(traverse, argv)
     else:
         print("'{}' is not a cortexpy command. See 'cortexpy --help'.".format(args['<command>']))
         return 1
+
+
+def run_command(function, argv):
+    try:
+        function(argv)
+    except SchemaError as e:
+        print(e)
+        return e
     return 0
 
 
