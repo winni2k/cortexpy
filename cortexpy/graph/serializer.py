@@ -259,9 +259,10 @@ class UnitigCollapser(object):
         All nodes have an attribute `repr` added which is the node label with the left k-1 letters
         removed unless the node has no incoming edges. In that case, `repr` is the full kmer.
 
+        All nodes have an attribute `unitig` added, which is the string representation of the unitg.
+
         Unitigs are described in :py:func:`find_unitig_from`.
 
-        :param graph:
         :return graph:
         """
         self.unitig_graph = self.unitig_finder.find_unitigs()
@@ -269,16 +270,17 @@ class UnitigCollapser(object):
         for unitig_graph, data in self.unitig_graph.nodes.data():
             assert data['is_unitig']
             left_node = data['left_node']
-            if self.graph.in_degree(left_node) > 0:
-                short_kmer_name = [left_node[-1]]
-            else:
-                short_kmer_name = [left_node]
+            kmer_suffices = [left_node[-1]]
             seen_nodes = set()
             for _, target, _ in nx.edge_dfs(unitig_graph, source=left_node):
                 if target not in seen_nodes:
                     seen_nodes.add(target)
-                    short_kmer_name.append(target[-1])
-            short_kmer_name = ''.join(short_kmer_name)
-            out_graph.nodes[unitig_graph]['repr'] = short_kmer_name
+                    kmer_suffices.append(target[-1])
+            unitig_repr = ''.join(kmer_suffices)
+            unitig_string = left_node[:-1] + unitig_repr
+            if self.graph.in_degree(left_node) == 0:
+                unitig_repr = unitig_string
+            out_graph.nodes[unitig_graph]['repr'] = unitig_repr
+            out_graph.nodes[unitig_graph]['unitig'] = ''.join(unitig_string)
         self.unitig_graph = out_graph
         return self

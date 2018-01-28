@@ -57,7 +57,8 @@ class JsonGraphExpectation(object):
     graph = attr.ib()
     colors = attr.ib(init=False)
     n_colors = attr.ib(init=False)
-    node_id_by_repr = attr.ib(init=False)
+    node_id_by_repr = attr.ib(attr.Factory(lambda: defaultdict(list)), init=False)
+    node_id_by_unitig = attr.ib(attr.Factory(lambda: defaultdict(list)), init=False)
 
     def __attrs_post_init__(self):
         print('With JSON graph: {}'.format(self.graph))
@@ -65,9 +66,9 @@ class JsonGraphExpectation(object):
         assert sum(['is_missing' in e for e in self.graph['edges']]) == 0
         self.colors = self.graph['graph']['colors']
         self.n_colors = len(self.colors)
-        self.node_id_by_repr = defaultdict(list)
         for node_id, node in enumerate(self.graph['nodes']):
             self.node_id_by_repr[node['repr']].append(node_id)
+            self.node_id_by_unitig[node['unitig']].append(node_id)
 
     def is_directed(self):
         assert self.graph['directed']
@@ -81,10 +82,19 @@ class JsonGraphExpectation(object):
         assert len(self.graph['nodes']) == n
         return self
 
+    def has_node_unitig(self, unitig):
+        node_ids = self.node_id_by_unitig[unitig]
+        assert len(node_ids) == 1
+        node = self.graph['nodes'][node_ids[0]]
+        return JsonNodeExpectation(node, self.n_colors)
+
     def has_node_repr(self, repr):
-        nodes = list(filter(lambda n: n['repr'] == repr, self.graph['nodes']))
-        assert len(nodes) > 0
-        return JsonNodeExpectation(nodes[0], self.n_colors)
+        node_ids = self.node_id_by_repr[repr]
+        assert len(node_ids) > 0
+        if len(node_ids) != 1:
+            raise AssertionError('Found more than one node matching repr: ' + repr)
+        node = self.graph['nodes'][node_ids[0]]
+        return JsonNodeExpectation(node, self.n_colors)
 
     def has_n_edges(self, n):
         assert len(self.graph['edges']) == n
@@ -341,6 +351,11 @@ class TestTraversal(object):
         expect.has_node_repr('T').has_coverages_by_color(1, 0, 0)
         expect.has_node_repr('GG').has_coverages_by_color([0, 0], [1, 1], [0, 0])
         expect.has_n_nodes(4)
+
+        expect.has_node_unitig('AAA')
+        expect.has_node_unitig('CAA')
+        expect.has_node_unitig('AAT')
+        expect.has_node_unitig('AAGG')
 
         expect.has_repr_edge('A', 'T', 0)
         expect.has_repr_edge('A', 'GG', 1)
