@@ -41,8 +41,8 @@ class Traverser(object):
         while True:
             oriented_edge_set = self.kmer.edges[self.traversal_color].oriented(self.orientation)
             if (
-                    self._get_num_neighbors(oriented_edge_set) != 1
-                    or self._get_num_neighbors(oriented_edge_set.other_orientation()) > 1
+                self._get_num_neighbors(oriented_edge_set) != 1
+                or self._get_num_neighbors(oriented_edge_set.other_orientation()) > 1
             ):
                 break
             try:
@@ -52,7 +52,7 @@ class Traverser(object):
                 break
 
         reverse_neighbor_kmer_strings = set(
-                self._get_neighbors(oriented_edge_set.other_orientation()))
+            self._get_neighbors(oriented_edge_set.other_orientation()))
         if self.prev_kmer_string is not None:
             reverse_neighbor_kmer_strings.remove(self.prev_kmer_string)
         return Traversed(self.graph,
@@ -112,7 +112,7 @@ class Traversed(object):
         return len(self.graph) == 0
 
 
-@attr.s(slots=True)
+@attr.s(slots=True, frozen=True, hash=True)
 class TraversalSetup(object):
     start_string = attr.ib()
     orientation = attr.ib()
@@ -126,6 +126,7 @@ class Queuer(object):
     traversal_colors = attr.ib()
     engine_orientation = attr.ib(EngineTraversalOrientation.original)
     _orientations = attr.ib(init=False)
+    _seen_traversal_setups = attr.ib(attr.Factory(set))
 
     def __attrs_post_init__(self):
         if self.engine_orientation == EngineTraversalOrientation.both:
@@ -134,20 +135,21 @@ class Queuer(object):
             self._orientations = [EdgeTraversalOrientation[self.engine_orientation.name]]
 
     def add_from(self, start_string, orientation, connecting_node, traversal_color):
-        self.queue.append(
-                TraversalSetup(start_string=start_string,
-                               orientation=orientation,
-                               connecting_node=connecting_node,
-                               traversal_color=traversal_color)
-        )
+        traversal_setup = TraversalSetup(start_string=start_string,
+                                         orientation=orientation,
+                                         connecting_node=connecting_node,
+                                         traversal_color=traversal_color)
+        if traversal_setup not in self._seen_traversal_setups:
+            self._seen_traversal_setups.add(traversal_setup)
+            self.queue.append(traversal_setup)
 
     def add_from_branch(self, branch):
         orientation_neighbor_pairs = [
             (branch.orientation, branch.neighbor_kmer_strings)]
         if self.engine_orientation == EngineTraversalOrientation.both:
             orientation_neighbor_pairs.append(
-                    (EdgeTraversalOrientation.other(branch.orientation),
-                     branch.reverse_neighbor_kmer_strings))
+                (EdgeTraversalOrientation.other(branch.orientation),
+                 branch.reverse_neighbor_kmer_strings))
         else:
             assert EdgeTraversalOrientation[
                        self.engine_orientation.name] == branch.orientation

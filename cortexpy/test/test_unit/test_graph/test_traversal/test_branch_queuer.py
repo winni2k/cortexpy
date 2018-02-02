@@ -41,14 +41,14 @@ class TraversedBranchBuilder(object):
 
 @attr.s(slots=True)
 class BranchQueuerDriver(object):
-    traversed_branches_in_queue = attr.ib(attr.Factory(list))
-    traversed_branch_builders_to_queue = attr.ib(attr.Factory(list))
+    branches_in_queue = attr.ib(attr.Factory(list))
+    branch_builders_to_queue = attr.ib(attr.Factory(list))
     engine_traversal_orientation = attr.ib(EngineTraversalOrientation.original)
     traversal_colors = attr.ib((0,))
 
     def queue_from_traversed_branch(self):
         traversed_branch_builder_to_queue = TraversedBranchBuilder()
-        self.traversed_branch_builders_to_queue.append(traversed_branch_builder_to_queue)
+        self.branch_builders_to_queue.append(traversed_branch_builder_to_queue)
         return traversed_branch_builder_to_queue
 
     def with_engine_traversal_orientation(self, orientation):
@@ -56,10 +56,10 @@ class BranchQueuerDriver(object):
         return self
 
     def run(self):
-        queuer = Queuer(self.traversed_branches_in_queue,
+        queuer = Queuer(self.branches_in_queue,
                         traversal_colors=self.traversal_colors,
                         engine_orientation=self.engine_traversal_orientation)
-        for traversed_branch_builder in self.traversed_branch_builders_to_queue:
+        for traversed_branch_builder in self.branch_builders_to_queue:
             traversed_branch = traversed_branch_builder.build()
             queuer.add_from_branch(traversed_branch)
         return BranchQueueExpectation(queuer)
@@ -74,7 +74,7 @@ class BranchQueueExpectation(object):
         self.queue = self.queuer.queue
 
     def has_n_setups(self, n):
-        assert len(self.queue) == n
+        assert n == len(self.queue)
         return self
 
     def has_nth_setup(self, n, start_string, orientation, connecting_node):
@@ -98,18 +98,18 @@ class Test(object):
 
         driver = BranchQueuerDriver()
         (driver
-            .with_engine_traversal_orientation(engine_traversal_orientation_string)
-            .queue_from_traversed_branch()
-            .with_first_kmer(0)
-            .with_last_kmer(1)
-            .with_neighbors(2)
-            .with_reverse_neighbors(3)
-            .with_traversal_orientation(traversed_branch_orientation_string))
+         .with_engine_traversal_orientation(engine_traversal_orientation_string)
+         .queue_from_traversed_branch()
+         .with_first_kmer(0)
+         .with_last_kmer(1)
+         .with_neighbors(2)
+         .with_reverse_neighbors(3)
+         .with_traversal_orientation(traversed_branch_orientation_string))
 
         expected_setups = [(2, traversed_branch_orientation, 1)]
         if engine_traversal_orientation_string == 'both':
             expected_setups.append(
-                    (3, EdgeTraversalOrientation.other(traversed_branch_orientation), 1))
+                (3, EdgeTraversalOrientation.other(traversed_branch_orientation), 1))
 
         # when
         expect = driver.run()
@@ -121,3 +121,40 @@ class Test(object):
                                  start_string=setup[0],
                                  orientation=setup[1],
                                  connecting_node=setup[2])
+
+    @given(s.sampled_from(('original', 'reverse')), s.booleans())
+    def test_does_not_enqueue_from_a_seen_traversed_branch(self,
+                                                           traversed_branch_orientation_string,
+                                                           traverse_both):
+        # given
+        engine_traversal_orientation_string = traversed_branch_orientation_string
+        if traverse_both:
+            engine_traversal_orientation_string = 'both'
+        traversed_branch_orientation = EdgeTraversalOrientation[traversed_branch_orientation_string]
+
+        driver = BranchQueuerDriver()
+        driver.with_engine_traversal_orientation(engine_traversal_orientation_string)
+        expected_setups = []
+        for _ in range(2):
+            driver.queue_from_traversed_branch() \
+                .with_first_kmer(0) \
+                .with_last_kmer(1) \
+                .with_neighbors(2) \
+                .with_reverse_neighbors(3) \
+                .with_traversal_orientation(traversed_branch_orientation_string)
+
+        expected_setups.append((2, traversed_branch_orientation, 1))
+        if engine_traversal_orientation_string == 'both':
+            expected_setups.append(
+                (3, EdgeTraversalOrientation.other(traversed_branch_orientation), 1))
+
+        # when
+        expect = driver.run()
+
+        # then
+        for n, setup in enumerate(expected_setups):
+            expect.has_nth_setup(n,
+                                 start_string=setup[0],
+                                 orientation=setup[1],
+                                 connecting_node=setup[2])
+        expect.has_n_setups(len(expected_setups))
