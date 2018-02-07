@@ -5,7 +5,14 @@ import numpy as np
 import cortexpy.edge_set
 from cortexpy.edge_set import EdgeSet
 from cortexpy.graph.parser.constants import NUM_TO_LETTER, UINT64_T, UINT32_T
-from cortexpy.utils import revcomp
+from cortexpy.utils import revcomp, lexlo
+
+
+def check_kmer_string(kmer_string):
+    if len(kmer_string) % 2 == 0:
+        raise ValueError('kmer_string needs to be odd length')
+    if len(kmer_string) < 3:
+        raise ValueError('kmer_string needs to length 3 or more')
 
 
 @attr.s(slots=True)
@@ -18,23 +25,28 @@ class EmptyKmerBuilder(object):
         if value < 0:
             raise ValueError('value less than zero')
 
-    def build_or_get(self, kmer_string):
-        if len(kmer_string) % 2 == 0:
-            raise ValueError('kmer_string needs to be odd length')
-        if len(kmer_string) < 3:
-            raise ValueError('kmer_string needs to length 3 or more')
-        kmer_string_to_use = revcomp(kmer_string)
-        if kmer_string < kmer_string_to_use:
-            kmer_string_to_use = kmer_string
+    def _build_from_lexlo(self, kmer_string, is_lexlo=False):
+        """Build empty kmer from a lexicographically lowest string"""
+        return Kmer(EmptyKmer(kmer=kmer_string,
+                              coverage=np.zeros(self.num_colors,
+                                                dtype=np.uint8),
+                              kmer_size=len(kmer_string),
+                              num_colors=self.num_colors))
 
+    def build(self, kmer_string):
+        """Build empty kmer from a kmer string"""
+        check_kmer_string(kmer_string)
+        kmer_string_to_use = lexlo(kmer_string)
+        return self._build_from_lexlo(kmer_string_to_use)
+
+    def build_or_get(self, kmer_string):
+        check_kmer_string(kmer_string)
+        kmer_string_to_use = lexlo(kmer_string)
         if kmer_string_to_use in self._seen_kmers.keys():
             return self._seen_kmers[kmer_string_to_use]
-        self._seen_kmers[kmer_string_to_use] = Kmer(EmptyKmer(kmer=kmer_string_to_use,
-                                                              coverage=np.zeros(self.num_colors,
-                                                                                dtype=np.uint8),
-                                                              kmer_size=len(kmer_string_to_use),
-                                                              num_colors=self.num_colors))
-        return self._seen_kmers[kmer_string_to_use]
+        kmer = self._build_from_lexlo(kmer_string_to_use)
+        self._seen_kmers[kmer_string_to_use] = kmer
+        return kmer
 
 
 def flip_kmer_string_to_match(flip, ref, flip_is_after_reference_kmer=True):
@@ -56,8 +68,8 @@ def flip_kmer_string_to_match(flip, ref, flip_is_after_reference_kmer=True):
         raise ValueError
 
 
-def connect_kmers(first, second, color):
-    if first == second and first is not second:
+def connect_kmers(first, second, color, identical_kmer_check=True):
+    if identical_kmer_check and first == second and first is not second:
         raise ValueError('Kmers are equal, but not the same object')
     connection_is_set = False
     for flip_is_after_reference_kmer in [True, False]:
@@ -111,14 +123,13 @@ class EmptyKmer(object):
     coverage = attr.ib()
     kmer_size = attr.ib()
     num_colors = attr.ib()
-    edges = attr.ib(None)
+    edges = attr.ib(init=False)
 
     def __attrs_post_init__(self):
-        if self.edges is None:
-            self.edges = [cortexpy.edge_set.empty() for _ in range(len(self.coverage))]
+        self.edges = [cortexpy.edge_set.empty() for _ in range(len(self.coverage))]
 
 
-@attr.s(slots=True, cmp=False)
+@attr.s(slots=True, cmp=False, frozen=True)
 class KmerData(object):
     _data = attr.ib()
     kmer_size = attr.ib()
@@ -135,9 +146,8 @@ class KmerData(object):
         n_vals_left_over = self.kmer_size % 4
         n_vals_to_remove = 4 - n_vals_left_over
         if n_vals_to_remove > 0:
-            self._kmer_vals_to_delete = (
-                np.arange(0, n_vals_to_remove) + self.kmer_size - n_vals_left_over
-            )
+            object.__setattr__(self, "_kmer_vals_to_delete",
+                               np.arange(0, n_vals_to_remove) + self.kmer_size - n_vals_left_over)
 
     @property
     def kmer(self):
@@ -152,7 +162,8 @@ class KmerData(object):
             kmer = (
                 kmer_as_bits.reshape(-1, 2) * np.array([2, 1])
             ).sum(1)
-            self._kmer = ''.join(NUM_TO_LETTER[num] for num in kmer[(len(kmer) - self.kmer_size):])
+            object.__setattr__(self, "_kmer", ''.join(
+                NUM_TO_LETTER[num] for num in kmer[(len(kmer) - self.kmer_size):]))
         return self._kmer
 
     @property
@@ -161,7 +172,8 @@ class KmerData(object):
             start = self._kmer_container_size_in_uint64ts * UINT64_T
             coverage_raw = self._data[start:(start + self.num_colors * UINT32_T)]
             fmt_string = ''.join(['I' for _ in range(self.num_colors)])
-            self._coverage = np.array(unpack(fmt_string, coverage_raw), dtype=np.uint32)
+            object.__setattr__(self, "_coverage",
+                               np.array(unpack(fmt_string, coverage_raw), dtype=np.uint32))
         return self._coverage
 
     @property
@@ -173,7 +185,7 @@ class KmerData(object):
             edge_bytes = list(self._data[start:])
             edge_sets = np.unpackbits(np.array(edge_bytes, dtype=np.uint8)).reshape(-1, 4)
             edge_sets[1::2] = np.fliplr(edge_sets[1::2])
-            self._edges = list(map(EdgeSet, edge_sets.reshape(-1, 8)))
+            object.__setattr__(self, "_edges", list(map(EdgeSet, edge_sets.reshape(-1, 8))))
         return self._edges
 
 
@@ -193,16 +205,18 @@ class Kmer(object):
         self.kmer_size = self._kmer_data.kmer_size
         self.num_colors = self._kmer_data.num_colors
 
-    def append_color(self, coverage=0, edge_set=None):
-        if edge_set is None:
-            edge_set = cortexpy.edge_set.empty()
-
-        coverage_array = np.resize(self.coverage, len(self.coverage) + 1)
-        coverage_array[-1] = coverage
-        self.coverage = coverage_array
-
-        self.edges.append(edge_set)
-        self.num_colors += 1
+    def increment_color_coverage(self, color):
+        """Increment the coverage of a color by one"""
+        num_colors = max(self.num_colors, color + 1)
+        if num_colors > self.num_colors:
+            coverage_array = np.append(self.coverage, np.zeros(num_colors - self.num_colors,
+                                                               dtype=self.coverage.dtype))
+            self.coverage = coverage_array
+            for edge_idx in range(self.num_colors, num_colors):
+                assert len(self.edges) < edge_idx + 1
+                self.edges.append(cortexpy.edge_set.empty())
+        self.coverage[color] += 1
+        self.num_colors = num_colors
 
     def __eq__(self, other):
         return kmer_eq(self, other)
@@ -256,6 +270,3 @@ class KmerByStringComparator(object):
 
     def __lt__(self, other):
         return self.kmer < other.kmer
-
-    def __repr__(self):
-        return self.kmer

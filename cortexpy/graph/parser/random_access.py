@@ -1,5 +1,6 @@
 from bisect import bisect_left
 from collections import Sequence, Mapping
+from functools import lru_cache
 from io import SEEK_END
 
 import attr
@@ -17,9 +18,11 @@ class RandomAccessError(KeyError):
 @attr.s(slots=True)
 class RandomAccess(Mapping):
     graph_handle = attr.ib()
+    kmer_cache_size = attr.ib(1024)
     header = attr.ib(init=False)
     graph_sequence = attr.ib(init=False)
     n_records = attr.ib(init=False)
+    _cached_get_kmer_data_for_string = attr.ib(init=False)
 
     def __attrs_post_init__(self):
         assert self.graph_handle.seekable()
@@ -38,14 +41,19 @@ class RandomAccess(Mapping):
                                                  header=self.header,
                                                  n_records=self.n_records)
 
-    def __getitem__(self, kmer_string):
-        kmer = KmerByStringComparator(kmer=kmer_string)
+        self._cached_get_kmer_data_for_string = lru_cache(maxsize=self.kmer_cache_size)(
+            self._get_kmer_data_for_string)
+
+    def _get_kmer_data_for_string(self, kmer_string):
         try:
-            kmer_comparator = index_and_retrieve(self.graph_sequence, kmer)
+            kmer_comparator = index_and_retrieve(self.graph_sequence,
+                                                 KmerByStringComparator(kmer=kmer_string))
         except ValueError as exception:
             raise KeyError('Could not retrieve kmer: ' + kmer_string) from exception
+        return kmer_comparator.kmer_object._kmer_data
 
-        return kmer_comparator.kmer_object
+    def __getitem__(self, kmer_string):
+        return Kmer(self._cached_get_kmer_data_for_string(kmer_string))
 
     def __len__(self):
         return max(0, self.n_records)
@@ -54,9 +62,9 @@ class RandomAccess(Mapping):
         self.graph_handle.seek(self.graph_sequence.body_start)
         return kmer_generator_from_stream_and_header(self.graph_handle, self.header)
 
-    def get_kmer_for_string(self, kmer_string):
+    def get_kmer_for_string(self, string):
         """Will compute the revcomp of kmer string before getting a kmer"""
-        return self[lexlo(kmer_string)]
+        return self[lexlo(string)]
 
 
 # copied from https://docs.python.org/3.6/library/bisect.html

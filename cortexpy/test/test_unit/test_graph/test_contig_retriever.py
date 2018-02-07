@@ -55,6 +55,21 @@ class TestGetKmerGraph(object):
         assert len(kmer_graph.edges) == 0
         assert list(kmer_graph) == ['AAA']
 
+    def test_with_one_kmer_asking_for_longer_contig_returns_one_kmer_with_coverage_2(self):
+        # given
+        graph_builder = (builder.Graph()
+                         .with_kmer_size(3))
+        graph_builder.with_kmer('AAA', 1, '........')
+        retriever = graph.ContigRetriever(graph_builder.build())
+
+        # when
+        kmer_graph = retriever.get_kmer_graph('AAAA')
+
+        # then
+        assert 1 == len(kmer_graph.edges)
+        assert list(kmer_graph) == ['AAA']
+        assert [1, 2] == list(kmer_graph.nodes['AAA']['kmer'].coverage)
+
     def test_with_two_linked_kmers_returns_two_kmers(self):
         # given
         graph_builder = (builder.Graph()

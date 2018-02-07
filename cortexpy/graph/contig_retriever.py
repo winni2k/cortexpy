@@ -3,6 +3,7 @@ from collections import defaultdict
 import attr
 import networkx as nx
 
+from cortexpy.utils import lexlo
 from . import parser as parser
 from .parser.kmer import EmptyKmerBuilder, flip_kmer_string_to_match
 
@@ -12,6 +13,7 @@ RETRIEVED_CONTIG_NAME = 'retrieved_contig'
 @attr.s(slots=True)
 class ContigRetriever(object):
     graph_handle = attr.ib()
+    seen_kmer_strings = attr.ib(attr.Factory(dict))
     graph_parser = attr.ib(init=False)
     num_colors = attr.ib(init=False)
     contig_color = attr.ib(init=False)
@@ -33,19 +35,23 @@ class ContigRetriever(object):
         kmers = []
         for kmer_start in range(len(contig) - kmer_size + 1):
             kmer_string = contig[kmer_start:(kmer_start + kmer_size)]
-            try:
-                kmer = self.graph_parser.get_kmer_for_string(kmer_string)
-                kmer.append_color(1)
-            except KeyError:
-                kmer = self.empty_kmer_builder.build_or_get(kmer_string)
-                if kmer.coverage[-1] == 0:
-                    kmer.coverage[-1] = 1
+            lexlo_kmer_string = lexlo(kmer_string)
+            if lexlo_kmer_string in self.seen_kmer_strings:
+                kmer = self.seen_kmer_strings[lexlo_kmer_string]
+            else:
+                try:
+                    kmer = self.graph_parser.get_kmer_for_string(kmer_string)
+                except KeyError:
+                    kmer = self.empty_kmer_builder.build(kmer_string)
+                self.seen_kmer_strings[lexlo_kmer_string] = kmer
+            kmer.increment_color_coverage(self.num_colors - 1)
             kmers.append((kmer, kmer_string))
         for kmer_idx in range(len(kmers) - 1):
             this_kmer = kmers[kmer_idx][0]
             next_kmer = kmers[kmer_idx + 1][0]
 
-            parser.kmer.connect_kmers(this_kmer, next_kmer, self.contig_color)
+            parser.kmer.connect_kmers(this_kmer, next_kmer, self.contig_color,
+                                      identical_kmer_check=False)
         return kmers
 
     def get_kmer_graph(self, contig):

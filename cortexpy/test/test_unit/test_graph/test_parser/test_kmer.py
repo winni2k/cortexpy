@@ -1,8 +1,10 @@
+import numpy as np
 import pytest
 from Bio.Seq import reverse_complement
 from hypothesis import given, assume, settings
 from hypothesis import strategies as s
 
+import cortexpy.edge_set
 from cortexpy.graph.parser.kmer import EmptyKmerBuilder, connect_kmers
 from cortexpy.test.builder.graph.kmer import dna_sequences, kmer_strings
 
@@ -64,17 +66,22 @@ class TestBuildKmer(object):
 
 
 class TestAddColor(object):
-    @given(s.data(), s.integers(min_value=0, max_value=7))
+    @given(s.data(), s.integers(min_value=0, max_value=7), s.integers(min_value=0, max_value=10))
     @settings(max_examples=10)
-    def test_increases_color_count(self, data, num_colors):
+    def test_increases_color_count(self, data, num_colors, increment_color):
         # given
         kmer = EmptyKmerBuilder(num_colors).build_or_get(data.draw(kmer_strings()))
 
         # when
-        kmer.append_color()
+        kmer.increment_color_coverage(increment_color)
 
         # then
-        assert kmer.num_colors == num_colors + 1
+        assert kmer.num_colors == max(num_colors, increment_color + 1)
+        assert len(kmer.coverage) == kmer.num_colors
+        assert np.issubdtype(kmer.coverage[increment_color], np.integer)
+        assert kmer.coverage[increment_color] == 1
+        assert len(kmer.edges) == kmer.num_colors
+        assert list(kmer.edges) == [cortexpy.edge_set.empty() for _ in range(kmer.num_colors)]
 
 
 class TestConnectKmers(object):
