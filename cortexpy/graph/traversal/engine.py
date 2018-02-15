@@ -15,6 +15,14 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def add_graph_to(graph, graph_to_add):
+    """Compose two graphs and store the result in the first graph"""
+    assert isinstance(graph_to_add, nx.MultiDiGraph)
+    assert isinstance(graph, nx.MultiDiGraph)
+    graph.add_nodes_from(graph_to_add.nodes(data=True))
+    graph.add_edges_from(graph_to_add.edges(keys=True))
+
+
 @attr.s(slots=True)
 class Engine(object):
     ra_parser = attr.ib()
@@ -39,10 +47,7 @@ class Engine(object):
         for start in range(len(contig) - kmer_size + 1):
             start_kmer = contig[start:(start + kmer_size)]
             try:
-                self.graph = nx.compose(
-                    self.graph,
-                    self._traverse_from(start_kmer).graph
-                )
+                add_graph_to(self.graph, self._traverse_from(start_kmer).graph)
             except KeyError:
                 pass
             if len(self.graph) > self.max_nodes:
@@ -121,7 +126,7 @@ class Engine(object):
         branch = color_branch_traverser.traverse_from(setup.start_string,
                                                       orientation=setup.orientation,
                                                       parent_graph=self.graph)
-        self.graph = nx.union(self.graph, branch.graph)
+        add_graph_to(self.graph, branch.graph)
         self._connect_branch_to_parent_graph(branch, setup)
         self._link_branch_and_queue_neighbor_traversals(branch)
 
