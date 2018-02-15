@@ -15,12 +15,16 @@ class Traverser(object):
     ra_parser = attr.ib()
     traversal_color = attr.ib(0)
     graph = attr.ib(attr.Factory(SERIALIZER_GRAPH))
+    other_stopping_colors = attr.ib(attr.Factory(set))
     kmer = attr.ib(init=False, default=None)
     kmer_string = attr.ib(init=False)
     prev_kmer = attr.ib(init=False)
     prev_kmer_string = attr.ib(init=False)
     orientation = attr.ib(init=False)
     parent_graph = attr.ib(init=False)
+
+    def __attrs_post_init__(self):
+        assert self.traversal_color not in self.other_stopping_colors
 
     def traverse_from(self, kmer_string, *,
                       orientation=EdgeTraversalOrientation.original,
@@ -38,29 +42,42 @@ class Traverser(object):
         except KmerStringAlreadySeen:
             return Traversed(self.graph, orientation=self.orientation)
 
-        while True:
-            oriented_edge_set = self.kmer.edges[self.traversal_color].oriented(self.orientation)
-            if (
-                self._get_num_neighbors(oriented_edge_set) != 1
-                or self._get_num_neighbors(oriented_edge_set.other_orientation()) > 1
-            ):
-                break
-            try:
-                self._add_next_kmer_string_to_graph_and_get_next_kmer(oriented_edge_set)
-                self._add_edges()
-            except KmerStringAlreadySeen:
-                break
+        last_oriented_edge_set = self._traverse()
 
         reverse_neighbor_kmer_strings = set(
-            self._get_neighbors(oriented_edge_set.other_orientation()))
+            self._get_neighbors(last_oriented_edge_set.other_orientation()))
         if self.prev_kmer_string is not None:
             reverse_neighbor_kmer_strings.remove(self.prev_kmer_string)
         return Traversed(self.graph,
                          orientation=self.orientation,
                          first_kmer_string=first_kmer_string,
                          last_kmer_string=self.kmer_string,
-                         neighbor_kmer_strings=self._get_neighbors(oriented_edge_set),
+                         neighbor_kmer_strings=self._get_neighbors(last_oriented_edge_set),
                          reverse_neighbor_kmer_strings=list(reverse_neighbor_kmer_strings))
+
+    def _traverse(self):
+        while True:
+            traversal_edge_set = self.kmer.edges[self.traversal_color].oriented(
+                self.orientation)
+            if (
+                self._get_num_neighbors(traversal_edge_set) != 1
+                or self._get_num_neighbors(traversal_edge_set.other_orientation()) > 1
+            ):
+                return traversal_edge_set
+
+            for stop_color in self.other_stopping_colors:
+                stop_color_edge_set = self.kmer.edges[stop_color].oriented(self.orientation)
+                if (
+                    self._get_num_neighbors(stop_color_edge_set) != 0
+                    or self._get_num_neighbors(stop_color_edge_set.other_orientation()) != 0
+                ):
+                    return traversal_edge_set
+
+            try:
+                self._add_next_kmer_string_to_graph_and_get_next_kmer(traversal_edge_set)
+                self._add_edges()
+            except KmerStringAlreadySeen:
+                return traversal_edge_set
 
     def _get_num_neighbors(self, oriented_edge_set):
         return oriented_edge_set.num_neighbor(self.kmer_string)

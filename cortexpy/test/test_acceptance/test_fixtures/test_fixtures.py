@@ -1,5 +1,4 @@
 import os
-
 import cortexpy.graph.parser as parser
 
 

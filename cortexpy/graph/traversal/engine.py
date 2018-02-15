@@ -40,8 +40,8 @@ class Engine(object):
             start_kmer = contig[start:(start + kmer_size)]
             try:
                 self.graph = nx.compose(
-                        self.graph,
-                        self._traverse_from(start_kmer).graph
+                    self.graph,
+                    self._traverse_from(start_kmer).graph
                 )
             except KeyError:
                 pass
@@ -60,7 +60,9 @@ class Engine(object):
     def _traverse_from(self, start_string):
         assert len(start_string) == self.ra_parser.header.kmer_size
         self.branch_traverser = {
-            color: branch.Traverser(self.ra_parser, traversal_color=color)
+            color: branch.Traverser(self.ra_parser,
+                                    traversal_color=color,
+                                    other_stopping_colors=set(self.traversal_colors) - {color})
             for color in self.traversal_colors
         }
         self.queuer = branch.Queuer(self.branch_queue,
@@ -72,8 +74,8 @@ class Engine(object):
             self._traverse_a_branch_from_queue()
         if len(self.graph) > self.max_nodes:
             logger.warning(
-                    "Max nodes ({}) exceeded: {} nodes found".format(self.max_nodes,
-                                                                     len(self.graph)))
+                "Max nodes ({}) exceeded: {} nodes found".format(self.max_nodes,
+                                                                 len(self.graph)))
         return self
 
     def _post_process_graph(self):
@@ -97,7 +99,7 @@ class Engine(object):
         if self.orientation == EngineTraversalOrientation.both:
             for color in self.traversal_colors:
                 oriented_edge_set = start_kmer.edges[color].oriented(
-                        EdgeTraversalOrientation.reverse)
+                    EdgeTraversalOrientation.reverse)
                 kmer_strings = oriented_edge_set.neighbor_kmer_strings(start_string)
                 if len(kmer_strings) == 1:
                     self.queuer.add_from(start_string=kmer_strings[0],
@@ -133,8 +135,8 @@ class Engine(object):
         orientations_and_kmer_strings = [(branch.orientation, branch.neighbor_kmer_strings)]
         if self.orientation == EngineTraversalOrientation.both:
             orientations_and_kmer_strings.append(
-                    (EdgeTraversalOrientation.other(branch.orientation),
-                     branch.reverse_neighbor_kmer_strings)
+                (EdgeTraversalOrientation.other(branch.orientation),
+                 branch.reverse_neighbor_kmer_strings)
             )
         for orientation, kmer_strings in orientations_and_kmer_strings:
             for neighbor_string in kmer_strings:
@@ -156,7 +158,7 @@ class Engine(object):
             oriented_edge_set = last_kmer.edges[traversal_color].oriented(branch.orientation)
             neighbor_kmer_strings |= set(oriented_edge_set.neighbor_kmer_strings(last_kmer_string))
             reverse_neighbor_kmer_strings |= set(
-                    oriented_edge_set.other_orientation().neighbor_kmer_strings(last_kmer_string))
+                oriented_edge_set.other_orientation().neighbor_kmer_strings(last_kmer_string))
 
         branch = copy.copy(branch)
         branch.neighbor_kmer_strings = list(neighbor_kmer_strings)

@@ -221,6 +221,12 @@ class Kmer(object):
     def __eq__(self, other):
         return kmer_eq(self, other)
 
+    def __str__(self):
+        string_parts = [self.kmer]
+        string_parts += [str(c) for c in self.coverage]
+        string_parts += [e.to_str() for e in self.edges]
+        return ' '.join(string_parts)
+
     @property
     def colors(self):
         return range(self.num_colors)
@@ -238,7 +244,7 @@ class Kmer(object):
                 raise ValueError('Kmers are not neighbors')
         edge_set = self.edges[color]
         if edge_set.is_edge(other_kmer_letter) != other.edges[color].is_edge(this_kmer_letter):
-            raise ValueError('Kmers do not agree on connection')
+            raise ValueError('Kmers ({}) and ({}) do not agree on connection'.format(self, other))
         return edge_set.is_edge(other_kmer_letter)
 
     def has_incoming_edge_from_kmer_in_color(self, other, color):

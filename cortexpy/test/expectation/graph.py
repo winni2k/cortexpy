@@ -29,17 +29,17 @@ class KmerGraphExpectation(object):
         return KmerNodeExpectation(self.graph.node[node])
 
     def has_n_nodes(self, n):
-        assert len(self.graph) == n
+        assert n == len(self.graph)
         return self
 
     def has_n_edges(self, n):
-        assert len(self.graph.edges) == n
+        assert n == len(self.graph.edges)
         return self
 
     def has_nodes(self, *expected_nodes):
         expected_nodes = set(expected_nodes)
-        assert set(self.graph.nodes) == expected_nodes
-        assert len(self.graph.nodes) == len(expected_nodes)
+        assert expected_nodes == set(self.graph.nodes)
+        assert len(expected_nodes) == len(self.graph.nodes)
         return self
 
     def has_edges(self, *edges):
@@ -50,7 +50,7 @@ class KmerGraphExpectation(object):
                 edge[2] = int(edge[2])
             expected_edges.append(tuple(edge))
 
-        assert set(self.graph.edges) == set(expected_edges)
+        assert set(expected_edges) == set(self.graph.edges)
         return self
 
     def has_edge(self, source, target, color):
@@ -63,6 +63,8 @@ class KmerNodeExpectation(object):
     kmer_node = attr.ib()
 
     def has_coverages(self, *coverages):
+        if len(coverages) == 1 and isinstance(coverages[0], str):
+            coverages = [int(c) for c in coverages[0].split(' ')]
         assert np.all(self.kmer_node['kmer'].coverage == np.array(coverages))
         return self
 

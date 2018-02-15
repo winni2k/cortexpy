@@ -59,7 +59,7 @@ class Cortexpy(object):
         if output_format is not None:
             run_args.extend(['--output-format', output_format])
         run_args += list(other_args)
-        return self.run(['view', 'contig', graph, contig] + run_args)
+        return self.run(['view', 'contig', str(graph), contig] + run_args)
 
     def view_traversal(self, contig, graph, output_format='json', output_type='kmers',
                        orientation='both', color=0, max_nodes=None, colors=None):
@@ -68,7 +68,7 @@ class Cortexpy(object):
         if isinstance(colors, int):
             colors = [colors]
         command = ['view', 'traversal',
-                   graph, contig,
+                   str(graph), contig,
                    '--output-format', output_format,
                    '--colors', ','.join(str(c) for c in colors),
                    '--output-type', output_type]
