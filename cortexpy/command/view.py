@@ -1,4 +1,6 @@
 """
+cortexpy view
+
 Usage:
   cortexpy view graph <graph> [--help]
   cortexpy view contig <graph> <contig> [--help] [--output-format=<format>]
