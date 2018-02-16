@@ -3,6 +3,7 @@ import copy
 import attr
 import collections
 import networkx as nx
+from Bio import SeqIO
 
 from cortexpy import graph
 from cortexpy.graph.parser.kmer import EmptyKmerBuilder
@@ -41,7 +42,18 @@ class Engine(object):
         self.graph.clear()
         self.__attrs_post_init__()
 
+    def traverse_from_each_kmer_in_fasta(self, fasta):
+        for record in SeqIO.parse(fasta, 'fasta'):
+            self._traverse_from_each_kmer_in(str(record.seq))
+        self._post_process_graph()
+        return self
+
     def traverse_from_each_kmer_in(self, contig):
+        self._traverse_from_each_kmer_in(contig)
+        self._post_process_graph()
+        return self
+
+    def _traverse_from_each_kmer_in(self, contig):
         kmer_size = self.ra_parser.header.kmer_size
         assert len(contig) >= kmer_size
         for start in range(len(contig) - kmer_size + 1):
@@ -54,7 +66,6 @@ class Engine(object):
                 logger.warning(("Terminating contig traversal after kmer {}"
                                 " because max node limit is reached").format(start_kmer))
                 break
-        self._post_process_graph()
         return self
 
     def traverse_from(self, start_string):

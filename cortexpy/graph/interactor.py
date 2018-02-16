@@ -55,7 +55,6 @@ class Contigs(object):
 
     def all_simple_paths(self):
         graph = make_copy_of_color(self.graph, self.color, include_self_refs=False)
-        logger.info(graph.nodes)
         idx = 0
         for source in graph.nodes():
             if graph.in_degree(source) > 0:

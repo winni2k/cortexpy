@@ -1,4 +1,6 @@
 """
+cortexpy
+
 Usage: cortexpy [--help] <command> [<args>...]
 
 Options:
@@ -6,6 +8,7 @@ Options:
 
 Allowed cortexpy commands are:
    view       View a cortex graph
+   assemble   Assemble from a cortex graph
 
 See 'cortexpy <command>' for more information on a specific command.
 
@@ -29,6 +32,13 @@ def main(argv):
         import cortexpy.command.view
         try:
             cortexpy.command.view.view(argv)
+        except SchemaError as e:
+            print(e)
+            return e
+    elif args['<command>'] == 'assemble':
+        import cortexpy.command.assemble
+        try:
+            cortexpy.command.assemble.assemble(argv)
         except SchemaError as e:
             print(e)
             return e

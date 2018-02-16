@@ -31,5 +31,6 @@ class Fasta(object):
 
     def has_record(self, expected_record_seq):
         record = next((rec for rec in self.fasta_records if rec.seq == expected_record_seq), None)
-        assert record.seq == expected_record_seq
+        assert record is not None
+        assert expected_record_seq == record.seq
         return BioSeqRecord(record)

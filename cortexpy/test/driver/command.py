@@ -34,7 +34,8 @@ class Assemble(object):
 
     def run(self):
         inital_seq_fasta = self.tmpdir / 'initial_seqs.fasta'
-        initial_seqs = [SeqRecord(Seq(rec), id=str(idx)) for idx, rec in enumerate(self.initial_seqs)]
+        initial_seqs = [SeqRecord(Seq(rec), id=str(idx)) for idx, rec in
+                        enumerate(self.initial_seqs)]
         SeqIO.write(initial_seqs, str(inital_seq_fasta), "fasta")
         for rec in self.records:
             self.mccortex_builder.with_dna_sequence(rec)
