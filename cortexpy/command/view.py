@@ -2,13 +2,16 @@
 cortexpy view
 
 Usage:
-  cortexpy view graph <graph> [--help]
-  cortexpy view contig <graph> <contig> [--help] [--output-format=<format>]
-  cortexpy view traversal <traversal>
+  cortexpy view graph <graph>
+  cortexpy view contig <graph> <contig> [options] [--output-format=<format>]
+  cortexpy view traversal <traversal> [options] [--output-format=<format>]
 
 Options:
     -h, --help                          Display this help message.
     --output-format <format>            Output format [default: term].
+    --input-format <input-format>       Input format [default: pickle].
+    --output-type <output-type>         Output type
+    --colors                            Colors to view
 
 Subcommands:
     graph       Print all kmers in a cortex graph.
@@ -20,7 +23,6 @@ import networkx as nx
 from docopt import docopt
 from enum import Enum
 import logging
-import attr
 
 logger = logging.getLogger('cortexpy.view')
 
@@ -65,7 +67,7 @@ def view_traversal(args):
     from cortexpy.graph import interactor
     from cortexpy.graph import serializer
 
-    assert args['<input_format>'] == 'pickle'
+    assert args['--input-format'] == 'pickle'
     if args['<traversal>'] == '-':
         graph = nx.read_gpickle(sys.stdin.buffer)
     else:

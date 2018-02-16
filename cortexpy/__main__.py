@@ -42,7 +42,8 @@ def main(argv):
         from cortexpy.command.traverse import traverse
         return run_command(traverse, argv)
     else:
-        print("'{}' is not a cortexpy command. See 'cortexpy --help'.".format(args['<command>']))
+        print("'{}' is not a cortexpy command. See 'cortexpy --help'.".format(args['<command>']),
+              file=sys.stderr)
         return 1
 
 
@@ -50,7 +51,8 @@ def run_command(function, argv):
     try:
         function(argv)
     except SchemaError as e:
-        print(e)
+        print('Input argument error for arguments: {}'.format(argv))
+        print(e, file=sys.stderr)
         return e
     return 0
 

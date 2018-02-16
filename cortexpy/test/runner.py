@@ -70,26 +70,55 @@ class Cortexpy(object):
         command1 = ['traverse', str(graph), contig, '--colors', ','.join(str(c) for c in colors)]
         if max_nodes is not None:
             command1.extend(['--max-nodes', str(max_nodes)])
-        ret_val = self.run(command1)
-        command2 = ['view', 'traversal',
-                   str(graph), contig,
-                   '--output-format', output_format,
-                   '--colors', ','.join(str(c) for c in colors),
-                   '--output-type', output_type]
+
+        command2 = ['view', 'traversal', '-',
+                    '--output-format', output_format,
+                    '--input-format', 'pickle',
+                    '--colors', ','.join(str(c) for c in colors),
+                    '--output-type', output_type]
+        command = [sys.executable, '-m', 'cortexpy']
+        logger.info('Running with args: {}'.format(command1))
+        proc1 = subprocess.Popen(tuple(command) + tuple(command1), stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+        logger.info('Running with args: {}'.format(command2))
+        proc2 = subprocess.Popen(tuple(command) + tuple(command2), stdin=proc1.stdout,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        returncode = proc2.wait()
+        stderr = proc1.stderr.read()
+        stderr += proc2.stderr.read()
+        stdout = proc2.stdout.read()
+
+        return subprocess.CompletedProcess(command1 + ['|'] + command2,
+                                           returncode,
+                                           stdout=stdout.decode(),
+                                           stderr=stderr.decode())
 
     def assemble(self, *, graph, initial_seqs):
         command = ['assemble', graph, initial_seqs]
         return self.run([str(c) for c in command])
 
-    def run(self, args):
+    def run_binary(self, args, **kwargs):
+        stdout = io.BytesIO()
+        stderr = io.BytesIO()
+        universal_newlines = False
+        return self._run(args, stdout=stdout, stderr=stderr, universal_newlines=universal_newlines,
+                         **kwargs)
+
+    def run(self, args, **kwargs):
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        universal_newlines = False
+        return self._run(args, stdout=stdout, stderr=stderr, universal_newlines=universal_newlines,
+                         **kwargs)
+
+    def _run(self, args, *, stdout, stderr, universal_newlines, stdin=None, spawn_process=False):
         logger.info('Running with args: {}'.format(args))
-        if self.spawn_process:
+        if self.spawn_process or spawn_process:
             command = [sys.executable, '-m', 'cortexpy'] + args
             return subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                  universal_newlines=True)
+                                  universal_newlines=universal_newlines, stdin=stdin)
         else:
-            stdout = io.StringIO()
-            stderr = io.StringIO()
             with contextlib.redirect_stdout(stdout):
                 with contextlib.redirect_stderr(stderr):
                     main(args)
