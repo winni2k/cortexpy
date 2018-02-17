@@ -16,12 +16,16 @@ else:
 @attr.s(slots=True)
 class Assemble(object):
     tmpdir = attr.ib()
-    records = attr.ib(attr.Factory(list))
     initial_seqs = attr.ib(attr.Factory(list))
     mccortex_builder = attr.ib(attr.Factory(builder.Mccortex))
 
     def with_records(self, *records):
-        self.records = records
+        for rec in records:
+            self.mccortex_builder.with_dna_sequence(rec)
+        return self
+
+    def with_dna_sequence(self, sequence, **kwargs):
+        self.mccortex_builder.with_dna_sequence(sequence, **kwargs)
         return self
 
     def with_initial_sequences(self, *seqs):
@@ -37,8 +41,6 @@ class Assemble(object):
         initial_seqs = [SeqRecord(Seq(rec), id=str(idx)) for idx, rec in
                         enumerate(self.initial_seqs)]
         SeqIO.write(initial_seqs, str(inital_seq_fasta), "fasta")
-        for rec in self.records:
-            self.mccortex_builder.with_dna_sequence(rec)
         output_graph = self.mccortex_builder.build(self.tmpdir)
 
         completed_process = (

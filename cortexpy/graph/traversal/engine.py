@@ -38,10 +38,6 @@ class Engine(object):
     def __attrs_post_init__(self):
         self._add_graph_metadata()
 
-    def clear(self):
-        self.graph.clear()
-        self.__attrs_post_init__()
-
     def traverse_from_each_kmer_in_fasta(self, fasta):
         for record in SeqIO.parse(fasta, 'fasta'):
             self._traverse_from_each_kmer_in(str(record.seq))

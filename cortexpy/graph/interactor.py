@@ -51,11 +51,15 @@ def convert_kmer_path_to_contig(path):
 @attr.s(slots=True)
 class Contigs(object):
     graph = attr.ib()
-    color = attr.ib()
+    color = attr.ib(None)
 
     def all_simple_paths(self):
-        graph = make_copy_of_color(self.graph, self.color, include_self_refs=False)
+        graph = self.graph
+        if self.color is not None:
+            graph = make_copy_of_color(self.graph, self.color, include_self_refs=False)
         idx = 0
+        logger.info(graph.nodes())
+        logger.info(graph.edges())
         for source in graph.nodes():
             if graph.in_degree(source) > 0:
                 continue
