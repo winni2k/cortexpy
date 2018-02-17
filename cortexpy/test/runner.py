@@ -76,7 +76,7 @@ class Cortexpy(object):
             command.extend(['--max-nodes', str(max_nodes)])
         return self.run(command)
 
-    def assemble(self, *, graph, initial_seqs, ):
+    def assemble(self, *, graph, initial_seqs):
         command = ['assemble', graph, initial_seqs]
         return self.run([str(c) for c in command])
 
