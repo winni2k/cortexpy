@@ -26,7 +26,7 @@ class Mccortex(object):
         return self
 
     def build(self, tmpdir):
-        mccortex_args = ['build', '--sort', '--kmer', str(self.kmer_size)]
+        mccortex_args = ['build', '--force', '--sort', '--kmer', str(self.kmer_size)]
         for name, dna_sequences in self.sequences.items():
             input_fasta = str(tmpdir.join('input.{}.fasta'.format(name)))
             with open(input_fasta, 'w') as fh:

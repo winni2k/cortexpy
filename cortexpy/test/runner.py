@@ -66,7 +66,7 @@ class Cortexpy(object):
                        to_json=None, kmers=None,
                        color=0, max_nodes=None, colors=None,
                        # deprecated options
-                       output_format=None, output_type=None,):
+                       output_format=None, output_type=None, ):
         assert output_format is None or to_json is None
         assert output_type is None or kmers is None
         if (output_format is None and to_json is None) or output_format == 'json':
@@ -79,16 +79,8 @@ class Cortexpy(object):
         if isinstance(colors, int):
             colors = [colors]
         intermediate_graph = str(Path(graph).with_suffix('.traverse.pickle'))
-        command1 = [
-            'traverse', str(graph),
-            '--initial-contig',
-            contig, '--colors',
-            ','.join(str(c) for c in colors),
-            '--out', intermediate_graph
-        ]
-        if max_nodes is not None:
-            command1 += ['--max-nodes', str(max_nodes)]
-        command1_ret = self.run(command1)
+        command1_ret = self.traverse(graph=graph, out=intermediate_graph, contig=contig,
+                                     colors=colors, max_nodes=max_nodes)
 
         command2 = ['view', 'traversal', intermediate_graph, ]
         if to_json:
@@ -101,10 +93,28 @@ class Cortexpy(object):
         stderr = command1_ret.stderr + command2_ret.stderr
         returncode = command2_ret.returncode
 
-        return subprocess.CompletedProcess(command1 + command2,
+        return subprocess.CompletedProcess(command2,
                                            returncode,
                                            stdout=stdout,
                                            stderr=stderr)
+
+    def traverse(self, *, graph, out, contig=None, contig_fasta=None, colors=None, max_nodes=None):
+        cmd = ['traverse', graph, '--out', out]
+        if colors:
+            cmd.extend(['--colors', ','.join(str(c) for c in colors)])
+        if contig:
+            cmd.extend(['--initial-contig', contig])
+        if contig_fasta:
+            cmd.extend(['--initial-contig-fasta', contig_fasta])
+        if max_nodes:
+            cmd.extend(['--max-nodes', max_nodes])
+        return self.run([str(c) for c in cmd])
+
+    def prune(self, *, graph, out, remove_tips=None):
+        cmd = ['prune', graph, '--out', out]
+        if remove_tips:
+            cmd.extend(['--remove-tips', remove_tips])
+        return self.run([str(c) for c in cmd])
 
     def assemble(self, *, graph, initial_seqs):
         command = ['assemble', graph, initial_seqs]

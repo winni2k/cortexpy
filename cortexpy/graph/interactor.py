@@ -21,6 +21,33 @@ class Interactor(object):
                 add_edge = kmer1.has_outgoing_edge_to_kmer_in_color(kmer2, color)
             if add_edge:
                 self.graph.add_edge(kmer1_string, kmer2_string, key=color)
+        return self
+
+    def prune_tips_less_than(self, n):
+        nodes_to_prune = set()
+        assert self.colors is None
+        graph = nx.DiGraph(self.graph)
+        for sources, next_node_func in [
+            (in_nodes_of(graph), graph.successors),
+            (out_nodes_of(graph), graph.predecessors),
+        ]:
+            for source in sources:
+                tip = find_tip_from(source, n=n, graph=graph, next_node_func=next_node_func)
+                if tip:
+                    nodes_to_prune |= tip
+        self.graph.remove_nodes_from(nodes_to_prune)
+        return self
+
+
+def find_tip_from(query, *, n, graph, next_node_func):
+    tip = set()
+    for node_num in range(n):
+        if graph.in_degree(query) > 1 or graph.out_degree(query) > 1:
+            return tip
+        else:
+            tip.add(query)
+            query = next(next_node_func(query))
+    return None
 
 
 def make_copy_of_color(graph, color, include_self_refs=False):
@@ -48,6 +75,20 @@ def convert_kmer_path_to_contig(path):
     return ''.join(contig)
 
 
+def in_nodes_of(graph):
+    for source in graph.nodes():
+        if graph.in_degree(source) > 0:
+            continue
+        yield source
+
+
+def out_nodes_of(graph):
+    for target in graph.nodes():
+        if graph.out_degree(target) != 0:
+            continue
+        yield target
+
+
 @attr.s(slots=True)
 class Contigs(object):
     graph = attr.ib()
@@ -60,11 +101,9 @@ class Contigs(object):
         idx = 0
         logger.info(graph.nodes())
         logger.info(graph.edges())
-        for source in graph.nodes():
-            if graph.in_degree(source) > 0:
-                continue
-            for target in graph.nodes():
-                if source == target or graph.out_degree(target) != 0:
+        for source in in_nodes_of(graph):
+            for target in out_nodes_of(graph):
+                if source == target:
                     continue
                 for path in nx.all_simple_paths(graph, source=source, target=target):
                     yield SeqRecord(Seq(convert_kmer_path_to_contig(path)), id=str(idx),
