@@ -8,11 +8,8 @@ Options:
 
 Allowed cortexpy commands are:
    view       View a cortex graph
-<<<<<<< HEAD
    assemble   Assemble from a cortex graph
-=======
    traverse   Traverse a cortex graph
->>>>>>> WIP
 
 See 'cortexpy <command>' for more information on a specific command.
 
@@ -22,6 +19,9 @@ from docopt import docopt
 from schema import SchemaError
 
 from cortexpy import VERSION_STRING
+import logging
+
+logger = logging.getLogger('cortexpy')
 
 
 def main_without_argv():
@@ -36,7 +36,7 @@ def main(argv):
         from cortexpy.command.view import view
         return run_command(view, argv)
     elif args['<command>'] == 'assemble':
-        import cortexpy.command.assemble as assemble
+        from cortexpy.command.assemble import assemble
         return run_command(assemble, argv)
     elif args['<command>'] == 'traverse':
         from cortexpy.command.traverse import traverse

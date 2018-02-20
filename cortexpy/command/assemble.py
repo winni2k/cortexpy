@@ -17,11 +17,10 @@ Description:
     graph            A cortex graph
     start-sequences  A FASTA file with sequences from which to start assembly.
 """
-from schema import Optional, Or
 
 
 def validate(args):
-    from schema import Schema, Use
+    from schema import Schema, Use, Optional, Or
 
     schema = Schema({
         Optional('--color'): Or(None, Use(int)),

@@ -3,21 +3,21 @@ cortexpy view
 
 Usage:
   cortexpy view graph <graph>
-  cortexpy view contig <graph> <contig> [options] [--output-format=<format>]
-  cortexpy view traversal <traversal> [options] [--output-format=<format>]
+  cortexpy view contig [options] <graph> <contig>
+  cortexpy view traversal [options] <traversal>
 
 Options:
-    -h, --help                          Display this help message.
-    --output-format <format>            Output format [default: term].
-    --input-format <input-format>       Input format [default: pickle].
-    --output-type <output-type>         Output type
-    --colors                            Colors to view
+    -h, --help                        Display this help message
+    --output-type <output-type>       Output type
+    --color <color>                   Restrict view to single color
+    --output-format <format>          Output format [default: term]
 
 Subcommands:
     graph       Print all kmers in a cortex graph.
     contig      Retrieve all kmers in a contig from a cortex graph.
     traversal   View a cortexpy traversal in Python pickle format. Reads traversal from stdin if
                 <traversal> is '-'.
+
 """
 import networkx as nx
 from docopt import docopt
@@ -61,13 +61,25 @@ def view(argv):
         raise ArgparseError
 
 
+def validate_view_traversal(args):
+    from schema import Schema, Use, Optional, Or
+
+    schema = Schema({
+        '--color': Or(None, Use(int)),
+        Optional('--max-nodes'): Use(int),
+
+        str: object,
+    })
+    return schema.validate(args)
+
+
 def view_traversal(args):
     from Bio import SeqIO
     import sys
     from cortexpy.graph import interactor
     from cortexpy.graph import serializer
 
-    assert args['--input-format'] == 'pickle'
+    args = validate_view_traversal(args)
     if args['<traversal>'] == '-':
         graph = nx.read_gpickle(sys.stdin.buffer)
     else:
@@ -77,13 +89,14 @@ def view_traversal(args):
     elif args['--output-format'] == ViewTraversalOutputFormat.fasta.name:
         kmer_serializer = serializer.Kmers(graph)
         if args['--output-type'] == ViewTraversalOutputType.contigs.name:
-            assert len(args['--colors']) == 1
             seq_record_generator = interactor.Contigs(
-                graph, int(args['--colors'][0])
+                graph, args['--color']
             ).all_simple_paths()
         else:
             seq_record_generator = kmer_serializer.to_seq_records()
         SeqIO.write(seq_record_generator, sys.stdout, 'fasta')
+    else:
+        ArgparseError
 
 
 def view_graph(args):
