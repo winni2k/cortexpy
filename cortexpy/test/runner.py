@@ -55,15 +55,25 @@ class Cortexpy(object):
     def view_graph(self, graph):
         return self.run(['view', 'graph', graph])
 
-    def view_contig(self, contig, graph, output_format=None, other_args=()):
+    def view_contig(self, contig, graph, to_json=False, other_args=()):
         run_args = []
-        if output_format is not None:
-            run_args.extend(['--output-format', output_format])
+        if to_json:
+            run_args.append('--to-json')
         run_args += list(other_args)
         return self.run(['view', 'contig', str(graph), contig] + run_args)
 
-    def view_traversal(self, contig, graph, output_format='json', output_type='kmers',
-                       orientation='both', color=0, max_nodes=None, colors=None):
+    def view_traversal(self, contig, graph,
+                       to_json=None, kmers=None,
+                       color=0, max_nodes=None, colors=None,
+                       # deprecated options
+                       output_format=None, output_type=None,):
+        assert output_format is None or to_json is None
+        assert output_type is None or kmers is None
+        if (output_format is None and to_json is None) or output_format == 'json':
+            to_json = True
+        if (output_type is None and kmers is None) or output_format == 'kmers':
+            kmers = True
+
         if colors is None:
             colors = [color]
         if isinstance(colors, int):
@@ -80,9 +90,11 @@ class Cortexpy(object):
             command1 += ['--max-nodes', str(max_nodes)]
         command1_ret = self.run(command1)
 
-        command2 = ['view', 'traversal', intermediate_graph,
-                    '--output-format', output_format,
-                    '--output-type', output_type]
+        command2 = ['view', 'traversal', intermediate_graph, ]
+        if to_json:
+            command2.append('--to-json')
+        if kmers:
+            command2.append('--kmers')
         command2_ret = self.run(command2)
 
         stdout = command1_ret.stdout + command2_ret.stdout

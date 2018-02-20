@@ -3,14 +3,13 @@ cortexpy view
 
 Usage:
   cortexpy view graph <graph>
-  cortexpy view contig [options] <graph> <contig>
-  cortexpy view traversal [options] <traversal>
+  cortexpy view contig [--to-json] <graph> <contig>
+  cortexpy view traversal [--to-json options] <traversal>
 
 Options:
     -h, --help                        Display this help message
-    --output-type <output-type>       Output type
+    --kmers                           View graph as k-mers
     --color <color>                   Restrict view to single color
-    --output-format <format>          Output format [default: term]
 
 Subcommands:
     graph       Print all kmers in a cortex graph.
@@ -21,25 +20,9 @@ Subcommands:
 """
 import networkx as nx
 from docopt import docopt
-from enum import Enum
 import logging
 
 logger = logging.getLogger('cortexpy.view')
-
-
-class ViewContigOutputFormat(Enum):
-    term = 0
-    json = 1
-
-
-class ViewTraversalOutputFormat(Enum):
-    json = 1
-    fasta = 2
-
-
-class ViewTraversalOutputType(Enum):
-    kmers = 0
-    contigs = 1
 
 
 class ArgparseError(ValueError):
@@ -84,19 +67,18 @@ def view_traversal(args):
         graph = nx.read_gpickle(sys.stdin.buffer)
     else:
         graph = nx.read_gpickle(args['<traversal>'])
-    if args['--output-format'] == ViewTraversalOutputFormat.json.name:
+
+    if args['--to-json']:
         print(serializer.Serializer(graph).to_json())
-    elif args['--output-format'] == ViewTraversalOutputFormat.fasta.name:
+    else:
         kmer_serializer = serializer.Kmers(graph)
-        if args['--output-type'] == ViewTraversalOutputType.contigs.name:
+        if args['--kmers']:
+            seq_record_generator = kmer_serializer.to_seq_records()
+        else:
             seq_record_generator = interactor.Contigs(
                 graph, args['--color']
             ).all_simple_paths()
-        else:
-            seq_record_generator = kmer_serializer.to_seq_records()
         SeqIO.write(seq_record_generator, sys.stdout, 'fasta')
-    else:
-        ArgparseError
 
 
 def view_graph(args):
@@ -108,13 +90,11 @@ def view_contig(args):
     from cortexpy.graph.serializer import Serializer
 
     contig_retriever = ContigRetriever(open(args['<graph>'], 'rb'))
-    if args['--output-format'] == ViewContigOutputFormat.term.name:
-        print_contig(contig_retriever, args['<contig>'])
-    elif args['--output-format'] == ViewContigOutputFormat.json.name:
+    if args['--to-json']:
         serializer = Serializer(contig_retriever.get_kmer_graph(args['<contig>']))
         print(serializer.to_json())
     else:
-        raise ArgparseError
+        print_contig(contig_retriever, args['<contig>'])
 
 
 def print_cortex_file(graph_handle):
