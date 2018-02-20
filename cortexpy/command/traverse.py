@@ -2,7 +2,7 @@
 cortexpy traverse
 
 Usage:
-  cortexpy traverse <graph> --out <file> [options]
+  cortexpy traverse <graph> <initial-contigs> --out <file> [options]
 
 Options:
     -h, --help                    Display this help message.
@@ -12,8 +12,7 @@ Options:
            May take multiple color numbers separated by a comma (example: '0,2,3').
            The traverser will follow all colors specified.
     --max-nodes <n>               Maximum number of nodes to traverse [default: 1000].
-    --initial-contig <initial_contig>              Initiate traversal from each k-mer in this string
-    --initial-contig-fasta <initial_contig_fasta>  Initiate traversal from each k-mer in this fasta
+    --initial-fasta               Treat <initial-contigs> as fasta
 
 Description:
     Traverse a cortex graph starting from each k-mer in an initial_contig and return the subgraph as
@@ -52,11 +51,16 @@ def traverse(argv):
 
     import networkx as nx
     from cortexpy.graph import parser as g_parser, traversal
-    graph = traversal.Engine(
+    engine = traversal.Engine(
         g_parser.RandomAccess(open(args['<graph>'], 'rb')),
         traversal_colors=args['--colors'],
         orientation=traversal.constants.EngineTraversalOrientation[
             args['--orientation']],
         max_nodes=args['--max-nodes'],
-    ).traverse_from_each_kmer_in(args['--initial-contig']).graph
-    nx.write_gpickle(graph, output)
+    )
+    if args['--initial-fasta']:
+        engine.traverse_from_each_kmer_in_fasta(args['<initial-contigs>'])
+    else:
+        engine.traverse_from_each_kmer_in(args['<initial-contigs>'])
+
+    nx.write_gpickle(engine.graph, output)

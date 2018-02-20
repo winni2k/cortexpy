@@ -83,8 +83,7 @@ class Prune(object):
         cortexpy_graph = self.tmpdir / 'cortexpy_graph.pickle'
         initial_contig = self.last_record[0:self.kmer_size]
         ctp_runner = runner.Cortexpy(SPAWN_PROCESS)
-        ctp_runner.traverse(graph=mccortex_graph, out=cortexpy_graph,
-                            contig=initial_contig)
+        ctp_runner.traverse(graph=mccortex_graph, out=cortexpy_graph, contig=initial_contig)
 
         pruned_graph = Path(cortexpy_graph).with_suffix('.pruned.pickle')
         completed_process = ctp_runner.prune(graph=cortexpy_graph, out=pruned_graph,

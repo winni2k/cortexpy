@@ -98,14 +98,12 @@ class Cortexpy(object):
                                            stdout=stdout,
                                            stderr=stderr)
 
-    def traverse(self, *, graph, out, contig=None, contig_fasta=None, colors=None, max_nodes=None):
-        cmd = ['traverse', graph, '--out', out]
+    def traverse(self, *, graph, out, contig, contig_fasta=False, colors=None, max_nodes=None):
+        cmd = ['traverse', graph, contig, '--out', out]
         if colors:
             cmd.extend(['--colors', ','.join(str(c) for c in colors)])
-        if contig:
-            cmd.extend(['--initial-contig', contig])
         if contig_fasta:
-            cmd.extend(['--initial-contig-fasta', contig_fasta])
+            cmd.append('--initial-fasta')
         if max_nodes:
             cmd.extend(['--max-nodes', max_nodes])
         return self.run([str(c) for c in cmd])
