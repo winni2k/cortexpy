@@ -15,9 +15,8 @@ See 'cortexpy <command>' for more information on a specific command.
 
 """
 import sys
+import importlib
 from docopt import docopt
-from schema import SchemaError
-
 from cortexpy import VERSION_STRING
 import logging
 
@@ -30,29 +29,32 @@ def main_without_argv():
 
 def main(argv):
     args = docopt(__doc__, argv=argv, version=VERSION_STRING, options_first=True)
-
+    commands = {
+        'view': 'cortexpy.command.view.view',
+        'assemble': 'cortexpy.command.assemble.assemble',
+        'traverse': 'cortexpy.command.traverse.traverse',
+        'prune': 'cortexpy.command.prune.prune',
+    }
     argv = [args['<command>']] + args['<args>']
-    if args['<command>'] == 'view':
-        from cortexpy.command.view import view
-        return run_command(view, argv)
-    elif args['<command>'] == 'assemble':
-        from cortexpy.command.assemble import assemble
-        return run_command(assemble, argv)
-    elif args['<command>'] == 'traverse':
-        from cortexpy.command.traverse import traverse
-        return run_command(traverse, argv)
+    if args['<command>'] in commands.keys():
+        package_string, method_string = commands[args['<command>']].rsplit('.', 1)
+        module = importlib.import_module(package_string)
+        run_command(getattr(module, method_string), argv)
     else:
-        print("'{}' is not a cortexpy command. See 'cortexpy --help'.".format(args['<command>']),
-              file=sys.stderr)
+        logger.error(
+            "'{}' is not a cortexpy command. See 'cortexpy --help'.".format(args['<command>'])
+            )
         return 1
 
 
 def run_command(function, argv):
+    from schema import SchemaError
+
     try:
         function(argv)
     except SchemaError as e:
-        print('Input argument error for arguments: {}'.format(argv))
-        print(e, file=sys.stderr)
+        logger.error('Input argument error for arguments: {}'.format(argv))
+        logger.error(e)
         return e
     return 0
 

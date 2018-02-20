@@ -31,14 +31,15 @@ def validate(args):
 
 
 def assemble(argv):
-    import sys
     from docopt import docopt
-    from Bio import SeqIO
     from cortexpy import VERSION_STRING
-    from cortexpy.graph import traversal, parser, interactor
-
     args = docopt(__doc__, argv=argv, version=VERSION_STRING)
     args = validate(args)
+
+    import sys
+    from Bio import SeqIO
+    from cortexpy.graph import traversal, parser, interactor
+
     random_access = parser.RandomAccess(open(args['<graph>'], 'rb'))
     if args['--color'] is None:
         colors = list(range(random_access.header.num_colors))

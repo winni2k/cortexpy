@@ -4,7 +4,7 @@ cortexpy view
 Usage:
   cortexpy view graph <graph>
   cortexpy view contig [--to-json] <graph> <contig>
-  cortexpy view traversal [--to-json options] <traversal>
+  cortexpy view traversal [--to-json --kmers --color <color>] <traversal>
 
 Options:
     -h, --help                        Display this help message
@@ -18,7 +18,6 @@ Subcommands:
                 <traversal> is '-'.
 
 """
-import networkx as nx
 from docopt import docopt
 import logging
 
@@ -45,12 +44,10 @@ def view(argv):
 
 
 def validate_view_traversal(args):
-    from schema import Schema, Use, Optional, Or
+    from schema import Schema, Use, Or
 
     schema = Schema({
         '--color': Or(None, Use(int)),
-        Optional('--max-nodes'): Use(int),
-
         str: object,
     })
     return schema.validate(args)
@@ -63,6 +60,9 @@ def view_traversal(args):
     from cortexpy.graph import serializer
 
     args = validate_view_traversal(args)
+
+    import networkx as nx
+
     if args['<traversal>'] == '-':
         graph = nx.read_gpickle(sys.stdin.buffer)
     else:
