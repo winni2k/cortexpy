@@ -1,7 +1,10 @@
 from itertools import repeat
 import cortexpy.graph.parser as parser
 import cortexpy.test.builder as builder
-from cortexpy.test.builder.graph.body import KmerRecord, as_edge_set, print_kmer
+from cortexpy.test.builder.graph.body import KmerRecord, as_edge_set
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class TestHeaderFromStream(object):
@@ -55,7 +58,7 @@ class TestKmerGeneratorFromStream(object):
         # then
         actual_kmers = list(kmer_generator)
         for kmer in actual_kmers:
-            print_kmer(kmer)
+            logger.info(kmer)
         for expected_kmer, kmer in zip(expected_kmers, actual_kmers):
             assert kmer.kmer == expected_kmer.kmer
             assert kmer.coverage == expected_kmer.coverage
@@ -81,7 +84,7 @@ class TestKmerGeneratorFromStream(object):
         # then
         actual_kmers = list(kmer_generator)
         for kmer in actual_kmers:
-            print_kmer(kmer)
+            logger.info(kmer)
         for expected_kmer, kmer in zip(expected_kmers, actual_kmers):
             assert kmer.kmer == expected_kmer.kmer
             assert kmer.coverage == expected_kmer.coverage
@@ -107,7 +110,7 @@ class TestKmerGeneratorFromStream(object):
         # then
         actual_kmers = list(kmer_generator)
         for kmer in actual_kmers:
-            print_kmer(kmer)
+            logger.info(kmer)
         for expected_kmer, kmer in zip(expected_kmers, actual_kmers):
             assert kmer.kmer == expected_kmer.kmer
             assert kmer.coverage == expected_kmer.coverage
@@ -130,7 +133,7 @@ class TestRandomAccess(object):
         actual = cg['AAC']
 
         # then
-        print_kmer(actual)
+        logger.info(actual)
 
         assert actual.kmer == expected.kmer
         assert actual.coverage == expected.coverage

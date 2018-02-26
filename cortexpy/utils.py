@@ -11,3 +11,12 @@ def lexlo(kmer_string):
     if alt_kmer_string < kmer_string:
         return alt_kmer_string
     return kmer_string
+
+
+def get_graph_stream_iterator(file_handle):
+    import networkx as nx
+    while True:
+        try:
+            yield nx.read_gpickle(file_handle)
+        except EOFError:
+            break

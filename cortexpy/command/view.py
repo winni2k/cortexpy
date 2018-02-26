@@ -18,8 +18,11 @@ Subcommands:
                 <traversal> is '-'.
 
 """
+import networkx as nx
 from docopt import docopt
 import logging
+
+from cortexpy.utils import get_graph_stream_iterator
 
 logger = logging.getLogger('cortexpy.view')
 
@@ -61,24 +64,22 @@ def view_traversal(args):
 
     args = validate_view_traversal(args)
 
-    import networkx as nx
-
     if args['<traversal>'] == '-':
-        graph = nx.read_gpickle(sys.stdin.buffer)
+        graphs = get_graph_stream_iterator(sys.stdin.buffer)
     else:
-        graph = nx.read_gpickle(args['<traversal>'])
+        graphs = get_graph_stream_iterator(open(args['<traversal>'], 'rb'))
 
     if args['--to-json']:
+        graph = nx.compose_all(list(graphs))
         print(serializer.Serializer(graph).to_json())
     else:
-        kmer_serializer = serializer.Kmers(graph)
-        if args['--kmers']:
-            seq_record_generator = kmer_serializer.to_seq_records()
-        else:
-            seq_record_generator = interactor.Contigs(
-                graph, args['--color']
-            ).all_simple_paths()
-        SeqIO.write(seq_record_generator, sys.stdout, 'fasta')
+        for graph_idx, graph in enumerate(graphs):
+            if args['--kmers']:
+                seq_record_generator = serializer.Kmers(graph).to_seq_records()
+            else:
+                seq_record_generator = interactor.Contigs(graph, args['--color']).all_simple_paths()
+            seq_record_generator = annotated_seq_records(seq_record_generator, graph_idx=graph_idx)
+            SeqIO.write(seq_record_generator, sys.stdout, 'fasta')
 
 
 def view_graph(args):
@@ -120,3 +121,9 @@ def kmer_to_cortex_jdk_print_string(kmer, alt_kmer_string=None):
     to_print.append(' ' + ' '.join(map(str, kmer.coverage)))
     to_print.append(' ' + ' '.join(edge_set_strings))
     return ''.join(to_print)
+
+
+def annotated_seq_records(seq_record_generator, *, graph_idx):
+    for rec in seq_record_generator:
+        rec.id = 'g{}_p{}'.format(graph_idx, rec.id)
+        yield rec

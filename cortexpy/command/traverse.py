@@ -13,6 +13,7 @@ Options:
            The traverser will follow all colors specified.
     --max-nodes <n>               Maximum number of nodes to traverse [default: 1000].
     --initial-fasta               Treat <initial-contigs> as fasta
+    --subgraphs                  Emit traversal as sequence of networkx subgraphs
 
 Description:
     Traverse a cortex graph starting from each k-mer in an initial_contig and return the subgraph as
@@ -63,4 +64,9 @@ def traverse(argv):
     else:
         engine.traverse_from_each_kmer_in(args['<initial-contigs>'])
 
-    nx.write_gpickle(engine.graph, output)
+    output_graph = engine.graph
+    if args['--subgraphs'] and len(output_graph) > 0:
+        for subgraph in nx.weakly_connected_component_subgraphs(output_graph):
+            nx.write_gpickle(subgraph, output)
+    else:
+        nx.write_gpickle(output_graph, output)

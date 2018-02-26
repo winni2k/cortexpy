@@ -13,6 +13,11 @@ Description:
     graph            A cortexpy graph.  '-' redirects to or from stdout.
 """
 from cortexpy.graph import Interactor
+import logging
+
+from cortexpy.utils import get_graph_stream_iterator
+
+logger = logging.getLogger(__name__)
 
 
 def validate_prune(args):
@@ -41,10 +46,10 @@ def prune(argv):
         output = open(args['--out'], 'wb')
 
     if args['<graph>'] == '-':
-        graph = nx.read_gpickle(sys.stdin.buffer)
+        graphs = get_graph_stream_iterator(sys.stdin.buffer)
     else:
-        graph = nx.read_gpickle(args['<graph>'])
+        graphs = get_graph_stream_iterator(open(args['<graph>'], 'rb'))
 
-    Interactor(graph, colors=None).prune_tips_less_than(args['--remove-tips'])
-
-    nx.write_gpickle(graph, output)
+    for graph in graphs:
+        Interactor(graph, colors=None).prune_tips_less_than(args['--remove-tips'])
+        nx.write_gpickle(graph, output)

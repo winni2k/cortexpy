@@ -1,8 +1,9 @@
 import io
-
-import sys
 from Bio import SeqIO
 import attr
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @attr.s(slots=True)
@@ -21,12 +22,16 @@ class Fasta(object):
     fasta_records = attr.ib(init=False)
 
     def __attrs_post_init__(self):
-        print(self.fasta_string, file=sys.stderr)
+        logger.info(self.fasta_string)
         self.fasta_records = [rec for rec in SeqIO.parse(io.StringIO(self.fasta_string), "fasta")]
-        print(self.fasta_records, file=sys.stderr)
+        logger.info(self.fasta_records)
 
     def has_n_records(self, n):
-        assert len(self.fasta_records) == n
+        assert n == len(self.fasta_records)
+        return self
+
+    def has_record_ids(self, *ids):
+        assert set(ids) == {rec.id for rec in self.fasta_records}
         return self
 
     def has_record(self, expected_record_seq):

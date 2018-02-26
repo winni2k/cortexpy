@@ -45,7 +45,7 @@ class Mccortex(object):
         command += mccortex_args
         command = [str(arg) for arg in command]
 
-        return subprocess.run(command, check=True)
+        return subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
 @attr.s(slots=True)
@@ -98,7 +98,16 @@ class Cortexpy(object):
                                            stdout=stdout,
                                            stderr=stderr)
 
-    def traverse(self, *, graph, out, contig, contig_fasta=False, colors=None, max_nodes=None):
+    def view(self, *, cortexpy_graph, to_json=False, kmers=False):
+        command2 = ['view', 'traversal', cortexpy_graph, ]
+        if to_json:
+            command2.append('--to-json')
+        if kmers:
+            command2.append('--kmers')
+        return self.run(command2)
+
+    def traverse(self, *, graph, out, contig, contig_fasta=False, colors=None, max_nodes=None,
+                 subgraphs=True):
         cmd = ['traverse', graph, contig, '--out', out]
         if colors:
             cmd.extend(['--colors', ','.join(str(c) for c in colors)])
@@ -106,6 +115,8 @@ class Cortexpy(object):
             cmd.append('--initial-fasta')
         if max_nodes:
             cmd.extend(['--max-nodes', max_nodes])
+        if subgraphs:
+            cmd.append('--subgraphs')
         return self.run([str(c) for c in cmd])
 
     def prune(self, *, graph, out, remove_tips=None):
@@ -119,7 +130,8 @@ class Cortexpy(object):
         return self.run([str(c) for c in command])
 
     def run(self, args):
-        logger.info('Running with args: {}'.format(args))
+        args = [str(a) for a in args]
+        logger.info('Running with args: "{}"'.format(' '.join(args)))
         if self.spawn_process:
             command = [sys.executable, '-m', 'cortexpy'] + args
             return subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,

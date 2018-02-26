@@ -35,6 +35,7 @@ class Interactor(object):
                 tip = find_tip_from(source, n=n, graph=graph, next_node_func=next_node_func)
                 if tip:
                     nodes_to_prune |= tip
+        logger.info('Pruning {} nodes'.format(len(nodes_to_prune)))
         self.graph.remove_nodes_from(nodes_to_prune)
         return self
 
@@ -68,7 +69,6 @@ def make_copy_of_color(graph, color, include_self_refs=False):
 def convert_kmer_path_to_contig(path):
     if len(path) == 0:
         return ''
-    logger.info(path)
     contig = [path[0]]
     for kmer in path[1:]:
         contig.append(kmer[-1])
@@ -95,12 +95,11 @@ class Contigs(object):
     color = attr.ib(None)
 
     def all_simple_paths(self):
-        graph = self.graph
         if self.color is not None:
             graph = make_copy_of_color(self.graph, self.color, include_self_refs=False)
+        else:
+            graph = self.graph
         idx = 0
-        logger.info(graph.nodes())
-        logger.info(graph.edges())
         for source in in_nodes_of(graph):
             for target in out_nodes_of(graph):
                 if source == target:

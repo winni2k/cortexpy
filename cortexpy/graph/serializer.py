@@ -41,7 +41,6 @@ class Serializer(object):
         return json.dumps(serializable)
 
     def _collapse_graph_to_unitigs(self):
-        # self.graph = annotate_kmer_graph_edges(self.graph, self.colors)
         self._collapse_kmer_graph()
         self._make_unitig_graph_json_representable()
 

@@ -3,6 +3,7 @@ import os
 from Bio.Seq import reverse_complement
 
 from cortexpy.test import builder, runner, expectation
+from cortexpy.test.driver import command
 
 if os.environ.get('CI'):
     SPAWN_PROCESS = True
@@ -62,7 +63,7 @@ class TestContigs(object):
         # then
         assert completed_process.returncode == 0, completed_process
         expect = expectation.Fasta(stdout)
-        ids = list(range(n_paths))
+        ids = ['g0_p{}'.format(i) for i in range(n_paths)]
         for record in records:
             expect.has_record(record).has_id_in(*ids)
         expect.has_record('CAACT').has_id_in(*ids)
@@ -167,3 +168,20 @@ class TestContigs(object):
         # then
         assert ('Terminating contig traversal after kmer CAA'
                 ' because max node limit is reached') in stderr
+
+
+class TestTraversal(object):
+    def test_traverses_two_subgraphs_as_two_subgraphs(self, tmpdir):
+        # given
+        d = command.ViewTraversal(tmpdir)
+        d.with_records('CCCGC', 'CCCGA', 'AAAT')
+        d.with_subgraph_output()
+        d.with_kmer_size(3)
+
+        # when
+        expect = d.run()
+
+        # then
+        expect.has_n_records(3)
+        expect.has_record_ids('g0_p0', 'g0_p1', 'g1_p0')
+        expect.has_record('AAAT').has_id_in('g1_p0')

@@ -120,8 +120,5 @@ def edge_set_string_to_array(edge_set_string):
     return np.array(edge_set, dtype=np.uint8)
 
 
-def print_kmer(kmer):
-    print(kmer)
-    print(kmer.kmer)
-    print(kmer.coverage)
-    print(kmer.edges)
+# def print_kmer(kmer):
+#     print(kmer)

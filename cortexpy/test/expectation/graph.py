@@ -7,6 +7,23 @@ logger = logging.getLogger(__name__)
 
 
 @attr.s(slots=True)
+class KmerGraphsExpectation(object):
+    graph_list = attr.ib()
+
+    def has_n_graphs(self, n):
+        assert n == len(self.graph_list)
+        return self
+
+    def has_nodes(self, *expected_nodes):
+        expected_nodes = set(expected_nodes)
+        nodes = set()
+        for graph in self.graph_list:
+            nodes |= graph.nodes
+        assert expected_nodes == nodes
+        return self
+
+
+@attr.s(slots=True)
 class KmerGraphExpectation(object):
     graph = attr.ib()
 

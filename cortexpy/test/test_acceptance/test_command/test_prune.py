@@ -22,3 +22,25 @@ def test_prunes_two_tips(tmpdir, tip_length):
 
     # then
     expect.has_nodes(*expected_nodes)
+
+
+def test_prunes_two_tips_on_two_subgraphs(tmpdir):
+    # given
+    tip_length = 3
+    d = command.Prune(tmpdir)
+    d.with_records(
+        'CCCCCGG',
+        'CCCCCAA',
+        'AAAAAGG',
+        'AAAAACC',
+    )
+    d.prune_tips_less_than(tip_length)
+    d.with_kmer_size(5)
+    expected_nodes = ['CCCCC', 'AAAAA']
+
+    # when
+    expect = d.run()
+
+    # then
+    expect.has_nodes(*expected_nodes)
+    expect.has_n_graphs(2)
