@@ -175,7 +175,7 @@ class TestTraversal(object):
         # given
         d = command.ViewTraversal(tmpdir)
         d.with_records('CCCGC', 'CCCGA', 'AAAT')
-        d.with_subgraph_output()
+        d.with_subgraph_traversal()
         d.with_kmer_size(3)
 
         # when

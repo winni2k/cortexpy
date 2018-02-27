@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import Bio
@@ -109,10 +110,21 @@ class Traverse(object):
     added_records = attr.ib(attr.Factory(list))
     output_subgraphs = attr.ib(False)
     cortexpy_graph = attr.ib(init=False)
+    colors = attr.ib(None)
 
-    def with_records(self, *records):
-        for rec in records:
-            self.mccortex_builder.with_dna_sequence(rec)
+    def with_record(self, record, name=None):
+        if name:
+            self.mccortex_builder.with_dna_sequence(record, name=name)
+        else:
+            self.mccortex_builder.with_dna_sequence(record)
+
+    def with_records(self, *records, names=None):
+        if names:
+            assert len(records) == len(names)
+        else:
+            names = ['sample_0' for _ in records]
+        for rec, name in zip(records, names):
+            self.mccortex_builder.with_dna_sequence(rec, name=name)
             self.added_records.append(rec)
         return self
 
@@ -125,6 +137,10 @@ class Traverse(object):
 
     def with_kmer_size(self, size):
         self.mccortex_builder.with_kmer_size(size)
+        return self
+
+    def with_traversal_colors(self, *colors):
+        self.colors = colors
         return self
 
     def run(self):
@@ -143,7 +159,8 @@ class Traverse(object):
                                                 out=self.cortexpy_graph,
                                                 contig=contig_fasta,
                                                 contig_fasta=True,
-                                                subgraphs=self.output_subgraphs)
+                                                subgraphs=self.output_subgraphs,
+                                                colors=self.colors)
 
         subgraphs = list(load_graph_stream(self.cortexpy_graph))
         assert completed_process.returncode == 0, completed_process
@@ -156,15 +173,25 @@ class ViewTraversal(object):
     """Runner for view of traversal acceptance tests"""
     tmpdir = attr.ib()
     traverse_driver = attr.ib(init=False)
+    to_json = attr.ib(False)
+    subgraphs = attr.ib(False)
 
     def __attrs_post_init__(self):
         self.traverse_driver = Traverse(self.tmpdir)
 
-    def with_records(self, *records):
-        self.traverse_driver.with_records(*records)
+    def with_record(self, record, name=None):
+        self.traverse_driver.with_record(record, name=name)
         return self
 
-    def with_subgraph_output(self):
+    def with_records(self, *records, names=None):
+        self.traverse_driver.with_records(*records, names=names)
+        return self
+
+    def with_sample_records(self, *records):
+        self.with_records(*records, names=['sample_{}'.format(i) for i in range(3)])
+        return self
+
+    def with_subgraph_traversal(self):
         self.traverse_driver.with_subgraph_output()
         return self
 
@@ -172,11 +199,42 @@ class ViewTraversal(object):
         self.traverse_driver.with_kmer_size(size)
         return self
 
+    def with_json_output(self):
+        self.to_json = True
+        return self
+
+    def with_initial_contigs(self, *contigs):
+        self.traverse_driver.with_initial_contigs(*contigs)
+        return self
+
+    def with_traverlsal_colors(self, *colors):
+        self.traverse_driver.with_traversal_colors(*colors)
+        return self
+
+    def with_subgraph_view(self):
+        self.subgraphs = True
+        self.with_subgraph_traversal()
+        return self
+
     def run(self):
         self.traverse_driver.run()
+        if self.subgraphs:
+            assert self.to_json
+            out_prefix = Path(self.tmpdir) / 'subgraphs'
+        else:
+            out_prefix = None
         ret = runner.Cortexpy(SPAWN_PROCESS).view(
-            cortexpy_graph=self.traverse_driver.cortexpy_graph)
+            cortexpy_graph=self.traverse_driver.cortexpy_graph,
+            to_json=self.to_json,
+            subgraphs=out_prefix,
+        )
         assert ret.returncode == 0, ret
+        if self.to_json:
+            if self.subgraphs:
+                return expectation.JsonGraphs(
+                    list(out_prefix.parent.glob(out_prefix.name + '*')))
+            else:
+                return expectation.JsonGraph(json.loads(ret.stdout))
         return expectation.Fasta(ret.stdout)
 
 

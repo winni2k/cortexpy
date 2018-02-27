@@ -63,7 +63,7 @@ class Cortexpy(object):
         return self.run(['view', 'contig', str(graph), contig] + run_args)
 
     def view_traversal(self, contig, graph,
-                       to_json=None, kmers=None,
+                       to_json=None, kmers=None, out=None,
                        color=0, max_nodes=None, colors=None,
                        # deprecated options
                        output_format=None, output_type=None, ):
@@ -87,6 +87,8 @@ class Cortexpy(object):
             command2.append('--to-json')
         if kmers:
             command2.append('--kmers')
+        if out:
+            command2 += ['--out', out]
         command2_ret = self.run(command2)
 
         stdout = command1_ret.stdout + command2_ret.stdout
@@ -98,13 +100,15 @@ class Cortexpy(object):
                                            stdout=stdout,
                                            stderr=stderr)
 
-    def view(self, *, cortexpy_graph, to_json=False, kmers=False):
-        command2 = ['view', 'traversal', cortexpy_graph, ]
+    def view(self, *, cortexpy_graph, to_json=False, kmers=False, subgraphs=None):
+        cmd = ['view', 'traversal', cortexpy_graph, ]
         if to_json:
-            command2.append('--to-json')
+            cmd.append('--to-json')
         if kmers:
-            command2.append('--kmers')
-        return self.run(command2)
+            cmd.append('--kmers')
+        if subgraphs:
+            cmd += ['--subgraphs', subgraphs]
+        return self.run(cmd)
 
     def traverse(self, *, graph, out, contig, contig_fasta=False, colors=None, max_nodes=None,
                  subgraphs=True):
@@ -117,17 +121,17 @@ class Cortexpy(object):
             cmd.extend(['--max-nodes', max_nodes])
         if subgraphs:
             cmd.append('--subgraphs')
-        return self.run([str(c) for c in cmd])
+        return self.run(cmd)
 
     def prune(self, *, graph, out, remove_tips=None):
         cmd = ['prune', graph, '--out', out]
         if remove_tips:
             cmd.extend(['--remove-tips', remove_tips])
-        return self.run([str(c) for c in cmd])
+        return self.run(cmd)
 
     def assemble(self, *, graph, initial_seqs):
         command = ['assemble', graph, initial_seqs]
-        return self.run([str(c) for c in command])
+        return self.run(command)
 
     def run(self, args):
         args = [str(a) for a in args]

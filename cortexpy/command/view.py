@@ -4,12 +4,13 @@ cortexpy view
 Usage:
   cortexpy view graph <graph>
   cortexpy view contig [--to-json] <graph> <contig>
-  cortexpy view traversal [--to-json --kmers --color <color>] <traversal>
+  cortexpy view traversal [--to-json options] <traversal>
 
 Options:
     -h, --help                        Display this help message
     --kmers                           View graph as k-mers
     --color <color>                   Restrict view to single color
+    --subgraphs <output-prefix>       Do not merge subgraphs and store under this prefix
 
 Subcommands:
     graph       Print all kmers in a cortex graph.
@@ -18,6 +19,7 @@ Subcommands:
                 <traversal> is '-'.
 
 """
+
 import networkx as nx
 from docopt import docopt
 import logging
@@ -70,8 +72,13 @@ def view_traversal(args):
         graphs = get_graph_stream_iterator(open(args['<traversal>'], 'rb'))
 
     if args['--to-json']:
-        graph = nx.compose_all(list(graphs))
-        print(serializer.Serializer(graph).to_json())
+        if args['--subgraphs']:
+            for graph_idx, graph in enumerate(graphs):
+                with open('{}_{}.json'.format(args['--subgraphs'], graph_idx), 'w') as fh:
+                    fh.write(serializer.Serializer(graph).to_json())
+        else:
+            graph = nx.compose_all(list(graphs))
+            print(serializer.Serializer(graph).to_json())
     else:
         for graph_idx, graph in enumerate(graphs):
             if args['--kmers']:
