@@ -117,6 +117,7 @@ class Traverse(object):
             self.mccortex_builder.with_dna_sequence(record, name=name)
         else:
             self.mccortex_builder.with_dna_sequence(record)
+        self.added_records.append(record)
 
     def with_records(self, *records, names=None):
         if names:
@@ -138,6 +139,9 @@ class Traverse(object):
     def with_kmer_size(self, size):
         self.mccortex_builder.with_kmer_size(size)
         return self
+
+    def without_traversal_colors(self):
+        self.colors = None
 
     def with_traversal_colors(self, *colors):
         self.colors = colors
