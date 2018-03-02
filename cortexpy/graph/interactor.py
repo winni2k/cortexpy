@@ -47,7 +47,10 @@ def find_tip_from(query, *, n, graph, next_node_func):
             return tip
         else:
             tip.add(query)
-            query = next(next_node_func(query))
+            try:
+                query = next(next_node_func(query))
+            except StopIteration:
+                return tip
     return None
 
 
