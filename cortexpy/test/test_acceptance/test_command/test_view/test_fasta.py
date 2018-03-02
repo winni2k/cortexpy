@@ -129,7 +129,7 @@ class TestContigs(object):
             expect.has_record(record)
         expect.has_n_records(2)
 
-    def test_outputs_warning_on_max_nodes_succeeded(self, tmpdir):
+    def test_raises_on_max_nodes_exceeded(self, tmpdir):
         # given
         query = 'CAA'
         records = ['CAACC']
@@ -141,15 +141,14 @@ class TestContigs(object):
         output_graph = maker.build(tmpdir)
 
         # when
-        stderr = (
-            runner.Cortexpy(True).view_traversal(graph=output_graph, contig=query,
-                                                 max_nodes=1).stderr
-        )
+        completed_process = runner.Cortexpy(True).view_traversal(graph=output_graph, contig=query,
+                                                                 max_nodes=1)
 
         # then
-        assert 'Max nodes (1) exceeded: 3 nodes found' in stderr
+        assert 0 != completed_process.returncode
+        assert 'Max nodes (1) exceeded: 3 nodes found' in completed_process.stderr
 
-    def test_outputs_warning_with_kmer(self, tmpdir):
+    def test_raises_with_kmer(self, tmpdir):
         # given
         query = 'CAACC'
         records = [query]
@@ -161,13 +160,32 @@ class TestContigs(object):
         output_graph = maker.build(tmpdir)
 
         # when
-        stderr = (
-            runner.Cortexpy(True).view_traversal(graph=output_graph, contig=query, max_nodes=1)
-        ).stderr
+        completed_process = runner.Cortexpy(True).traverse(graph=output_graph, contig=query,
+                                                           out='-',
+                                                           max_nodes=1)
 
         # then
-        assert ('Terminating contig traversal after kmer CAA'
-                ' because max node limit is reached') in stderr
+        assert 0 != completed_process.returncode
+        assert ('Max nodes (1) exceeded: 3 nodes found') in completed_process.stderr
+
+    def test_does_not_raise_without_max_nodes(self, tmpdir):
+        # given
+        query = 'CAACC'
+        records = [query]
+        kmer_size = 3
+        maker = builder.Mccortex().with_kmer_size(kmer_size)
+        for rec in records:
+            maker.with_dna_sequence(rec)
+
+        output_graph = maker.build(tmpdir)
+
+        # when
+        completed_process = runner.Cortexpy(True).traverse(graph=output_graph, contig=query,
+                                                           out=tmpdir / 'discarded.pickle',
+                                                           max_nodes=None)
+
+        # then
+        assert 0 == completed_process.returncode
 
 
 class TestTraversal(object):

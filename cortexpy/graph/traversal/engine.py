@@ -29,7 +29,7 @@ class Engine(object):
     ra_parser = attr.ib()
     traversal_colors = attr.ib((0,))
     orientation = attr.ib(EngineTraversalOrientation.original)
-    max_nodes = attr.ib(1000)
+    max_nodes = attr.ib(None)
     branch_queue = attr.ib(attr.Factory(collections.deque))
     graph = attr.ib(attr.Factory(SERIALIZER_GRAPH))
     queuer = attr.ib(init=False)
@@ -58,10 +58,9 @@ class Engine(object):
                 add_graph_to(self.graph, self._traverse_from(start_kmer).graph)
             except KeyError:
                 pass
-            if len(self.graph) > self.max_nodes:
-                logger.warning(("Terminating contig traversal after kmer {}"
-                                " because max node limit is reached").format(start_kmer))
-                break
+            if self.max_nodes and len(self.graph) > self.max_nodes:
+                raise Exception(("Terminating contig traversal after kmer {}"
+                                 " because max node limit is reached").format(start_kmer))
         return self
 
     def traverse_from(self, start_string):
@@ -82,12 +81,13 @@ class Engine(object):
                                     engine_orientation=self.orientation)
 
         self._process_initial_branch(start_string)
-        while 0 < len(self.branch_queue) and len(self.graph) < self.max_nodes:
+        while 0 < len(self.branch_queue) and (
+            self.max_nodes is None or len(self.graph) < self.max_nodes
+        ):
             self._traverse_a_branch_from_queue()
-        if len(self.graph) > self.max_nodes:
-            logger.warning(
-                "Max nodes ({}) exceeded: {} nodes found".format(self.max_nodes,
-                                                                 len(self.graph)))
+        if self.max_nodes and len(self.graph) > self.max_nodes:
+            raise Exception("Max nodes ({}) exceeded: {} nodes found".format(self.max_nodes,
+                                                                             len(self.graph)))
         return self
 
     def _post_process_graph(self):

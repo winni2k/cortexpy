@@ -12,9 +12,10 @@ Options:
            May take multiple color numbers separated by a comma (example: '0,2,3').
            The traverser will follow all colors specified.
            Will follow all colors if not specified.
-    --max-nodes <n>               Maximum number of nodes to traverse [default: 1000].
     --initial-fasta               Treat <initial-contigs> as fasta
     --subgraphs                  Emit traversal as sequence of networkx subgraphs
+    --max-nodes <n>               Maximum number of nodes to traverse (int).
+                                  Die without output if max nodes is exceeded.
 
 Description:
     Traverse a cortex graph starting from each k-mer in an initial_contig and return the subgraph as
@@ -37,7 +38,7 @@ def validate(args):
         ),
         '--colors': Or(None,
                        Use(lambda colors: tuple([int(color) for color in colors.split(',')]))),
-        '--max-nodes': Use(int),
+        '--max-nodes': Or(None, Use(int)),
         str: object,
     })
     return schema.validate(args)
