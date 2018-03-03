@@ -188,11 +188,6 @@ class Traverse(object):
                                    colors=self.colors,
                                    logging_interval=self.logging_interval_seconds)
 
-    def run_for_stderr(self):
-        self.spawn_process = True
-        completed_process = self._run()
-        return completed_process.stderr
-
     def run(self):
         completed_process = self._run()
         subgraphs = list(load_graph_stream(self.cortexpy_graph))
