@@ -2,10 +2,12 @@
 cortexpy traverse
 
 Usage:
-  cortexpy traverse <graph> <initial-contigs> --out <file> [options]
+  cortexpy traverse <graph> <initial-contigs> --out <file> [options] [-v | -s]
 
 Options:
     -h, --help                    Display this help message.
+    -v, --verbose                 Increase log level to debug
+    -s, --silent                  Decrease log level to warnings and errors
     --out <file>                  Output graph. '-' prints to stdout
     --orientation <orientation>   Traversal orientation [default: both].
     -c --colors <colors>          Colors to traverse.
@@ -13,18 +15,15 @@ Options:
            The traverser will follow all colors specified.
            Will follow all colors if not specified.
     --initial-fasta               Treat <initial-contigs> as fasta
-    --subgraphs                  Emit traversal as sequence of networkx subgraphs
+    --subgraphs                   Emit traversal as sequence of networkx subgraphs
     --max-nodes <n>               Maximum number of nodes to traverse (int).
                                   Die without output if max nodes is exceeded.
+    --logging-interval <seconds>  Logging interval [default: 90]
 
 Description:
     Traverse a cortex graph starting from each k-mer in an initial_contig and return the subgraph as
     a Python pickle object.
 """
-
-import logging
-
-logger = logging.getLogger('cortexpy.traverse')
 
 
 def validate(args):
@@ -39,9 +38,20 @@ def validate(args):
         '--colors': Or(None,
                        Use(lambda colors: tuple([int(color) for color in colors.split(',')]))),
         '--max-nodes': Or(None, Use(int)),
+        '--logging-interval': Use(int),
         str: object,
     })
     return schema.validate(args)
+
+
+log_level_conversion = {
+    0: 'NOTSET',
+    10: 'DEBUG',
+    20: 'INFO',
+    30: 'WARNING',
+    40: 'ERROR',
+    50: 'CRITICAL',
+}
 
 
 def traverse(argv):
@@ -50,6 +60,17 @@ def traverse(argv):
 
     args = docopt(__doc__, argv=argv, version=VERSION_STRING)
     args = validate(args)
+
+    import logging
+    if args['--verbose']:
+        log_level = logging.DEBUG
+    elif args['--silent']:
+        log_level = logging.WARNING
+    else:
+        log_level = logging.INFO
+    logging.basicConfig(level=log_level)
+    logger = logging.getLogger('cortexpy.traverse')
+    logger.info('Log level is {}'.format(log_level_conversion[logger.getEffectiveLevel()]))
 
     import sys
     from contextlib import ExitStack
@@ -67,6 +88,7 @@ def traverse(argv):
             orientation=traversal.constants.EngineTraversalOrientation[
                 args['--orientation']],
             max_nodes=args['--max-nodes'],
+            logging_interval=args['--logging-interval']
         )
 
         if args['--colors'] is not None:

@@ -4,6 +4,7 @@ import attr
 import collections
 import networkx as nx
 from Bio import SeqIO
+from datetime import datetime
 
 from cortexpy import graph
 from cortexpy.graph.parser.kmer import EmptyKmerBuilder
@@ -25,6 +26,24 @@ def add_graph_to(graph, graph_to_add):
 
 
 @attr.s(slots=True)
+class IntervalLogger(object):
+    logger = attr.ib()
+    min_log_interval_seconds = attr.ib(0)
+    last_log_time = attr.ib(init=False)
+
+    def __attrs_post_init__(self):
+        self.last_log_time = datetime.now()
+
+    def _ok_to_log(self):
+        return (datetime.now() - self.last_log_time).total_seconds() > self.min_log_interval_seconds
+
+    def info(self, *args, **kwargs):
+        if self._ok_to_log():
+            self.last_log_time = datetime.now()
+            return self.logger.info(*args, **kwargs)
+
+
+@attr.s(slots=True)
 class Engine(object):
     ra_parser = attr.ib()
     traversal_colors = attr.ib((0,))
@@ -32,11 +51,15 @@ class Engine(object):
     max_nodes = attr.ib(None)
     branch_queue = attr.ib(attr.Factory(collections.deque))
     graph = attr.ib(attr.Factory(SERIALIZER_GRAPH))
+    last_graph_size = attr.ib(0)
+    logging_interval = attr.ib(0)
     queuer = attr.ib(init=False)
     branch_traverser = attr.ib(init=False)
+    logger = attr.ib(init=False)
 
     def __attrs_post_init__(self):
         self._add_graph_metadata()
+        self.logger = IntervalLogger(logger, min_log_interval_seconds=self.logging_interval)
 
     def traverse_from_each_kmer_in_fasta(self, fasta):
         for record in SeqIO.parse(fasta, 'fasta'):
@@ -56,6 +79,8 @@ class Engine(object):
             start_kmer = contig[start:(start + kmer_size)]
             try:
                 add_graph_to(self.graph, self._traverse_from(start_kmer).graph)
+                self.log_graph_size()
+
             except KeyError:
                 pass
             if self.max_nodes and len(self.graph) > self.max_nodes:
@@ -184,6 +209,11 @@ class Engine(object):
         kmer2 = self.ra_parser.get_kmer_for_string(kmer2_string)
         interactor = graph.Interactor(self.graph, kmer1.colors)
         interactor.add_edge_to_graph_for_kmer_pair(kmer1, kmer2, kmer1_string, kmer2_string)
+
+    def log_graph_size(self):
+        if len(self.graph) > self.last_graph_size:
+            self.last_graph_size = len(self.graph)
+            self.logger.info('current graph size: {}'.format(self.last_graph_size))
 
 
 def annotate_kmer_graph_edges(graph):

@@ -111,6 +111,10 @@ class Traverse(object):
     output_subgraphs = attr.ib(False)
     cortexpy_graph = attr.ib(init=False)
     colors = attr.ib(None)
+    spawn_process = attr.ib(None)
+    verbose = attr.ib(False)
+    silent = attr.ib(False)
+    logging_interval_seconds = attr.ib(0)
 
     def with_record(self, record, name=None):
         if name:
@@ -140,6 +144,18 @@ class Traverse(object):
         self.mccortex_builder.with_kmer_size(size)
         return self
 
+    def with_verbose_arg(self):
+        self.verbose = True
+        return self
+
+    def with_logging_interval(self, seconds):
+        self.logging_interval_seconds = seconds
+        return self
+
+    def with_silent_arg(self):
+        self.silent = True
+        return self
+
     def without_traversal_colors(self):
         self.colors = None
 
@@ -147,7 +163,7 @@ class Traverse(object):
         self.colors = colors
         return self
 
-    def run(self):
+    def _run(self):
         mccortex_graph = self.mccortex_builder.build(self.tmpdir)
         contig_fasta = self.tmpdir / 'cortexpy_initial_contigs.fa'
         if self.traversal_contigs:
@@ -158,14 +174,27 @@ class Traverse(object):
             Bio.SeqIO.write([SeqRecord(Seq(s)) for s in initial_contigs], fh, 'fasta')
 
         self.cortexpy_graph = self.tmpdir / 'cortexpy_graph.pickle'
-        ctp_runner = runner.Cortexpy(SPAWN_PROCESS)
-        completed_process = ctp_runner.traverse(graph=mccortex_graph,
-                                                out=self.cortexpy_graph,
-                                                contig=contig_fasta,
-                                                contig_fasta=True,
-                                                subgraphs=self.output_subgraphs,
-                                                colors=self.colors)
+        if self.spawn_process is None:
+            ctp_runner = runner.Cortexpy(SPAWN_PROCESS)
+        else:
+            ctp_runner = runner.Cortexpy(self.spawn_process)
+        return ctp_runner.traverse(graph=mccortex_graph,
+                                   out=self.cortexpy_graph,
+                                   contig=contig_fasta,
+                                   contig_fasta=True,
+                                   verbose=self.verbose,
+                                   silent=self.silent,
+                                   subgraphs=self.output_subgraphs,
+                                   colors=self.colors,
+                                   logging_interval=self.logging_interval_seconds)
 
+    def run_for_stderr(self):
+        self.spawn_process = True
+        completed_process = self._run()
+        return completed_process.stderr
+
+    def run(self):
+        completed_process = self._run()
         subgraphs = list(load_graph_stream(self.cortexpy_graph))
         assert completed_process.returncode == 0, completed_process
 

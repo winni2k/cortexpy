@@ -111,7 +111,7 @@ class Cortexpy(object):
         return self.run(cmd)
 
     def traverse(self, *, graph, out, contig, contig_fasta=False, colors=None, max_nodes=None,
-                 subgraphs=True):
+                 subgraphs=True, verbose=False, silent=False, logging_interval=None):
         cmd = ['traverse', graph, contig, '--out', out]
         if colors:
             cmd.extend(['--colors', ','.join(str(c) for c in colors)])
@@ -121,6 +121,12 @@ class Cortexpy(object):
             cmd.extend(['--max-nodes', max_nodes])
         if subgraphs:
             cmd.append('--subgraphs')
+        if verbose:
+            cmd.append('--verbose')
+        if silent:
+            cmd.append('--silent')
+        if logging_interval is not None:
+            cmd += ['--logging-interval', logging_interval]
         return self.run(cmd)
 
     def prune(self, *, graph, out, remove_tips=None):
