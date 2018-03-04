@@ -8,6 +8,7 @@ Options:
     -h, --help                    Display this help message.
     -v, --verbose                 Increase log level to debug
     -s, --silent                  Decrease log level to warnings and errors
+
     --out <file>                  Output graph. '-' prints to stdout
     --orientation <orientation>   Traversal orientation [default: both].
     -c --colors <colors>          Colors to traverse.

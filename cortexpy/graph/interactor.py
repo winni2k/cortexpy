@@ -27,14 +27,21 @@ class Interactor(object):
         nodes_to_prune = set()
         assert self.colors is None
         graph = nx.DiGraph(self.graph)
-        for sources, next_node_func in [
-            (in_nodes_of(graph), graph.successors),
-            (out_nodes_of(graph), graph.predecessors),
+        for sources, next_node_func, direction in [
+            (in_nodes_of(graph), graph.successors, 'incoming'),
+            (out_nodes_of(graph), graph.predecessors, 'outgoing'),
         ]:
+            num_tips = 0
+            num_tips_to_prune = 0
             for source in sources:
                 tip = find_tip_from(source, n=n, graph=graph, next_node_func=next_node_func)
+                num_tips += 1
                 if tip:
                     nodes_to_prune |= tip
+                    num_tips_to_prune += 1
+            logger.info(
+                'Found {} of {} {} tips shorter than {}.'.format(num_tips_to_prune, num_tips,
+                                                                 direction, n))
         logger.info('Pruning {} nodes'.format(len(nodes_to_prune)))
         self.graph.remove_nodes_from(nodes_to_prune)
         return self

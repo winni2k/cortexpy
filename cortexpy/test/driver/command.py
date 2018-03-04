@@ -6,6 +6,7 @@ import attr
 import os
 
 import networkx as nx
+import sys
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -93,9 +94,11 @@ class Prune(object):
 
         pruned_graph = Path(str(cortexpy_graph)).with_suffix('.pruned.pickle')
         completed_process = ctp_runner.prune(graph=cortexpy_graph, out=pruned_graph,
-                                             remove_tips=self.min_tip_length)
+                                             remove_tips=self.min_tip_length, verbose=True)
 
         assert completed_process.returncode == 0, completed_process
+        print(completed_process.stdout)
+        print(completed_process.stderr, file=sys.stderr)
 
         subgraphs = list(load_graph_stream(str(pruned_graph)))
         return expectation.graph.KmerGraphsExpectation(subgraphs)

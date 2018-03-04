@@ -129,10 +129,12 @@ class Cortexpy(object):
             cmd += ['--logging-interval', logging_interval]
         return self.run(cmd)
 
-    def prune(self, *, graph, out, remove_tips=None):
+    def prune(self, *, graph, out, remove_tips=None, verbose=None):
         cmd = ['prune', graph, '--out', out]
         if remove_tips:
             cmd.extend(['--remove-tips', remove_tips])
+        if verbose:
+            cmd.append('--verbose')
         return self.run(cmd)
 
     def assemble(self, *, graph, initial_seqs):

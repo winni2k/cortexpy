@@ -2,22 +2,21 @@
 cortexpy prune
 
 Usage:
-  cortexpy prune --out <graph> <graph> [-t <n>]
+  cortexpy prune --out <graph> <graph> [-t <n>] [-v | -s]
 
 Options:
-    -h, --help            Display this help message.
-    -o, --out <graph>     Output graph.
-    -t, --remove-tips <n> Remove tips less than <n>
+    -h, --help             Display this help message.
+    -v, --verbose          Increase log level to debug
+    -s, --silent           Decrease log level to warnings and errors
+
+    -o, --out <graph>      Output graph.
+    -t, --remove-tips <n>  Remove tips less than <n>. [default: 0]
 
 Description:
     graph            A cortexpy graph.  '-' redirects to or from stdout.
 """
 from cortexpy.graph import Interactor
-import logging
-
 from cortexpy.utils import get_graph_stream_iterator
-
-logger = logging.getLogger(__name__)
 
 
 def validate_prune(args):
@@ -36,6 +35,12 @@ def prune(argv):
 
     args = docopt(__doc__, argv=argv, version=VERSION_STRING)
     args = validate_prune(args)
+
+    from cortexpy.logging_config import configure_logging_from_args
+    configure_logging_from_args(args)
+
+    import logging
+    logger = logging.getLogger('cortexpy.prune')
 
     import networkx as nx
     import sys
