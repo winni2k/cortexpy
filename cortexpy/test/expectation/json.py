@@ -14,7 +14,7 @@ class JsonGraphs(object):
 
     def __attrs_post_init__(self):
         for file_name in self.graph_file_names:
-            with open(file_name) as fh:
+            with open(str(file_name)) as fh:
                 self.graphs.append(json.load(fh))
 
     def has_graph_with_node_reprs(self, *reprs):
