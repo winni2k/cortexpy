@@ -90,7 +90,8 @@ def traverse(argv):
 
         output_graph = engine.graph
         if args['--subgraphs'] and len(output_graph) > 0:
-            for subgraph in nx.weakly_connected_component_subgraphs(output_graph):
+            for subgraph in sorted(nx.weakly_connected_component_subgraphs(output_graph),
+                                   key=lambda g: len(g), reverse=True):
                 nx.write_gpickle(subgraph, output)
         else:
             nx.write_gpickle(output_graph, output)

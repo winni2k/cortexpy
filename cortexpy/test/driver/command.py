@@ -257,7 +257,7 @@ class ViewTraversal(object):
         self.traverse_driver.run()
         if self.subgraphs:
             assert self.to_json
-            out_prefix = Path(self.tmpdir) / 'subgraphs'
+            out_prefix = Path(str(self.tmpdir)) / 'subgraphs'
         else:
             out_prefix = None
         ret = runner.Cortexpy(SPAWN_PROCESS).view(
