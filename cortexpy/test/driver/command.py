@@ -191,6 +191,7 @@ class Traverse(object):
     def run_for_stderr(self):
         self.spawn_process = True
         completed_process = self._run()
+        print(completed_process.stdout)
         return completed_process.stderr
 
     def run(self):

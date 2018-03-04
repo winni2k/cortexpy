@@ -44,16 +44,6 @@ def validate(args):
     return schema.validate(args)
 
 
-log_level_conversion = {
-    0: 'NOTSET',
-    10: 'DEBUG',
-    20: 'INFO',
-    30: 'WARNING',
-    40: 'ERROR',
-    50: 'CRITICAL',
-}
-
-
 def traverse(argv):
     from cortexpy import VERSION_STRING
     from docopt import docopt
@@ -61,16 +51,11 @@ def traverse(argv):
     args = docopt(__doc__, argv=argv, version=VERSION_STRING)
     args = validate(args)
 
+    from cortexpy.logging_config import configure_logging_from_args
+    configure_logging_from_args(args)
+
     import logging
-    if args['--verbose']:
-        log_level = logging.DEBUG
-    elif args['--silent']:
-        log_level = logging.WARNING
-    else:
-        log_level = logging.INFO
-    logging.basicConfig(level=log_level)
     logger = logging.getLogger('cortexpy.traverse')
-    logger.info('Log level is {}'.format(log_level_conversion[logger.getEffectiveLevel()]))
 
     import sys
     from contextlib import ExitStack

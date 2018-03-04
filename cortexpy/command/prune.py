@@ -50,6 +50,8 @@ def prune(argv):
     else:
         graphs = get_graph_stream_iterator(open(args['<graph>'], 'rb'))
 
-    for graph in graphs:
+    logger.info('Removing tips shorter than {} k-mers'.format(args['--remove-tips']))
+    for graph_idx, graph in enumerate(graphs):
+        logger.info('Processing graph {}'.format(graph_idx))
         Interactor(graph, colors=None).prune_tips_less_than(args['--remove-tips'])
         nx.write_gpickle(graph, output)
