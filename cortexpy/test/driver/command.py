@@ -91,7 +91,7 @@ class Prune(object):
         ctp_runner.traverse(graph=mccortex_graph, out=cortexpy_graph, contig=contig_fasta,
                             contig_fasta=True, subgraphs=True)
 
-        pruned_graph = Path(cortexpy_graph).with_suffix('.pruned.pickle')
+        pruned_graph = Path(str(cortexpy_graph)).with_suffix('.pruned.pickle')
         completed_process = ctp_runner.prune(graph=cortexpy_graph, out=pruned_graph,
                                              remove_tips=self.min_tip_length)
 
