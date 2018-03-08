@@ -160,7 +160,8 @@ class TestContigs(object):
         output_graph = maker.build(tmpdir)
 
         # when
-        completed_process = runner.Cortexpy(True).traverse(graph=output_graph, contig=query,
+        completed_process = runner.Cortexpy(True).traverse(graphs=[output_graph],
+                                                           contig=query,
                                                            out='-',
                                                            max_nodes=1)
 
@@ -180,7 +181,8 @@ class TestContigs(object):
         output_graph = maker.build(tmpdir)
 
         # when
-        completed_process = runner.Cortexpy(True).traverse(graph=output_graph, contig=query,
+        completed_process = runner.Cortexpy(True).traverse(graphs=[output_graph],
+                                                           contig=query,
                                                            out=tmpdir / 'discarded.pickle',
                                                            max_nodes=None)
 

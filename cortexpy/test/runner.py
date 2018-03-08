@@ -79,7 +79,7 @@ class Cortexpy(object):
         if isinstance(colors, int):
             colors = [colors]
         intermediate_graph = str(Path(graph).with_suffix('.traverse.pickle'))
-        command1_ret = self.traverse(graph=graph, out=intermediate_graph, contig=contig,
+        command1_ret = self.traverse(graphs=[graph], out=intermediate_graph, contig=contig,
                                      colors=colors, max_nodes=max_nodes)
 
         command2 = ['view', 'traversal', intermediate_graph, ]
@@ -110,9 +110,11 @@ class Cortexpy(object):
             cmd += ['--subgraphs', subgraphs]
         return self.run(cmd)
 
-    def traverse(self, *, graph, out, contig, contig_fasta=False, colors=None, max_nodes=None,
+    def traverse(self, *, graphs, out, contig, contig_fasta=False, colors=None, max_nodes=None,
                  subgraphs=True, verbose=False, silent=False, logging_interval=None):
-        cmd = ['traverse', graph, contig, '--out', out]
+        cmd = ['traverse', contig, '--out', out]
+        for graph in graphs:
+            cmd += ['--graph', graph]
         if colors:
             cmd.extend(['--colors', ','.join(str(c) for c in colors)])
         if contig_fasta:

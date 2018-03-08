@@ -40,6 +40,7 @@ class EmptyKmerBuilder(object):
         return self._build_from_lexlo(kmer_string_to_use)
 
     def build_or_get(self, kmer_string):
+        """Build empty kmer or return a cached kmer for a kmer string"""
         check_kmer_string(kmer_string)
         kmer_string_to_use = lexlo(kmer_string)
         if kmer_string_to_use in self._seen_kmers.keys():

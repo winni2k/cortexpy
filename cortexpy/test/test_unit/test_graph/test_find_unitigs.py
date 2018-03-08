@@ -293,9 +293,11 @@ class TestUnitigGraphCoverage(object):
             unitig = driver.finder.find_unitig_from(start_node)
 
             # then
-            if ((link_color_0_exists and link_color_1_exists) or
-                    (link_color_1_exists and kmer_coverages[0][0] == kmer_coverages[1][0] == 0) or
-                    (link_color_0_exists and kmer_coverages[0][1] == kmer_coverages[1][1] == 0)):
+            if (
+                (link_color_0_exists and link_color_1_exists) or
+                (link_color_1_exists and kmer_coverages[0][0] == kmer_coverages[1][0] == 0) or
+                (link_color_0_exists and kmer_coverages[0][1] == kmer_coverages[1][1] == 0)
+            ):
                 assert len(unitig.coverage) == 2
                 assert unitig.coverage[0] == kmer_coverages[0]
                 assert unitig.coverage[1] == kmer_coverages[1]

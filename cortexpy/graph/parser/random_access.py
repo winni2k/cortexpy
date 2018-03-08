@@ -19,7 +19,7 @@ class RandomAccessError(KeyError):
 class RandomAccess(Mapping):
     graph_handle = attr.ib()
     kmer_cache_size = attr.ib(1024)
-    header = attr.ib(init=False)
+    _header = attr.ib(init=False)
     graph_sequence = attr.ib(init=False)
     n_records = attr.ib(init=False)
     _cached_get_kmer_data_for_string = attr.ib(init=False)
@@ -27,18 +27,19 @@ class RandomAccess(Mapping):
     def __attrs_post_init__(self):
         assert self.graph_handle.seekable()
         self.graph_handle.seek(0)
-        self.header = cortexpy.graph.parser.header.from_stream(self.graph_handle)
+        self._header = cortexpy.graph.parser.header.from_stream(self.graph_handle)
         body_start_stream_position = self.graph_handle.tell()
 
         self.graph_handle.seek(0, SEEK_END)
         body_size = self.graph_handle.tell() - body_start_stream_position
-        if body_size % self.header.record_size != 0:
+        if body_size % self._header.record_size != 0:
             raise RuntimeError(
-                "Body size ({}) % Record size ({}) != 0".format(body_size, self.header.record_size))
-        self.n_records = body_size // self.header.record_size
+                "Body size ({}) % Record size ({}) != 0".format(body_size,
+                                                                self._header.record_size))
+        self.n_records = body_size // self._header.record_size
         self.graph_sequence = KmerRecordSequence(graph_handle=self.graph_handle,
                                                  body_start=body_start_stream_position,
-                                                 header=self.header,
+                                                 header=self._header,
                                                  n_records=self.n_records)
 
         self._cached_get_kmer_data_for_string = lru_cache(maxsize=self.kmer_cache_size)(
@@ -60,11 +61,27 @@ class RandomAccess(Mapping):
 
     def __iter__(self):
         self.graph_handle.seek(self.graph_sequence.body_start)
-        return kmer_generator_from_stream_and_header(self.graph_handle, self.header)
+        return kmer_generator_from_stream_and_header(self.graph_handle, self._header)
 
     def get_kmer_for_string(self, string):
         """Will compute the revcomp of kmer string before getting a kmer"""
         return self[lexlo(string)]
+
+    @property
+    def num_colors(self):
+        return self._header.num_colors
+
+    @property
+    def colors(self):
+        return self._header.colors
+
+    @property
+    def sample_names(self):
+        return self._header.sample_names
+
+    @property
+    def kmer_size(self):
+        return self._header.kmer_size
 
 
 # copied from https://docs.python.org/3.6/library/bisect.html

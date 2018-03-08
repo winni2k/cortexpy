@@ -2,7 +2,7 @@
 cortexpy traverse
 
 Usage:
-  cortexpy traverse <graph> <initial-contigs> --out <file> [options] [-v | -s]
+  cortexpy traverse --graph=<graph>... --out=<file> [options] [-v | -s] <initial-contigs>
 
 Options:
     -h, --help                    Display this help message.
@@ -10,11 +10,12 @@ Options:
     -s, --silent                  Decrease log level to warnings and errors
 
     --out <file>                  Output graph. '-' prints to stdout
+    --graph <graph>               Input mccortex graph.  Multiple graphs can be specified and are
+                                  joined on-the-fly.
     --orientation <orientation>   Traversal orientation [default: both].
-    -c --colors <colors>          Colors to traverse.
-           May take multiple color numbers separated by a comma (example: '0,2,3').
-           The traverser will follow all colors specified.
-           Will follow all colors if not specified.
+    -c --colors <colors>          Colors to traverse.  May take multiple color numbers separated by
+                                  a comma (example: '0,2,3').  The traverser will follow all colors
+                                  specified.  Will follow all colors if not specified.
     --initial-fasta               Treat <initial-contigs> as fasta
     --subgraphs                   Emit traversal as sequence of networkx subgraphs
     --max-nodes <n>               Maximum number of nodes to traverse (int).
@@ -68,9 +69,14 @@ def traverse(argv):
 
         import networkx as nx
         from cortexpy.graph import parser as g_parser, traversal
-        input_graph = stack.enter_context(open(args['<graph>'], 'rb'))
+        if len(args['--graph']) == 1:
+            ra_parser = g_parser.RandomAccess(stack.enter_context(open(args['--graph'][0], 'rb')))
+        else:
+            ra_parser = g_parser.RandomAccessCollection(
+                [g_parser.RandomAccess(stack.enter_context(open(graph_path, 'rb'))) for graph_path
+                 in args['--graph']])
         engine = traversal.Engine(
-            g_parser.RandomAccess(input_graph),
+            ra_parser,
             orientation=traversal.constants.EngineTraversalOrientation[
                 args['--orientation']],
             max_nodes=args['--max-nodes'],
@@ -80,7 +86,7 @@ def traverse(argv):
         if args['--colors'] is not None:
             engine.traversal_colors = args['--colors']
         else:
-            engine.traversal_colors = tuple(list(range(engine.ra_parser.header.num_colors)))
+            engine.traversal_colors = tuple(list(range(engine.ra_parser.num_colors)))
         logger.info('Traversing colors: ' + ','.join([str(c) for c in engine.traversal_colors]))
 
         if args['--initial-fasta']:

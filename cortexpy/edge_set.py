@@ -35,6 +35,9 @@ class EdgeSet(object):
     def __eq__(self, other):
         return np.array_equal(self.data, other.data)
 
+    def __str__(self):
+        return self.to_str(as_revcomp=False)
+
     @property
     def outgoing(self):
         return self.data[EDGE_SET_LENGTH // 2:]

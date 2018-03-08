@@ -2,8 +2,10 @@ import struct
 from struct import unpack
 import attr
 
-from cortexpy.graph.parser.constants import CORTEX_MAGIC_WORD, CORTEX_VERSION, UINT8_T, UINT32_T, \
-    UINT64_T
+from cortexpy.graph.parser.constants import (
+    CORTEX_MAGIC_WORD, CORTEX_VERSION, UINT8_T, UINT32_T,
+    UINT64_T,
+)
 
 
 def none_or_greater_than_zero(_, attribute, value):

@@ -89,7 +89,7 @@ class Prune(object):
         with open(str(contig_fasta), 'w') as fh:
             SeqIO.write(self.records, fh, 'fasta')
         ctp_runner = runner.Cortexpy(SPAWN_PROCESS)
-        ctp_runner.traverse(graph=mccortex_graph, out=cortexpy_graph, contig=contig_fasta,
+        ctp_runner.traverse(graphs=[mccortex_graph], out=cortexpy_graph, contig=contig_fasta,
                             contig_fasta=True, subgraphs=True)
 
         pruned_graph = Path(str(cortexpy_graph)).with_suffix('.pruned.pickle')
@@ -109,6 +109,7 @@ class Traverse(object):
     """Runner for traverse acceptance tests"""
     tmpdir = attr.ib()
     mccortex_builder = attr.ib(attr.Factory(builder.Mccortex))
+    mccortex_builders = attr.ib(attr.Factory(list))
     traversal_contigs = attr.ib(None)
     added_records = attr.ib(attr.Factory(list))
     output_subgraphs = attr.ib(False)
@@ -118,6 +119,7 @@ class Traverse(object):
     verbose = attr.ib(False)
     silent = attr.ib(False)
     logging_interval_seconds = attr.ib(0)
+    kmer_size = attr.ib(None)
 
     def with_record(self, record, name=None):
         if name:
@@ -144,7 +146,7 @@ class Traverse(object):
         return self
 
     def with_kmer_size(self, size):
-        self.mccortex_builder.with_kmer_size(size)
+        self.kmer_size = size
         return self
 
     def with_verbose_arg(self):
@@ -166,8 +168,20 @@ class Traverse(object):
         self.colors = colors
         return self
 
+    def with_extra_graph(self):
+        self.mccortex_builders.append(self.mccortex_builder)
+        self.mccortex_builder = builder.Mccortex()
+        return self
+
     def _run(self):
-        mccortex_graph = self.mccortex_builder.build(self.tmpdir)
+        mccortex_graphs = []
+        self.mccortex_builders.append(self.mccortex_builder)
+        for idx, mc_builder in enumerate(self.mccortex_builders):
+            mc_builder.with_kmer_size(self.kmer_size)
+            builder_dir = self.tmpdir / 'mc_graph_{}'.format(idx)
+            builder_dir.mkdir()
+            mccortex_graphs.append(mc_builder.build(builder_dir))
+
         contig_fasta = self.tmpdir / 'cortexpy_initial_contigs.fa'
         if self.traversal_contigs:
             initial_contigs = self.traversal_contigs
@@ -181,7 +195,7 @@ class Traverse(object):
             ctp_runner = runner.Cortexpy(SPAWN_PROCESS)
         else:
             ctp_runner = runner.Cortexpy(self.spawn_process)
-        return ctp_runner.traverse(graph=mccortex_graph,
+        return ctp_runner.traverse(graphs=mccortex_graphs,
                                    out=self.cortexpy_graph,
                                    contig=contig_fasta,
                                    contig_fasta=True,

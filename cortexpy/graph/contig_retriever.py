@@ -23,14 +23,14 @@ class ContigRetriever(object):
 
     def __attrs_post_init__(self):
         self.graph_parser = parser.RandomAccess(self.graph_handle)
-        self.num_colors = self.graph_parser.header.num_colors + 1
+        self.num_colors = self.graph_parser.num_colors + 1
         self.contig_color = self.num_colors - 1
         self.non_contig_colors = list(range(self.num_colors - 1))
         self.colors = self.non_contig_colors + [self.contig_color]
         self.empty_kmer_builder = EmptyKmerBuilder(num_colors=self.num_colors)
 
     def get_kmers(self, contig):
-        kmer_size = self.graph_parser.header.kmer_size
+        kmer_size = self.graph_parser.kmer_size
         assert len(contig) >= kmer_size
         kmers = []
         for kmer_start in range(len(contig) - kmer_size + 1):
@@ -94,7 +94,7 @@ class ContigRetriever(object):
 
     def _add_metadata_to_graph(self, kmer_graph):
         kmer_graph.graph['colors'] = tuple(self.colors)
-        sample_names = [n.decode() for n in self.graph_parser.header.sample_names]
+        sample_names = [n.decode() for n in self.graph_parser.sample_names]
         sample_names.append(RETRIEVED_CONTIG_NAME)
         kmer_graph.graph['sample_names'] = sample_names
         return kmer_graph

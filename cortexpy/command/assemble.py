@@ -42,7 +42,7 @@ def assemble(argv):
 
     random_access = parser.RandomAccess(open(args['<graph>'], 'rb'))
     if args['--color'] is None:
-        colors = list(range(random_access.header.num_colors))
+        colors = list(range(random_access.num_colors))
     else:
         colors = [args['--color']]
     traverser = traversal.Engine(

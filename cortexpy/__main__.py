@@ -43,7 +43,7 @@ def main(argv):
     else:
         logger.error(
             "'{}' is not a cortexpy command. See 'cortexpy --help'.".format(args['<command>'])
-            )
+        )
         return 1
 
 

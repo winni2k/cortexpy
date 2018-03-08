@@ -119,6 +119,5 @@ def edge_set_string_to_array(edge_set_string):
             edge_set.append(1)
     return np.array(edge_set, dtype=np.uint8)
 
-
 # def print_kmer(kmer):
 #     print(kmer)

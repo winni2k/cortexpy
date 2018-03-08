@@ -27,8 +27,9 @@ class TestStreamKmerGenerator(object):
 
         # when
         for kmer, expected_kmer in zip(
-                kmer_generator_from_stream_and_header(builder.build(), header),
-                expected_kmers):
+            kmer_generator_from_stream_and_header(builder.build(), header),
+            expected_kmers
+        ):
             # then
             assert expected_kmer.kmer == kmer.kmer
             assert np.all(expected_kmer.coverage == kmer.coverage)

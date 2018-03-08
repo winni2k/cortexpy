@@ -73,7 +73,7 @@ class Engine(object):
         return self
 
     def _traverse_from_each_kmer_in(self, contig):
-        kmer_size = self.ra_parser.header.kmer_size
+        kmer_size = self.ra_parser.kmer_size
         assert len(contig) >= kmer_size
         for start in range(len(contig) - kmer_size + 1):
             start_kmer = contig[start:(start + kmer_size)]
@@ -94,7 +94,7 @@ class Engine(object):
         return self
 
     def _traverse_from(self, start_string):
-        assert len(start_string) == self.ra_parser.header.kmer_size
+        assert len(start_string) == self.ra_parser.kmer_size
         self.branch_traverser = {
             color: branch.Traverser(self.ra_parser,
                                     traversal_color=color,
@@ -119,8 +119,8 @@ class Engine(object):
         self.graph = annotate_kmer_graph_edges(self.graph)
 
     def _add_graph_metadata(self):
-        self.graph.graph['colors'] = self.ra_parser.header.colors
-        self.graph.graph['sample_names'] = [n.decode() for n in self.ra_parser.header.sample_names]
+        self.graph.graph['colors'] = self.ra_parser.colors
+        self.graph.graph['sample_names'] = [n.decode() for n in self.ra_parser.sample_names]
 
     def _process_initial_branch(self, start_string):
         if self.orientation == EngineTraversalOrientation.both:
