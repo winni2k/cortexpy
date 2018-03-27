@@ -23,10 +23,6 @@ import logging
 logger = logging.getLogger('cortexpy')
 
 
-def main_without_argv():
-    return main(sys.argv[1:])
-
-
 def main(argv):
     args = docopt(__doc__, argv=argv, version=VERSION_STRING, options_first=True)
     commands = {
@@ -57,6 +53,10 @@ def run_command(function, argv):
         logger.error(e)
         return e
     return 0
+
+
+def main_without_argv():
+    return main(sys.argv[1:])
 
 
 if __name__ == '__main__':
