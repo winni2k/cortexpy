@@ -47,3 +47,28 @@ class TestTraverseFrom(object):
             'AAT ATA 1',
             'ATA TAA 1',
             'TAA AAG 1')
+
+
+class TestTraverseFromEachKmerInIterable(object):
+    def test_with_two_subgraphs_returns_all_kmers(self, tmpdir):
+        # given
+        kmer_size = 3
+        output_graph = (builder.Mccortex(kmer_size)
+                        .with_dna_sequence('AAAT')
+                        .with_dna_sequence('GGGC')
+                        .build(tmpdir))
+
+        traverser = traversal.Engine(
+            RandomAccess(open(output_graph, 'rb')),
+            traversal_colors=(0,),
+            orientation=EngineTraversalOrientation.both
+        )
+
+        # when
+        expect = KmerGraphExpectation(
+            traverser.traverse_from_each_kmer_in_iterable(['AAA', 'GGG']).graph)
+
+        # then
+        expect.has_edges(
+            'AAA AAT 0',
+            'GGG GGC 0', )

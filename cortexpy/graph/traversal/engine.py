@@ -88,6 +88,12 @@ class Engine(object):
                                  " because max node limit is reached").format(start_kmer))
         return self
 
+    def traverse_from_each_kmer_in_iterable(self, iterable):
+        for kmer in iterable:
+            self._traverse_from(kmer)
+        self._post_process_graph()
+        return self
+
     def traverse_from(self, start_string):
         self._traverse_from(start_string)
         self._post_process_graph()
