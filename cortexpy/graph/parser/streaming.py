@@ -1,4 +1,6 @@
-from cortexpy.graph.parser.kmer import Kmer, KmerData
+import io
+
+from cortexpy.graph.parser.kmer import Kmer, KmerData, RawKmerConverter
 from cortexpy.graph.parser.constants import UINT64_T
 from cortexpy.graph.parser.header import from_stream
 
@@ -6,6 +8,11 @@ from cortexpy.graph.parser.header import from_stream
 def kmer_generator_from_stream(stream):
     header = from_stream(stream)
     return kmer_generator_from_stream_and_header(stream, header)
+
+
+def kmer_list_generator_from_stream(stream):
+    header = from_stream(stream)
+    return kmer_list_generator_from_stream_and_header(stream, header)
 
 
 def kmer_generator_from_stream_and_header(stream, header):
@@ -20,3 +27,17 @@ def kmer_generator_from_stream_and_header(stream, header):
                      header.kmer_container_size)
         )
         raw_record = stream.read(record_size)
+
+
+def kmer_list_generator_from_stream_and_header(stream, header):
+    record_size = header.kmer_container_size * UINT64_T + 5 * header.num_colors
+    kmer_container_size = header.kmer_container_size * UINT64_T
+    assert record_size >= kmer_container_size
+    kmer_converter = RawKmerConverter(header.kmer_size)
+
+    advance = record_size - kmer_container_size
+    raw_kmer = stream.read(kmer_container_size)
+    while raw_kmer != b'':
+        yield kmer_converter.to_letters(raw_kmer)
+        stream.seek(advance, io.SEEK_CUR)
+        raw_kmer = stream.read(kmer_container_size)

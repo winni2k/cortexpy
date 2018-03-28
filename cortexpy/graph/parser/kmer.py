@@ -130,6 +130,22 @@ class EmptyKmer(object):
         self.edges = [cortexpy.edge_set.empty() for _ in range(len(self.coverage))]
 
 
+@attr.s(slots=True)
+class RawKmerConverter(object):
+    kmer_size = attr.ib()
+
+    def to_letters(self, raw_kmer):
+        kmer_as_uint64ts = np.frombuffer(raw_kmer, dtype='<u8')
+        big_endian_kmer = kmer_as_uint64ts.byteswap().newbyteorder()
+        kmer_as_bits = np.unpackbits(
+            np.frombuffer(big_endian_kmer.tobytes(), dtype=np.uint8)
+        )
+        kmer = (
+            kmer_as_bits.reshape(-1, 2) * np.array([2, 1])
+        ).sum(1)
+        return [NUM_TO_LETTER[num] for num in kmer[(len(kmer) - self.kmer_size):]]
+
+
 @attr.s(slots=True, cmp=False, frozen=True)
 class KmerData(object):
     _data = attr.ib()
@@ -153,18 +169,9 @@ class KmerData(object):
     @property
     def kmer(self):
         if self._kmer is None:
-            kmer_as_uint64ts = np.frombuffer(
-                self._data[:self._kmer_container_size_in_uint64ts * 8],
-                dtype='<u8')
-            big_endian_kmer = kmer_as_uint64ts.byteswap().newbyteorder()  # change to big endian
-            kmer_as_bits = np.unpackbits(
-                np.frombuffer(big_endian_kmer.tobytes(), dtype=np.uint8)
-            )
-            kmer = (
-                kmer_as_bits.reshape(-1, 2) * np.array([2, 1])
-            ).sum(1)
-            object.__setattr__(self, "_kmer", ''.join(
-                NUM_TO_LETTER[num] for num in kmer[(len(kmer) - self.kmer_size):]))
+            raw_kmer = self._data[:self._kmer_container_size_in_uint64ts * UINT64_T]
+            kmer_letters = RawKmerConverter(self.kmer_size).to_letters(raw_kmer)
+            object.__setattr__(self, "_kmer", ''.join(kmer_letters))
         return self._kmer
 
     @property
