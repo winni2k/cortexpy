@@ -14,6 +14,7 @@ def lexlo(kmer_string):
 
 
 def get_graph_stream_iterator(file_handle):
+    """Load a networkx graph from file handle"""
     import networkx as nx
     while True:
         try:

@@ -15,6 +15,11 @@ def kmer_list_generator_from_stream(stream):
     return kmer_list_generator_from_stream_and_header(stream, header)
 
 
+def kmer_string_generator_from_stream(stream):
+    header = from_stream(stream)
+    return ''.join(kmer_list_generator_from_stream_and_header(stream, header))
+
+
 def kmer_generator_from_stream_and_header(stream, header):
     record_size = header.kmer_container_size * UINT64_T + 5 * header.num_colors
 
