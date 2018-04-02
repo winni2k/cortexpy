@@ -1,24 +1,3 @@
-"""
-cortexpy assemble
-
-Usage:
-  cortexpy assemble <graph> <start-sequences-fasta> [options]
-
-Options:
-    -h, --help               Display this help message.
-    -c --color <color>       Restrict assembly to single color (int)
-    --max-nodes <n>          Maximum number of nodes to traverse [default: 1000].
-
-Description:
-    Assemble all possible transcripts in <graph> from all k-mers in <start-sequences> and print the
-    resulting transcripts as a FASTA to stdout. All specified colors are traversed and collapsed
-    before output.
-
-    graph            A cortex graph
-    start-sequences  A FASTA file with sequences from which to start assembly.
-"""
-
-
 def validate(args):
     from schema import Schema, Use, Optional, Or
 
@@ -31,27 +10,35 @@ def validate(args):
 
 
 def assemble(argv):
-    from docopt import docopt
-    from cortexpy import VERSION_STRING
-    args = docopt(__doc__, argv=argv, version=VERSION_STRING)
-    args = validate(args)
+    import argparse
+    parser = argparse.ArgumentParser(prog='cortexpy assemble', description="""
+    Assemble all possible transcripts in <graph> from all k-mers in <start-sequences> and print the
+    resulting transcripts as a FASTA to stdout. All specified colors are traversed and collapsed
+    before output.
+    """)
+    parser.add_argument('graph', help='cortex graph')
+    parser.add_argument('start_sequences_fasta', help='FASTA file with sequences to start from')
+    parser.add_argument('--color', type=int, help='Restrict view to single color')
+    parser.add_argument('--max-nodes', type=int, default=1000,
+                        help='Maximum number of nodes to traverse [default: %(default)s]')
+    args = parser.parse_args(argv)
 
     import sys
     from Bio import SeqIO
     from cortexpy.graph import traversal, parser, interactor
 
-    random_access = parser.RandomAccess(open(args['<graph>'], 'rb'))
-    if args['--color'] is None:
+    random_access = parser.RandomAccess(open(args.graph, 'rb'))
+    if args.color is None:
         colors = list(range(random_access.num_colors))
     else:
-        colors = [args['--color']]
+        colors = [args.color]
     traverser = traversal.Engine(
         random_access,
         traversal_colors=colors,
         orientation=traversal.constants.EngineTraversalOrientation.both,
-        max_nodes=args['--max-nodes'],
+        max_nodes=args.max_nodes,
     )
-    traverser.traverse_from_each_kmer_in_fasta(args['<start-sequences-fasta>'])
+    traverser.traverse_from_each_kmer_in_fasta(args.start_sequences_fasta)
 
     seq_record_generator = interactor.Contigs(traverser.graph).all_simple_paths()
 

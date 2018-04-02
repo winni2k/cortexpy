@@ -12,9 +12,9 @@ log_level_conversion_table = {
 
 def configure_logging_from_args(args):
     """Checks args for --silent and --verbose mode and sets the logging level appropriately"""
-    if args.get('--verbose'):
+    if getattr(args, 'verbose', None):
         log_level = logging.DEBUG
-    elif args.get('--silent'):
+    elif getattr(args, 'silent', None):
         log_level = logging.WARNING
     else:
         log_level = logging.INFO

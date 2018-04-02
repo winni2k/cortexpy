@@ -113,10 +113,12 @@ class Cortexpy(object):
     def traverse(self, *, graphs, out, contig, contig_fasta=False, colors=None, max_nodes=None,
                  subgraphs=True, verbose=False, silent=False, logging_interval=None):
         cmd = ['traverse', contig, '--out', out]
-        for graph in graphs:
-            cmd += ['--graph', graph]
+        assert len(graphs) > 0
+        cmd.append('--graphs')
+        cmd += graphs
         if colors:
-            cmd.extend(['--colors', ','.join(str(c) for c in colors)])
+            cmd.append('--colors')
+            cmd += colors
         if contig_fasta:
             cmd.append('--initial-fasta')
         if max_nodes:
@@ -137,6 +139,7 @@ class Cortexpy(object):
             cmd.extend(['--remove-tips', remove_tips])
         if verbose:
             cmd.append('--verbose')
+        cmd = [str(c) for c in cmd]
         return self.run(cmd)
 
     def assemble(self, *, graph, initial_seqs):

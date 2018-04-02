@@ -19,7 +19,6 @@ class JsonGraphs(object):
 
     def has_graph_with_node_reprs(self, *reprs):
         reprs = set(reprs)
-        print(self.graphs)
         graphs_with_node_reprs = [g for g in self.graphs if
                                   reprs <= {n['repr'] for n in g['nodes']}]
         assert 0 < len(graphs_with_node_reprs)

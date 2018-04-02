@@ -15,44 +15,32 @@ See 'cortexpy <command>' for more information on a specific command.
 
 """
 import sys
-import importlib
-from docopt import docopt
-from cortexpy import VERSION_STRING
 import logging
 
 logger = logging.getLogger('cortexpy')
 
 
 def main(argv):
-    args = docopt(__doc__, argv=argv, version=VERSION_STRING, options_first=True)
-    commands = {
+    from cortexpy import __version__
+    import importlib
+    import argparse
+    subcommands = {
         'view': 'cortexpy.command.view.view',
         'assemble': 'cortexpy.command.assemble.assemble',
         'traverse': 'cortexpy.command.traverse.traverse',
         'prune': 'cortexpy.command.prune.prune',
     }
-    argv = [args['<command>']] + args['<args>']
-    if args['<command>'] in commands.keys():
-        package_string, method_string = commands[args['<command>']].rsplit('.', 1)
-        module = importlib.import_module(package_string)
-        run_command(getattr(module, method_string), argv)
-    else:
-        logger.error(
-            "'{}' is not a cortexpy command. See 'cortexpy --help'.".format(args['<command>'])
-        )
-        return 1
+    parser = argparse.ArgumentParser(prog='cortexpy')
+    parser.add_argument('--version', action='version',
+                        version=f'%(prog)s version {__version__}')
+    parser.add_argument('subcommand', choices=sorted(subcommands.keys()),
+                        help='cortexpy sub-command')
+    parser.add_argument('args', nargs=argparse.REMAINDER, help='sub-command arguments')
+    args = parser.parse_args(argv)
 
-
-def run_command(function, argv):
-    from schema import SchemaError
-
-    try:
-        function(argv)
-    except SchemaError as e:
-        logger.error('Input argument error for arguments: {}'.format(argv))
-        logger.error(e)
-        return e
-    return 0
+    package_string, method_string = subcommands[args.subcommand].rsplit('.', 1)
+    module = importlib.import_module(package_string)
+    return getattr(module, method_string)(args.args)
 
 
 def main_without_argv():
