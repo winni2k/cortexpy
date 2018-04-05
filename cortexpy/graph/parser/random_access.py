@@ -18,7 +18,7 @@ class RandomAccessError(KeyError):
 @attr.s(slots=True)
 class RandomAccess(Mapping):
     graph_handle = attr.ib()
-    kmer_cache_size = attr.ib(1024)
+    kmer_cache_size = attr.ib(None)
     _header = attr.ib(init=False)
     graph_sequence = attr.ib(init=False)
     n_records = attr.ib(init=False)
@@ -37,6 +37,8 @@ class RandomAccess(Mapping):
                 "Body size ({}) % Record size ({}) != 0".format(body_size,
                                                                 self._header.record_size))
         self.n_records = body_size // self._header.record_size
+        if self.kmer_cache_size is None:
+            self.kmer_cache_size = self.n_records
         self.graph_sequence = KmerRecordSequence(graph_handle=self.graph_handle,
                                                  body_start=body_start_stream_position,
                                                  header=self._header,

@@ -1,21 +1,3 @@
-def validate(args):
-    """Validate inputs for traverse command"""
-    from schema import Schema, Use, Or
-    from cortexpy.graph import traversal
-
-    schema = Schema({
-        '--orientation': (
-            lambda x: x in traversal.constants.EngineTraversalOrientation.__members__.keys()
-        ),
-        '--colors': Or(None,
-                       Use(lambda colors: tuple([int(color) for color in colors.split(',')]))),
-        '--max-nodes': Or(None, Use(int)),
-        '--logging-interval': Use(int),
-        str: object,
-    })
-    return schema.validate(args)
-
-
 def traverse(argv):
     import argparse
     from cortexpy.graph import traversal
@@ -53,6 +35,7 @@ def traverse(argv):
                              '  Die without output if max nodes is exceeded')
     parser.add_argument('--logging-interval', type=int, default=90,
                         help='Logging interval.  [default: %(default)s]')
+    parser.add_argument('--cache-size', type=int, default=None, help='Number of kmers to cache')
     args = parser.parse_args(argv)
 
     from cortexpy.logging_config import configure_logging_from_args
@@ -72,11 +55,13 @@ def traverse(argv):
         import networkx as nx
         from cortexpy.graph import parser as g_parser, traversal
         if len(args.graphs) == 1:
-            ra_parser = g_parser.RandomAccess(stack.enter_context(open(args.graphs[0], 'rb')))
+            ra_parser = g_parser.RandomAccess(stack.enter_context(open(args.graphs[0], 'rb')),
+                                              kmer_cache_size=args.cache_size)
         else:
             ra_parser = g_parser.RandomAccessCollection(
-                [g_parser.RandomAccess(stack.enter_context(open(graph_path, 'rb'))) for graph_path
-                 in args.graphs])
+                [g_parser.RandomAccess(stack.enter_context(open(graph_path, 'rb')),
+                                       kmer_cache_size=args.cache_size)
+                 for graph_path in args.graphs])
         engine = traversal.Engine(
             ra_parser,
             orientation=traversal.constants.EngineTraversalOrientation[args.orientation.name],
