@@ -1,11 +1,16 @@
+import random
+from unittest import mock
+
 import numpy as np
 import pytest
 from hypothesis import given
 from hypothesis import strategies as s
 import cortexpy.test.builder as builder
 import cortexpy.graph.parser as parser
+from cortexpy.graph.parser import RandomAccess
 from cortexpy.test.builder.graph.body import KmerRecord, as_edge_set
 from cortexpy.test.builder.graph.kmer import kmers
+from cortexpy.utils import lexlo
 
 
 class TestDunderGetitemDunder(object):
@@ -39,6 +44,34 @@ class TestDunderGetitemDunder(object):
             assert expected_kmer.kmer == kmer.kmer
             assert np.all(expected_kmer.coverage == kmer.coverage)
             assert expected_kmer.edges == kmer.edges
+
+    @given(s.integers(min_value=0, max_value=16))
+    def test_cache_complexity(self, num_kmers):
+        # given
+        kmer_size = 11
+        expected_num_calls = num_kmers
+        cache_size = num_kmers
+        num_colors = 1
+        b = builder.Graph() \
+            .with_kmer_size(kmer_size) \
+            .with_num_colors(num_colors)
+        seen_kmers = set()
+        for _ in range(num_kmers):
+            kmer_string = lexlo(''.join([random.choice('ACGT') for _ in range(kmer_size)]))
+            while kmer_string in seen_kmers:
+                kmer_string = lexlo(''.join([random.choice('ACGT') for _ in range(kmer_size)]))
+            seen_kmers.add(kmer_string)
+            b.with_kmer(kmer_string)
+        fh = b.build()
+
+        ra = RandomAccess(fh, kmer_cache_size=cache_size)
+        with mock.patch.object(fh, 'read', wraps=fh.read) as mocked_seek:
+            # when
+            for seen_kmer in sorted(seen_kmers):
+                ra[seen_kmer]
+
+            # then
+            assert expected_num_calls == mocked_seek.call_count
 
     def test_raises_on_missing_kmer(self):
         # given

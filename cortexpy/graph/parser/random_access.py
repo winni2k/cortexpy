@@ -40,7 +40,8 @@ class RandomAccess(Mapping):
         self.graph_sequence = KmerRecordSequence(graph_handle=self.graph_handle,
                                                  body_start=body_start_stream_position,
                                                  header=self._header,
-                                                 n_records=self.n_records)
+                                                 n_records=self.n_records,
+                                                 kmer_cache_size=self.kmer_cache_size)
 
         self._cached_get_kmer_data_for_string = lru_cache(maxsize=self.kmer_cache_size)(
             self._get_kmer_data_for_string)
@@ -101,6 +102,7 @@ class KmerRecordSequence(Sequence):
     header = attr.ib()
     body_start = attr.ib()
     n_records = attr.ib()
+    kmer_cache_size = attr.ib(0)
     record_size = attr.ib(init=False)
     num_colors = attr.ib(init=False)
     kmer_size = attr.ib(init=False)
@@ -111,22 +113,26 @@ class KmerRecordSequence(Sequence):
         self.kmer_size = self.header.kmer_size
         self.num_colors = self.header.num_colors
         self.kmer_container_size = self.header.kmer_container_size
+        self._cached_get_kmer_data_for_item = lru_cache(maxsize=self.kmer_cache_size)(
+            self._get_kmer_data_for_item)
 
     def __getitem__(self, item):
         if not isinstance(item, int):
             raise TypeError("Index must be of type int")
         if item >= self.n_records or item < 0:
             raise IndexError("Index ({}) is out of range".format(item))
-        self.graph_handle.seek(self.body_start + self.record_size * item)
-        kmer_bytes = self.graph_handle.read(self.record_size)
-        return KmerByStringComparator(
-            kmer_object=Kmer(KmerData(
-                kmer_bytes,
-                kmer_size=self.kmer_size,
-                num_colors=self.num_colors,
-                kmer_container_size_in_uint64ts=self.kmer_container_size,
-            ))
-        )
+        kmer_data = self._cached_get_kmer_data_for_item(item)
+        return KmerByStringComparator(kmer_object=Kmer(kmer_data))
 
     def __len__(self):
         return max(0, self.n_records)
+
+    def _get_kmer_data_for_item(self, item):
+        self.graph_handle.seek(self.body_start + self.record_size * item)
+        kmer_bytes = self.graph_handle.read(self.record_size)
+        return KmerData(
+            kmer_bytes,
+            kmer_size=self.kmer_size,
+            num_colors=self.num_colors,
+            kmer_container_size_in_uint64ts=self.kmer_container_size,
+        )
