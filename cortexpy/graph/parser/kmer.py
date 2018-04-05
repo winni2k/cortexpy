@@ -200,18 +200,45 @@ class KmerData(object):
 @attr.s(slots=True, cmp=False)
 class Kmer(object):
     _kmer_data = attr.ib()
-    kmer = attr.ib(init=False)
-    coverage = attr.ib(init=False)
-    edges = attr.ib(init=False)
+    _kmer = attr.ib(None)
+    _coverage = attr.ib(None)
+    _edges = attr.ib(None)
     kmer_size = attr.ib(init=False)
     num_colors = attr.ib(init=False)
 
     def __attrs_post_init__(self):
-        self.kmer = self._kmer_data.kmer
-        self.coverage = self._kmer_data.coverage
-        self.edges = self._kmer_data.edges
         self.kmer_size = self._kmer_data.kmer_size
         self.num_colors = self._kmer_data.num_colors
+
+    @property
+    def kmer(self):
+        if self._kmer is None:
+            self._kmer = self._kmer_data.kmer
+        return self._kmer
+
+    @kmer.setter
+    def kmer(self, val):
+        self._kmer = val
+
+    @property
+    def coverage(self):
+        if self._coverage is None:
+            self._coverage = self._kmer_data.coverage
+        return self._coverage
+
+    @coverage.setter
+    def coverage(self, val):
+        self._coverage = val
+
+    @property
+    def edges(self):
+        if self._edges is None:
+            self._edges = self._kmer_data.edges
+        return self._edges
+
+    @edges.setter
+    def edges(self, val):
+        return self._edges
 
     def increment_color_coverage(self, color):
         """Increment the coverage of a color by one"""
