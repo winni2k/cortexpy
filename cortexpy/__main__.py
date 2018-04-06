@@ -32,7 +32,7 @@ def main(argv):
     }
     parser = argparse.ArgumentParser(prog='cortexpy')
     parser.add_argument('--version', action='version',
-                        version=f'%(prog)s version {__version__}')
+                        version='%(prog)s version '.format(__version__))
     parser.add_argument('subcommand', choices=sorted(subcommands.keys()),
                         help='cortexpy sub-command')
     parser.add_argument('args', nargs=argparse.REMAINDER, help='sub-command arguments')
