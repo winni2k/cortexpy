@@ -143,7 +143,7 @@ class RawKmerConverter(object):
         kmer = (
             kmer_as_bits.reshape(-1, 2) * np.array([2, 1])
         ).sum(1)
-        return [NUM_TO_LETTER[num] for num in kmer[(len(kmer) - self.kmer_size):]]
+        return NUM_TO_LETTER[kmer[(len(kmer) - self.kmer_size):]]
 
 
 @attr.s(slots=True, cmp=False, frozen=True)
@@ -171,7 +171,7 @@ class KmerData(object):
         if self._kmer is None:
             raw_kmer = self._data[:self._kmer_container_size_in_uint64ts * UINT64_T]
             kmer_letters = RawKmerConverter(self.kmer_size).to_letters(raw_kmer)
-            object.__setattr__(self, "_kmer", ''.join(kmer_letters))
+            object.__setattr__(self, "_kmer", kmer_letters.astype('|S1').tostring().decode('utf-8'))
         return self._kmer
 
     @property

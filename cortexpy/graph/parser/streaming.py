@@ -17,7 +17,12 @@ def kmer_list_generator_from_stream(stream):
 
 def kmer_string_generator_from_stream(stream):
     header = from_stream(stream)
-    return (''.join(l) for l in kmer_list_generator_from_stream_and_header(stream, header))
+    return kmer_string_generator_from_stream_and_header(stream, header)
+
+
+def kmer_string_generator_from_stream_and_header(stream, header):
+    return (l.astype('|S1').tostring().decode('utf-8') for l in
+            kmer_list_generator_from_stream_and_header(stream, header))
 
 
 def kmer_generator_from_stream_and_header(stream, header):
