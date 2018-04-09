@@ -1,10 +1,15 @@
 from struct import unpack
 import attr
 import numpy as np
+import math
 
 import cortexpy.edge_set
 from cortexpy.edge_set import EdgeSet
-from cortexpy.graph.parser.constants import NUM_TO_LETTER, UINT64_T, UINT32_T
+from cortexpy.graph.parser.constants import (
+    NUM_TO_LETTER, UINT64_T, UINT32_T, LETTER_TO_NUM,
+    ASCII_OFFSET_OF_ZERO,
+    LETTERS_PER_BYTE,
+)
 from cortexpy.utils import revcomp, lexlo
 
 
@@ -137,13 +142,39 @@ class RawKmerConverter(object):
     def to_letters(self, raw_kmer):
         kmer_as_uint64ts = np.frombuffer(raw_kmer, dtype='<u8')
         big_endian_kmer = kmer_as_uint64ts.byteswap().newbyteorder()
-        kmer_as_bits = np.unpackbits(
-            np.frombuffer(big_endian_kmer.tobytes(), dtype=np.uint8)
-        )
-        kmer = (
-            kmer_as_bits.reshape(-1, 2) * np.array([2, 1])
-        ).sum(1)
+        kmer_as_bits = np.unpackbits(np.frombuffer(big_endian_kmer.tobytes(), dtype=np.uint8))
+        kmer = (kmer_as_bits.reshape(-1, 2) * np.array([2, 1])).sum(1)
         return NUM_TO_LETTER[kmer[(len(kmer) - self.kmer_size):]]
+
+
+NUM_TO_BITS = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+
+
+@attr.s(slots=True)
+class StringKmerConverter(object):
+    kmer_size = attr.ib()
+    _kmer_container_size_in_uint64ts = attr.ib(init=False)
+    _padding_array = attr.ib(init=False)
+
+    def __attrs_post_init__(self):
+        num_letters_per_uint = UINT64_T * LETTERS_PER_BYTE
+        self._kmer_container_size_in_uint64ts = math.ceil(
+            self.kmer_size / num_letters_per_uint)
+        padding_size = num_letters_per_uint - self.kmer_size % num_letters_per_uint
+        if padding_size == num_letters_per_uint:
+            padding_size = 0
+        self._padding_array = np.zeros(padding_size, dtype=np.uint8)
+
+    def to_uints(self, kmer_string):
+        """Converts kmer_string to big-endian uint64 array"""
+        assert isinstance(kmer_string, str)
+        letters = np.frombuffer(kmer_string.encode().translate(LETTER_TO_NUM), dtype=np.uint8)
+        letter_vals = letters - ASCII_OFFSET_OF_ZERO
+        letter_vals = np.concatenate((letter_vals[:-self.kmer_size],
+                                      self._padding_array,
+                                      letter_vals[-self.kmer_size:]))
+        letter_val_bits = NUM_TO_BITS[letter_vals]
+        return np.packbits(letter_val_bits).view('uint64').newbyteorder()
 
 
 @attr.s(slots=True, cmp=False, frozen=True)
@@ -311,3 +342,20 @@ class KmerByStringComparator(object):
 
     def __lt__(self, other):
         return self.kmer < other.kmer
+
+
+@attr.s(slots=True, cmp=False)
+class KmerUintComparator(object):
+    kmer_uints = attr.ib()
+
+    def __lt__(self, other):
+        assert len(self) == len(other)
+        for i, val in enumerate(self.kmer_uints):
+            if val < other.kmer_uints[i]:
+                return True
+            elif val != other.kmer_uints[i]:
+                return False
+        return False
+
+    def __len__(self):
+        return len(self.kmer_uints)

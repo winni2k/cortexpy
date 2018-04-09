@@ -8,6 +8,8 @@ from hypothesis import strategies as s
 import cortexpy.test.builder as builder
 import cortexpy.graph.parser as parser
 from cortexpy.graph.parser import RandomAccess
+from cortexpy.graph.parser.header import from_stream
+from cortexpy.graph.parser.random_access import KmerUintSequence
 from cortexpy.test.builder.graph.body import KmerRecord, as_edge_set
 from cortexpy.test.builder.graph.kmer import kmers
 from cortexpy.utils import lexlo
@@ -155,3 +157,41 @@ class TestDunderIterDunder(object):
 
         # when/then
         assert list(cg) == []
+
+
+class TestKmerUintSequence(object):
+    @given(s.data(),
+           s.integers(min_value=1, max_value=129),
+           s.integers(min_value=1, max_value=5))
+    def test_index(self, data, kmer_size, n_kmers):
+        # given
+        num_colors = 1
+        graph_builder = (builder.Graph()
+                         .with_kmer_size(kmer_size)
+                         .with_num_colors(num_colors))
+
+        expected_kmers = []
+        seen_kmers = set()
+        for _ in range(n_kmers):
+            kmer = data.draw(kmers(kmer_size, num_colors))
+            while kmer.kmer in seen_kmers:
+                kmer = data.draw(kmers(kmer_size, num_colors))
+            seen_kmers.add(kmer.kmer)
+            graph_builder.with_kmer_record(kmer)
+            expected_kmers.append(kmer)
+        expected_kmers = sorted(expected_kmers)
+
+        graph_stream = graph_builder.build()
+        header_stream = graph_builder.header.build()
+        header = from_stream(header_stream)
+
+        # when
+        sequence = KmerUintSequence(graph_handle=graph_stream,
+                                    body_start=len(header_stream.getvalue()),
+                                    header=header,
+                                    n_records=len(expected_kmers),
+                                    kmer_cache_size=0)
+        # then
+        for idx, expected_kmer in enumerate(expected_kmers):
+            # then
+            assert idx == sequence.index_kmer_string(expected_kmer.kmer)

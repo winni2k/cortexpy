@@ -1,11 +1,12 @@
 import numpy as np
 import pytest
+import math
 from Bio.Seq import reverse_complement
 from hypothesis import given, assume, settings
 from hypothesis import strategies as s
 
 import cortexpy.edge_set
-from cortexpy.graph.parser.kmer import EmptyKmerBuilder, connect_kmers
+from cortexpy.graph.parser.kmer import EmptyKmerBuilder, connect_kmers, StringKmerConverter
 from cortexpy.test.builder.graph.kmer import dna_sequences, kmer_strings
 
 
@@ -265,3 +266,58 @@ class TestHasEdgeTo(object):
         # when/then
         assert not kmer1.has_outgoing_edge_to_kmer_in_color(kmer2, color_to_check)
         assert not kmer2.has_incoming_edge_from_kmer_in_color(kmer1, color_to_check)
+
+
+class TestStringKmerConverter(object):
+    @given(s.lists(s.sampled_from(list('ACGT')), min_size=1, max_size=65))
+    def test_kmer_sizes(self, letters):
+        # given
+        string_kmer = ''.join(letters)
+        converter = StringKmerConverter(kmer_size=len(letters))
+
+        # when
+        uints = converter.to_uints(string_kmer)
+
+        # then
+        assert math.ceil(len(letters) / 32) == len(uints)
+
+    @given(s.integers(min_value=0, max_value=3))
+    def test_converts_least_significant_letter(self, letter_idx):
+        # given
+        kmer_string = 'A' * 31 + list('ACGT')[letter_idx]
+        converter = StringKmerConverter(kmer_size=len(kmer_string))
+
+        # when
+        uints = converter.to_uints(kmer_string)
+
+        # then
+        assert letter_idx == uints[0]
+        assert 1 == len(uints)
+
+    @given(s.integers(min_value=0, max_value=3))
+    def test_converts_most_significant_letter(self, letter_idx):
+        # given
+        kmer_string = list('ACGT')[letter_idx] + 'A' * 31
+        converter = StringKmerConverter(kmer_size=len(kmer_string))
+
+        # when
+        uints = converter.to_uints(kmer_string)
+
+        # then
+        assert int(letter_idx << 62) == uints[0]
+        assert 1 == len(uints)
+
+    @given(s.integers(min_value=0, max_value=3),
+           s.integers(min_value=1, max_value=129))
+    def test_with_partially_filled_container_converts_least_significant_letter(self, letter_idx,
+                                                                               kmer_size):
+        # given
+        kmer_string = 'A' * (kmer_size - 1) + list('ACGT')[letter_idx]
+        converter = StringKmerConverter(kmer_size=kmer_size)
+
+        # when
+        uints = converter.to_uints(kmer_string)
+
+        # then
+        assert letter_idx == uints[-1]
+        assert math.ceil(kmer_size / 32) == len(uints)
