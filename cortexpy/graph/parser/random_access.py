@@ -21,7 +21,7 @@ class RandomAccess(Mapping):
     """Provide fast k-mer access to Cortex graph in log(n) time (n = number of kmers in graph)"""
     graph_handle = attr.ib()
     kmer_cache_size = attr.ib(None)
-    kmer_binary_search_cache_size = attr.ib(None)
+    kmer_cache_size_binary_search = attr.ib(None)
     _header = attr.ib(init=False)
     graph_sequence = attr.ib(init=False)
     graph_kmer_sequence = attr.ib(init=False)
@@ -43,8 +43,8 @@ class RandomAccess(Mapping):
         self.n_records = body_size // self._header.record_size
         if self.kmer_cache_size is None:
             self.kmer_cache_size = self.n_records
-        if self.kmer_binary_search_cache_size is None:
-            self.kmer_binary_search_cache_size = self.n_records
+        if self.kmer_cache_size_binary_search is None:
+            self.kmer_cache_size_binary_search = self.n_records
         self.graph_sequence = KmerRecordSequence(graph_handle=self.graph_handle,
                                                  body_start=body_start_stream_position,
                                                  header=self._header,
@@ -55,7 +55,7 @@ class RandomAccess(Mapping):
             body_start=body_start_stream_position,
             header=self._header,
             n_records=self.n_records,
-            kmer_cache_size=self.kmer_binary_search_cache_size
+            kmer_cache_size=self.kmer_cache_size_binary_search
         )
 
         self._cached_get_kmer_data_for_string = lru_cache(maxsize=self.kmer_cache_size)(
