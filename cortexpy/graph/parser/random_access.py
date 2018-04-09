@@ -16,15 +16,12 @@ from cortexpy.graph.parser.streaming import kmer_generator_from_stream_and_heade
 from cortexpy.utils import lexlo
 
 
-class RandomAccessError(KeyError):
-    """Raise this if a random access parser could not find a kmer"""
-
-
 @attr.s(slots=True)
 class RandomAccess(Mapping):
     """Provide fast k-mer access to Cortex graph in log(n) time (n = number of kmers in graph)"""
     graph_handle = attr.ib()
     kmer_cache_size = attr.ib(None)
+    kmer_binary_search_cache_size = attr.ib(None)
     _header = attr.ib(init=False)
     graph_sequence = attr.ib(init=False)
     graph_kmer_sequence = attr.ib(init=False)
@@ -46,27 +43,31 @@ class RandomAccess(Mapping):
         self.n_records = body_size // self._header.record_size
         if self.kmer_cache_size is None:
             self.kmer_cache_size = self.n_records
+        if self.kmer_binary_search_cache_size is None:
+            self.kmer_binary_search_cache_size = self.n_records
         self.graph_sequence = KmerRecordSequence(graph_handle=self.graph_handle,
                                                  body_start=body_start_stream_position,
                                                  header=self._header,
                                                  n_records=self.n_records,
                                                  kmer_cache_size=self.kmer_cache_size)
-        self.graph_kmer_sequence = KmerUintSequence(graph_handle=self.graph_handle,
-                                                    body_start=body_start_stream_position,
-                                                    header=self._header,
-                                                    n_records=self.n_records,
-                                                    kmer_cache_size=self.kmer_cache_size)
+        self.graph_kmer_sequence = KmerUintSequence(
+            graph_handle=self.graph_handle,
+            body_start=body_start_stream_position,
+            header=self._header,
+            n_records=self.n_records,
+            kmer_cache_size=self.kmer_binary_search_cache_size
+        )
 
         self._cached_get_kmer_data_for_string = lru_cache(maxsize=self.kmer_cache_size)(
             self._get_kmer_data_for_string)
 
     def _get_kmer_data_for_string(self, kmer_string):
-        try:
-            kmer_comparator = index_and_retrieve(self.graph_sequence,
-                                                 KmerByStringComparator(kmer=kmer_string))
-        except ValueError as exception:
-            raise KeyError('Could not retrieve kmer: ' + kmer_string) from exception
-        return kmer_comparator.kmer_object._kmer_data
+        index = self.graph_kmer_sequence.index_kmer_string(kmer_string)
+        if index < self.n_records:
+            kmer_object = self.graph_sequence[index].kmer_object
+            if kmer_object.kmer == kmer_string:
+                return kmer_object._kmer_data
+        raise KeyError('Could not retrieve kmer: ' + kmer_string)
 
     def __getitem__(self, kmer_string):
         return Kmer(self._cached_get_kmer_data_for_string(kmer_string))
@@ -98,17 +99,6 @@ class RandomAccess(Mapping):
     @property
     def kmer_size(self):
         return self._header.kmer_size
-
-
-# copied from https://docs.python.org/3.6/library/bisect.html
-def index_and_retrieve(sequence, value):
-    'Locate the leftmost value exactly equal to x'
-    i = bisect_left(sequence, value)
-    if i != len(sequence):
-        val = sequence[i]
-        if val == value:
-            return val
-    raise ValueError("Could not find '{}'".format(value))
 
 
 @attr.s(slots=True)
@@ -169,8 +159,11 @@ class KmerUintSequence(Sequence):
     def __attrs_post_init__(self):
         self.record_size = self.header.record_size
         self.kmer_container_size = self.header.kmer_container_size
-        self._cached_get_kmer_data_for_item = lru_cache(maxsize=self.kmer_cache_size)(
-            self._get_kmer_data_for_item)
+        if self.kmer_cache_size == 0:
+            self._cached_get_kmer_data_for_item = self._get_kmer_data_for_item
+        else:
+            self._cached_get_kmer_data_for_item = lru_cache(maxsize=self.kmer_cache_size)(
+                self._get_kmer_data_for_item)
         self._kmer_string_converter = StringKmerConverter(self.header.kmer_size)
 
     def __getitem__(self, item):

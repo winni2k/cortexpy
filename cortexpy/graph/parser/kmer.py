@@ -141,7 +141,7 @@ class RawKmerConverter(object):
 
     def to_letters(self, raw_kmer):
         kmer_as_uint64ts = np.frombuffer(raw_kmer, dtype='<u8')
-        big_endian_kmer = kmer_as_uint64ts.byteswap().newbyteorder()
+        big_endian_kmer = kmer_as_uint64ts.astype('>u8')
         kmer_as_bits = np.unpackbits(np.frombuffer(big_endian_kmer.tobytes(), dtype=np.uint8))
         kmer = (kmer_as_bits.reshape(-1, 2) * np.array([2, 1])).sum(1)
         return NUM_TO_LETTER[kmer[(len(kmer) - self.kmer_size):]]
@@ -330,10 +330,12 @@ class Kmer(object):
         return edge_set.is_edge(other_kmer_letter)
 
 
+@attr.s(slots=True, cmp=False)
 class KmerByStringComparator(object):
-    def __init__(self, *, kmer=None, kmer_object=None):
-        self.kmer = kmer
-        self.kmer_object = kmer_object
+    kmer = attr.ib(None)
+    kmer_object = attr.ib(None)
+
+    def __attrs_post_init__(self):
         if self.kmer is None:
             self.kmer = self.kmer_object.kmer
 
@@ -349,7 +351,6 @@ class KmerUintComparator(object):
     kmer_uints = attr.ib()
 
     def __lt__(self, other):
-        assert len(self) == len(other)
         for i, val in enumerate(self.kmer_uints):
             if val < other.kmer_uints[i]:
                 return True

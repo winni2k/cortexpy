@@ -35,7 +35,9 @@ def traverse(argv):
                              '  Die without output if max nodes is exceeded')
     parser.add_argument('--logging-interval', type=int, default=90,
                         help='Logging interval.  [default: %(default)s]')
-    parser.add_argument('--cache-size', type=int, default=None, help='Number of kmers to cache')
+    parser.add_argument('--cache-size', type=int, default=0, help='Number of kmers to cache')
+    parser.add_argument('--binary-search-cache-size', type=int, default=0,
+                        help='Number of kmers to cache for binary search')
     args = parser.parse_args(argv)
 
     from cortexpy.logging_config import configure_logging_from_args
@@ -55,12 +57,16 @@ def traverse(argv):
         import networkx as nx
         from cortexpy.graph import parser as g_parser, traversal
         if len(args.graphs) == 1:
-            ra_parser = g_parser.RandomAccess(stack.enter_context(open(args.graphs[0], 'rb')),
-                                              kmer_cache_size=args.cache_size)
+            ra_parser = g_parser.RandomAccess(
+                stack.enter_context(open(args.graphs[0], 'rb')),
+                kmer_cache_size=args.cache_size,
+                kmer_binary_search_cache_size=args.binary_search_cache_size,
+            )
         else:
             ra_parser = g_parser.RandomAccessCollection(
                 [g_parser.RandomAccess(stack.enter_context(open(graph_path, 'rb')),
-                                       kmer_cache_size=args.cache_size)
+                                       kmer_cache_size=args.cache_size,
+                                       kmer_binary_search_cache_size=args.binary_search_cache_size)
                  for graph_path in args.graphs])
         engine = traversal.Engine(
             ra_parser,

@@ -51,8 +51,8 @@ class TestDunderGetitemDunder(object):
     def test_cache_complexity(self, num_kmers):
         # given
         kmer_size = 11
-        expected_num_calls = num_kmers
-        cache_size = num_kmers
+        expected_num_calls = 2 * num_kmers
+        cache_size = 0
         num_colors = 1
         b = builder.Graph() \
             .with_kmer_size(kmer_size) \
