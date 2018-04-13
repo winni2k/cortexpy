@@ -65,9 +65,8 @@ class RandomAccess(Mapping):
     def _get_kmer_data_for_string(self, kmer_string):
         index = self.graph_kmer_sequence.index_kmer_string(kmer_string)
         if index < self.n_records:
-            kmer_object = self.graph_sequence[index]
-            if kmer_object.kmer == kmer_string:
-                return kmer_object._kmer_data
+            # not bothering to test if we got the right kmer, as all kmers *should* be unique
+            return self.graph_sequence[index]._kmer_data
         raise KeyError('Could not retrieve kmer: ' + kmer_string)
 
     def __getitem__(self, kmer_string):
