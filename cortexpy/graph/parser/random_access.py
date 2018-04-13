@@ -65,7 +65,7 @@ class RandomAccess(Mapping):
     def _get_kmer_data_for_string(self, kmer_string):
         index = self.graph_kmer_sequence.index_kmer_string(kmer_string)
         if index < self.n_records:
-            kmer_object = self.graph_sequence[index].kmer_object
+            kmer_object = self.graph_sequence[index]
             if kmer_object.kmer == kmer_string:
                 return kmer_object._kmer_data
         raise KeyError('Could not retrieve kmer: ' + kmer_string)
@@ -129,7 +129,7 @@ class KmerRecordSequence(Sequence):
         if item >= self.n_records or item < 0:
             raise IndexError("Index ({}) is out of range".format(item))
         kmer_data = self._cached_get_kmer_data_for_item(item)
-        return KmerByStringComparator(kmer_object=Kmer(kmer_data))
+        return Kmer(kmer_data)
 
     def __len__(self):
         return max(0, self.n_records)
