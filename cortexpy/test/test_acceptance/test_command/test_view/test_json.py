@@ -145,7 +145,7 @@ class TestTraversal(object):
         d.with_record('ACCG')
         d.with_record(record1 + 'G', name='sample_1')
         d.with_initial_contigs('CCC')
-        d.with_traverlsal_colors(0)
+        d.with_traversal_colors(0)
 
         # when
         expect = d.run()

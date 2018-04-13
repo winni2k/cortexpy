@@ -8,6 +8,7 @@ from datetime import datetime
 
 from cortexpy import graph
 from cortexpy.graph.parser.kmer import EmptyKmerBuilder
+from cortexpy.utils import lexlo
 from .constants import EngineTraversalOrientation
 from . import branch
 from cortexpy.graph.serializer import SERIALIZER_GRAPH
@@ -225,16 +226,22 @@ class Engine(object):
 def annotate_kmer_graph_edges(graph):
     """Adds nodes to graph for kmer_strings that only exist as edges in a node's kmer."""
     colors = graph.graph['colors']
-    graph2 = graph.copy()
+    graph2 = SERIALIZER_GRAPH()
     for kmer_string, kmer in graph.nodes(data='kmer'):
+        is_lexlo = bool(kmer_string == lexlo(kmer_string))
         for color in colors:
-            for new_kmer_string in kmer.edges[color].get_outgoing_kmer_strings(kmer_string):
-                graph2.add_edge(kmer_string, new_kmer_string, key=color)
-            for new_kmer_string in kmer.edges[color].get_incoming_kmer_strings(kmer_string):
-                graph2.add_edge(new_kmer_string, kmer_string, key=color)
-    graph3 = graph2.copy()
+            for new_kmer_string in kmer.edges[color].get_outgoing_kmer_strings(kmer_string,
+                                                                               is_lexlo=is_lexlo):
+                if (kmer_string, new_kmer_string, color) not in graph.edges:
+                    graph2.add_edge(kmer_string, new_kmer_string, key=color)
+            for new_kmer_string in kmer.edges[color].get_incoming_kmer_strings(kmer_string,
+                                                                               is_lexlo=is_lexlo):
+                if (new_kmer_string, kmer_string, color) not in graph.edges:
+                    graph2.add_edge(new_kmer_string, kmer_string, key=color)
     kmer_builder = EmptyKmerBuilder(num_colors=len(colors))
-    for kmer_string, data in graph2.nodes(data=True):
-        if 'kmer' not in data:
-            graph3.add_node(kmer_string, kmer=kmer_builder.build_or_get(kmer_string), **data)
-    return graph3
+    for kmer_string, data in list(graph2.nodes(data=True)):
+        if kmer_string not in graph:
+            if 'kmer' not in data:
+                graph2.add_node(kmer_string, kmer=kmer_builder.build_or_get(kmer_string), **data)
+    add_graph_to(graph, graph2)
+    return graph

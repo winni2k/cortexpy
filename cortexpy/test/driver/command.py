@@ -258,7 +258,7 @@ class ViewTraversal(object):
         self.traverse_driver.with_initial_contigs(*contigs)
         return self
 
-    def with_traverlsal_colors(self, *colors):
+    def with_traversal_colors(self, *colors):
         self.traverse_driver.with_traversal_colors(*colors)
         return self
 

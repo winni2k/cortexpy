@@ -1,4 +1,3 @@
-import io
 from bisect import bisect_left
 from collections import Sequence, Mapping
 from functools import lru_cache
@@ -10,7 +9,7 @@ import numpy as np
 import cortexpy.graph.parser.header
 from cortexpy.graph.parser.constants import UINT64_T
 from cortexpy.graph.parser.kmer import (
-    KmerByStringComparator, Kmer, KmerData, KmerUintComparator,
+    Kmer, KmerData, KmerUintComparator,
     StringKmerConverter,
 )
 from cortexpy.graph.parser.streaming import kmer_generator_from_stream_and_header
@@ -63,10 +62,13 @@ class RandomAccess(Mapping):
             self._get_kmer_data_for_string)
 
     def _get_kmer_data_for_string(self, kmer_string):
-        index = self.graph_kmer_sequence.index_kmer_string(kmer_string)
+        uints = self.graph_kmer_sequence.kmer_string_converter.to_uints(kmer_string)
+        index = self.graph_kmer_sequence.index_uint_vector(uints)
         if index < self.n_records:
-            # not bothering to test if we got the right kmer, as all kmers *should* be unique
-            return self.graph_sequence[index]._kmer_data
+            if KmerUintComparator(uints) == self.graph_kmer_sequence[index]:
+                kmer_data = self.graph_sequence[index]._kmer_data
+                kmer_data._kmer = kmer_string
+                return kmer_data
         raise KeyError('Could not retrieve kmer: ' + kmer_string)
 
     def __getitem__(self, kmer_string):
@@ -154,7 +156,7 @@ class KmerUintSequence(Sequence):
     record_size = attr.ib(init=False)
     kmer_container_size = attr.ib(init=False)
     _cached_get_kmer_data_for_item = attr.ib(init=False)
-    _kmer_string_converter = attr.ib(init=False)
+    kmer_string_converter = attr.ib(init=False)
 
     def __attrs_post_init__(self):
         self.record_size = self.header.record_size
@@ -164,7 +166,7 @@ class KmerUintSequence(Sequence):
         else:
             self._cached_get_kmer_data_for_item = lru_cache(maxsize=self.kmer_cache_size)(
                 self._get_kmer_data_for_item)
-        self._kmer_string_converter = StringKmerConverter(self.header.kmer_size)
+        self.kmer_string_converter = StringKmerConverter(self.header.kmer_size)
 
     def __getitem__(self, item):
         # if not isinstance(item, int):
@@ -183,5 +185,8 @@ class KmerUintSequence(Sequence):
         return np.frombuffer(kmer_bytes, dtype='<u8')
 
     def index_kmer_string(self, kmer_string):
-        uints = self._kmer_string_converter.to_uints(kmer_string)
+        uints = self.kmer_string_converter.to_uints(kmer_string)
+        return self.index_uint_vector(uints)
+
+    def index_uint_vector(self, uints):
         return bisect_left(self, KmerUintComparator(uints))

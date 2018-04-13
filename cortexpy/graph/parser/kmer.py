@@ -7,7 +7,6 @@ import cortexpy.edge_set
 from cortexpy.edge_set import EdgeSet
 from cortexpy.graph.parser.constants import (
     NUM_TO_LETTER, UINT64_T, UINT32_T, LETTER_TO_NUM,
-    ASCII_OFFSET_OF_ZERO,
     LETTERS_PER_BYTE,
 )
 from cortexpy.utils import revcomp, lexlo
@@ -178,7 +177,7 @@ class StringKmerConverter(object):
         return np.packbits(letter_val_bits).view('uint64').newbyteorder()
 
 
-@attr.s(slots=True, cmp=False, frozen=True)
+@attr.s(slots=True, cmp=False)
 class KmerData(object):
     _data = attr.ib()
     kmer_size = attr.ib()
@@ -360,6 +359,9 @@ class KmerUintComparator(object):
             elif val != other.kmer_uints[i]:
                 return False
         return False
+
+    def __eq__(self, other):
+        return np.all(self.kmer_uints == other.kmer_uints)
 
     def __len__(self):
         return len(self.kmer_uints)
