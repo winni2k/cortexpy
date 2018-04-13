@@ -5,16 +5,18 @@ from cortexpy.constants import EdgeTraversalOrientation
 from cortexpy.utils import revcomp, lexlo
 
 EDGE_SET_LENGTH = 8
-EDGE_SET_ORDERED_LETTERS = 'acgtACGT'
-EDGE_SET_LETTER_LOOKUP = {letter: idx for idx, letter in enumerate(EDGE_SET_ORDERED_LETTERS)}
+HALF_EDGE_SET_LENGTH = 4
+EDGE_SET_DATA_LETTER_ORDER = 'acgtTGCA'
+EDGE_SET_REPR_LETTER_ORDER = 'acgtACGT'
+EDGE_SET_LETTER_LOOKUP = {letter: idx for idx, letter in enumerate(EDGE_SET_DATA_LETTER_ORDER)}
 
-EDGE_IDX_TO_LETTER = ['A', 'C', 'G', 'T']
+EDGE_IDX_TO_LETTER = ['A', 'C', 'G', 'T', 'T', 'G', 'C', 'A']
 
 
 @attr.s(slots=True, cmp=False)
 class EdgeSet(object):
     """Adds methods for accessing an edge set array (data)"""
-    data = attr.ib(attr.Factory(lambda: np.zeros(EDGE_SET_LENGTH, dtype=np.uint8)))
+    data = attr.ib()
 
     @data.validator
     def check(self, _, value):  # noqa
@@ -40,11 +42,11 @@ class EdgeSet(object):
 
     @property
     def outgoing(self):
-        return self.data[EDGE_SET_LENGTH // 2:]
+        return self.data[HALF_EDGE_SET_LENGTH:]
 
     @property
     def incoming(self):
-        return self.data[:EDGE_SET_LENGTH // 2]
+        return self.data[:HALF_EDGE_SET_LENGTH]
 
     def num_outgoing(self):
         return sum(self.outgoing)
@@ -60,7 +62,7 @@ class EdgeSet(object):
                 if is_incoming:
                     new_kmer_string = EDGE_IDX_TO_LETTER[edge_idx] + sub_kmer_string
                 else:
-                    new_kmer_string = sub_kmer_string + EDGE_IDX_TO_LETTER[edge_idx]
+                    new_kmer_string = sub_kmer_string + EDGE_IDX_TO_LETTER[edge_idx + 4]
                 kmers.append(new_kmer_string)
         return kmers
 
@@ -71,7 +73,7 @@ class EdgeSet(object):
             edge_funcs = [self.incoming, self.outgoing]
         if is_lexlo:
             return edge_funcs[1]
-        return edge_funcs[0][::-1]
+        return edge_funcs[0]
 
     def get_incoming_kmer_strings(self, kmer_string, is_lexlo=None):
         if is_lexlo is None:
@@ -99,7 +101,7 @@ class EdgeSet(object):
 
     def to_str(self, *, as_revcomp=False):
         es_letters = []
-        for letter in EDGE_SET_ORDERED_LETTERS:
+        for letter in EDGE_SET_REPR_LETTER_ORDER:
             if self.is_edge(letter):
                 es_letters.append(letter)
             else:

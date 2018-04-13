@@ -19,7 +19,6 @@ LETTERS_PER_UINT64_T = UINT64_T * 4
 
 def pack_edge_set(edge_set):
     edge_set = [str(flag) for flag in edge_set]
-    edge_set = edge_set[:4] + list(reversed(edge_set[4:]))
     edge = BitArray('0b' + ''.join(edge_set))
     return edge.tobytes()
 
@@ -117,7 +116,7 @@ def edge_set_string_to_array(edge_set_string):
             edge_set.append(0)
         else:
             edge_set.append(1)
-    return np.array(edge_set, dtype=np.uint8)
+    return np.array(edge_set[:4] + list(reversed(edge_set[4:])), dtype=np.uint8)
 
 # def print_kmer(kmer):
 #     print(kmer)

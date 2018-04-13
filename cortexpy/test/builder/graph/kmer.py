@@ -32,5 +32,5 @@ def kmers(draw, kmer_size, num_colors, kmer_strings=dna_sequences):
         ),
         dtype=np.uint8
     )
-    edges = [EdgeSet(edge_set) for edge_set in edges]
+    edges = [EdgeSet(np.concatenate((e[:4], e[::-1][:4]))) for e in edges]
     return KmerRecord(kmer, coverage, edges)

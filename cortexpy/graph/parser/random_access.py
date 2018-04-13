@@ -1,3 +1,4 @@
+import io
 from bisect import bisect_left
 from collections import Sequence, Mapping
 from functools import lru_cache
@@ -167,8 +168,8 @@ class KmerUintSequence(Sequence):
         self._kmer_string_converter = StringKmerConverter(self.header.kmer_size)
 
     def __getitem__(self, item):
-        if not isinstance(item, int):
-            raise TypeError("Index must be of type int")
+        # if not isinstance(item, int):
+        #     raise TypeError("Index must be of type int")
         if item >= self.n_records or item < 0:
             raise IndexError("Index ({}) is out of range".format(item))
         kmer_uints = self._cached_get_kmer_data_for_item(item)

@@ -51,38 +51,39 @@ class TestIncomingOutgoingEdges(object):
 class TestIncomingOutgoingKmers(object):
     def test_no_incoming_or_outgoing(self):
         es = EdgeSet(np.zeros(8))
-        assert len(es.get_incoming_kmers('AAA')) == 0
-        assert len(es.get_outgoing_kmers('AAA')) == 0
+        assert 0 == len(es.get_incoming_kmers('AAA'))
+        assert 0 == len(es.get_outgoing_kmers('AAA'))
 
     def test_all_incoming_no_outgoing(self):
         es = EdgeSet(np.concatenate([np.ones(4), np.zeros(4)]))
         assert es.get_incoming_kmers('AAA') == ['AAA', 'CAA', 'GAA', 'TAA']
-        assert len(es.get_outgoing_kmers('AAA')) == 0
+        assert 0 == len(es.get_outgoing_kmers('AAA'))
 
     def test_no_incoming_all_outgoing(self):
         es = EdgeSet(np.concatenate([np.zeros(4), np.ones(4)]))
-        assert len(es.get_incoming_kmers('AAA')) == 0
-        assert es.get_outgoing_kmers('AAA') == ['AAA', 'AAC', 'AAG', 'AAT']
+        assert 0 == len(es.get_incoming_kmers('AAA'))
+        assert {'AAA', 'AAC', 'AAG', 'AAT'} == set(es.get_outgoing_kmers('AAA'))
 
     def test_incoming_returns_lexicographically_lowest_kmers(self):
         es = EdgeSet(np.zeros(8))
         es.add_edge('t')
-        assert es.get_incoming_kmers('TAA') == ['TAA']
+        assert ['TAA'] == es.get_incoming_kmers('TAA')
 
     def test_incoming_strings_does_not_return_lexicographically_lowest_kmers(self):
         es = EdgeSet(np.zeros(8))
         es.add_edge('t')
-        assert es.get_incoming_kmer_strings('TAA') == ['TTA']
+        assert ['TTA'] == es.get_incoming_kmer_strings('TAA')
 
     def test_outgoing_returns_lexicographically_lowest_kmers(self):
         es = EdgeSet(np.zeros(8))
         es.add_edge('G')
-        assert es.get_outgoing_kmers('ACG') == ['CCG']
+        print(es)
+        assert ['CCG'] == es.get_outgoing_kmers('ACG')
 
     def test_outgoing_strings_does_not_return_lexicographically_lowest_kmer(self):
         es = EdgeSet(np.zeros(8))
         es.add_edge('G')
-        assert es.get_outgoing_kmer_strings('ACG') == ['CGG']
+        assert ['CGG'] == es.get_outgoing_kmer_strings('ACG')
 
     def test_raises_on_non_lexlo_kmer(self):
         es = EdgeSet(np.zeros(8))
@@ -102,5 +103,5 @@ class TestStr(object):
         es = EdgeSet(np.zeros(8))
         es.add_edge('A')
         es.add_edge('c')
-        assert es.to_str() == '.c..A...'
-        assert es.to_str(as_revcomp=True) == '...T..g.'
+        assert '.c..A...' == es.to_str()
+        assert '...T..g.' == es.to_str(as_revcomp=True)

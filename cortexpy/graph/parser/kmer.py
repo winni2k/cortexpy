@@ -221,10 +221,12 @@ class KmerData(object):
             start = (
                 self._kmer_container_size_in_uint64ts * UINT64_T + self.num_colors * UINT32_T
             )
-            edge_bytes = list(self._data[start:])
-            edge_sets = np.unpackbits(np.array(edge_bytes, dtype=np.uint8)).reshape(-1, 4)
-            edge_sets[1::2] = np.fliplr(edge_sets[1::2])
-            object.__setattr__(self, "_edges", list(map(EdgeSet, edge_sets.reshape(-1, 8))))
+            edge_bytes = np.frombuffer(self._data[start:], dtype=np.uint8)
+            edge_sets = np.unpackbits(edge_bytes)
+            edge_sets = edge_sets.reshape(-1, 8)
+            edge_sets = map(EdgeSet, edge_sets)
+            edge_sets = list(edge_sets)
+            object.__setattr__(self, "_edges", edge_sets)
         return self._edges
 
 
