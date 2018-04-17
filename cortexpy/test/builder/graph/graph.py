@@ -26,7 +26,8 @@ class Graph(object):
         self.header.kmer_size = size
         return self
 
-    def with_kmer(self, kmer_string, color_coverage=0, edges='........'):
+    def with_kmer(self, kmer_string, color_coverage=0, edges='........',
+                  repeat_color_edges_n_times=None):
         if ' ' in kmer_string:
             assert '  ' not in kmer_string
             num_words = kmer_string.count(' ')
@@ -40,6 +41,12 @@ class Graph(object):
         revcomp = str(Seq(kmer_string).reverse_complement())
         if revcomp < kmer_string:
             raise Exception("kmer_string '{}' is not lexlow.  Please fix.".format(kmer_string))
+        if (repeat_color_edges_n_times and isinstance(edges, str) and isinstance(color_coverage,
+                                                                                 int)
+        ):
+            self.with_num_colors(repeat_color_edges_n_times)
+            edges = [edges for _ in range(repeat_color_edges_n_times)]
+            color_coverage = [color_coverage for _ in range(repeat_color_edges_n_times)]
         if isinstance(edges, str):
             edges = [edges]
         if isinstance(color_coverage, int):
