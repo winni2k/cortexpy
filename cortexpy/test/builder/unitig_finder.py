@@ -1,12 +1,11 @@
 import attr
 
 from cortexpy.graph.serializer import UnitigFinder
-from cortexpy.test.builder.graph.networkx import NetworkxGraphBuilder
-
+from cortexpy.test.builder.graph import colored_de_bruijn
 
 @attr.s(slots=True)
 class UnitigFinderBuilder(object):
-    builder = attr.ib(attr.Factory(NetworkxGraphBuilder))
+    builder = attr.ib(attr.Factory(colored_de_bruijn.ColoredDeBruijnGraphBuilder))
     test_coverage = attr.ib(True)
 
     def __attrs_post_init__(self):
@@ -14,7 +13,7 @@ class UnitigFinderBuilder(object):
 
     @property
     def graph(self):
-        return self.builder.graph
+        return self.builder
 
     def without_test_coverage(self):
         self.test_coverage = False

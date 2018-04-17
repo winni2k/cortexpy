@@ -74,6 +74,7 @@ def flip_kmer_string_to_match(flip, ref, flip_is_after_reference_kmer=True):
 
 
 def connect_kmers(first, second, color, identical_kmer_check=True):
+    """Connect two kmers"""
     if identical_kmer_check and first == second and first is not second:
         raise ValueError('Kmers are equal, but not the same object')
     connection_is_set = False

@@ -41,7 +41,8 @@ class Graph(object):
         revcomp = str(Seq(kmer_string).reverse_complement())
         if revcomp < kmer_string:
             raise Exception("kmer_string '{}' is not lexlow.  Please fix.".format(kmer_string))
-        if (repeat_color_edges_n_times and isinstance(edges, str) and isinstance(color_coverage,
+        if (
+            repeat_color_edges_n_times and isinstance(edges, str) and isinstance(color_coverage,
                                                                                  int)
         ):
             self.with_num_colors(repeat_color_edges_n_times)

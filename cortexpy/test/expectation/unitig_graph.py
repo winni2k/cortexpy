@@ -4,23 +4,18 @@ import numpy as np
 
 @attr.s(slots=True)
 class UnitigExpectation(object):
-    unitig = attr.ib()
     unitig_data = attr.ib()
 
     def with_left_node(self, node):
-        assert self.unitig_data['left_node'] == node
+        assert node == self.unitig_data.left_node
         return self
 
     def with_right_node(self, node):
-        assert self.unitig_data['right_node'] == node
-        return self
-
-    def is_missing(self):
-        assert self.unitig_data['is_missing']
+        assert node == self.unitig_data.right_node
         return self
 
     def with_coverage(self, coverage_matrix):
-        assert np.array_equal(self.unitig_data['coverage'], coverage_matrix)
+        assert np.array_equal(coverage_matrix, self.unitig_data['coverage'])
         return self
 
     # fixme: all nodes should have is_missing set
@@ -36,9 +31,9 @@ class GraphWithUnitigExpectation(object):
 
     def __attrs_post_init__(self):
         self.unitigs = []
-        for node, data in self.graph.nodes.data():
-            if data.get('is_unitig', False):
-                self.unitigs.append((node, data))
+        for source, target, unitig in self.graph.edges(data='unitig'):
+            if unitig:
+                self.unitigs.append((source, target, unitig))
 
     def has_n_nodes(self, n):
         try:
@@ -53,7 +48,7 @@ class GraphWithUnitigExpectation(object):
         return self
 
     def has_n_unitigs(self, n):
-        assert len(self.unitigs) == n
+        assert n == len(self.unitigs)
         return self
 
     def has_one_unitig(self):
@@ -65,11 +60,11 @@ class GraphWithUnitigExpectation(object):
 
     def has_unitig_with_edges(self, *expected_edges):
         expected_edge_set = set(expected_edges)
-        actual_edge_sets = [set(g.edges()) for g, _ in self.unitigs]
+        actual_edge_sets = [set(u.graph.edges()) for _, _, u in self.unitigs]
         assert expected_edge_set in actual_edge_sets
-        return UnitigExpectation(*self.unitigs[actual_edge_sets.index(expected_edge_set)])
+        return UnitigExpectation(self.unitigs[actual_edge_sets.index(expected_edge_set)][2])
 
     def has_unitig_with_one_node(self, expected_node):
-        unitigs_with_node = list(filter(lambda x: x[1]['left_node'] == expected_node, self.unitigs))
+        unitigs_with_node = list(filter(lambda x: x[2].left_node == expected_node, self.unitigs))
         assert len(unitigs_with_node) == 1
-        return UnitigExpectation(unitigs_with_node[0][0], unitigs_with_node[0][1])
+        return UnitigExpectation(unitigs_with_node[0][2])

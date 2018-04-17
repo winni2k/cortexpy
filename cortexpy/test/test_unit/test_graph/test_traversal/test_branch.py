@@ -1,4 +1,3 @@
-from contextlib import ExitStack
 from unittest import mock
 
 import attr
@@ -104,14 +103,14 @@ class BranchTestDriver(object):
         stream = self.graph_builder.build()
         ra_parser = cortexpy.graph.parser.RandomAccess(stream)
         with mock.patch.object(stream, 'read', wraps=stream.read) as mocked_read:
-            traversed_branch = branch.Traverser(
+            traverser = branch.Traverser(
                 ra_parser,
                 traversal_color=self.traversal_color,
-                other_stopping_colors=self.other_stopping_colors) \
-                .traverse_from(
-                self.start_kmer_string,
-                parent_graph=self.parent_graph,
-                orientation=self.traversal_orientation)
+                other_stopping_colors=self.other_stopping_colors)
+            traversed_branch = traverser \
+                .traverse_from(self.start_kmer_string,
+                               parent_graph=self.parent_graph,
+                               orientation=self.traversal_orientation)
             return BranchExpectation(traversed_branch,
                                      start_kmer_string=self.expected_start_kmer_string,
                                      mocked_rap_getitem=mocked_read)
@@ -191,11 +190,11 @@ class Test(object):
         expect = driver.run()
 
         # then
-        (expect
-         .has_neighbor_kmer_strings('AAT')
-         .has_reverse_neighbor_kmer_strings('AAA', 'CAA')
-         .has_nodes('AAA')
-         .has_n_edges(0))
+        expect \
+            .has_neighbor_kmer_strings('AAT') \
+            .has_reverse_neighbor_kmer_strings('AAA', 'CAA') \
+            .has_nodes('AAA') \
+            .has_n_edges(0)
 
     def test_raises_when_two_connected_kmers_with_missing_exiting_kmer(self):
         # given
@@ -289,7 +288,7 @@ class Test(object):
         # then
         (expect
          .has_nodes('AAA', 'AAT', 'ATA', 'TAA')
-         .has_n_edges(3*num_colors))
+         .has_n_edges(4 * num_colors))
         expect.called_stream_read_n_times(8)
 
     def test_one_seen_kmer_returns_empty_graph(self):

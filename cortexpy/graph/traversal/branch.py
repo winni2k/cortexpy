@@ -1,5 +1,4 @@
 import attr
-
 from cortexpy import graph
 from cortexpy.graph.serializer import SERIALIZER_GRAPH
 from cortexpy.constants import EdgeTraversalOrientation
@@ -32,7 +31,7 @@ class Traverser(object):
         if parent_graph is None:
             parent_graph = set()
         self.parent_graph = parent_graph
-        self.graph = SERIALIZER_GRAPH()
+        self.graph = graph.ColoredBeBruijn()
         self.kmer_string = first_kmer_string = kmer_string
         self.orientation = orientation
         self.prev_kmer_string = None

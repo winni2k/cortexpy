@@ -4,11 +4,10 @@ import attr
 import collections
 import networkx as nx
 from Bio import SeqIO
-from datetime import datetime
 
 from cortexpy import graph
 from cortexpy.graph.parser.kmer import EmptyKmerBuilder
-from cortexpy.utils import lexlo
+from cortexpy.utils import lexlo, IntervalLogger
 from .constants import EngineTraversalOrientation
 from . import branch
 from cortexpy.graph.serializer import SERIALIZER_GRAPH
@@ -20,28 +19,11 @@ logger = logging.getLogger(__name__)
 
 def add_graph_to(graph, graph_to_add):
     """Compose two graphs and store the result in the first graph"""
-    assert isinstance(graph_to_add, nx.MultiDiGraph)
-    assert isinstance(graph, nx.MultiDiGraph)
+    for g in [graph_to_add, graph]:
+        assert g.is_multigraph()
+        assert g.is_directed()
     graph.add_nodes_from(graph_to_add.nodes(data=True))
     graph.add_edges_from(graph_to_add.edges(keys=True))
-
-
-@attr.s(slots=True)
-class IntervalLogger(object):
-    logger = attr.ib()
-    min_log_interval_seconds = attr.ib(0)
-    last_log_time = attr.ib(init=False)
-
-    def __attrs_post_init__(self):
-        self.last_log_time = datetime.now()
-
-    def _ok_to_log(self):
-        return (datetime.now() - self.last_log_time).total_seconds() > self.min_log_interval_seconds
-
-    def info(self, *args, **kwargs):
-        if self._ok_to_log():
-            self.last_log_time = datetime.now()
-            return self.logger.info(*args, **kwargs)
 
 
 @attr.s(slots=True)
@@ -226,22 +208,18 @@ class Engine(object):
 def annotate_kmer_graph_edges(graph):
     """Adds nodes to graph for kmer_strings that only exist as edges in a node's kmer."""
     colors = graph.graph['colors']
-    graph2 = SERIALIZER_GRAPH()
-    for kmer_string, kmer in graph.nodes(data='kmer'):
+    kmer_builder = EmptyKmerBuilder(num_colors=len(colors))
+    for kmer_string, kmer in list(graph.nodes(data='kmer')):
         is_lexlo = bool(kmer_string == lexlo(kmer_string))
         for color in colors:
             for new_kmer_string in kmer.edges[color].get_outgoing_kmer_strings(kmer_string,
                                                                                is_lexlo=is_lexlo):
-                if (kmer_string, new_kmer_string, color) not in graph.edges:
-                    graph2.add_edge(kmer_string, new_kmer_string, key=color)
+                if new_kmer_string not in graph.nodes:
+                    graph.add_node(new_kmer_string, kmer=kmer_builder.build_or_get(new_kmer_string))
+                    graph.add_edge(kmer_string, new_kmer_string, key=color)
             for new_kmer_string in kmer.edges[color].get_incoming_kmer_strings(kmer_string,
                                                                                is_lexlo=is_lexlo):
-                if (new_kmer_string, kmer_string, color) not in graph.edges:
-                    graph2.add_edge(new_kmer_string, kmer_string, key=color)
-    kmer_builder = EmptyKmerBuilder(num_colors=len(colors))
-    for kmer_string, data in list(graph2.nodes(data=True)):
-        if kmer_string not in graph:
-            if 'kmer' not in data:
-                graph2.add_node(kmer_string, kmer=kmer_builder.build_or_get(kmer_string), **data)
-    add_graph_to(graph, graph2)
+                if new_kmer_string not in graph.nodes:
+                    graph.add_node(new_kmer_string, kmer=kmer_builder.build_or_get(new_kmer_string))
+                    graph.add_edge(new_kmer_string, kmer_string, key=color)
     return graph

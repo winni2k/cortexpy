@@ -1,6 +1,7 @@
 import json
 
 import attr
+from itertools import chain
 import networkx as nx
 
 from Bio.Seq import Seq
@@ -8,8 +9,10 @@ from Bio.SeqRecord import SeqRecord
 from networkx.readwrite import json_graph
 
 from cortexpy.constants import EdgeTraversalOrientation
+from .colored_de_bruijn import ColoredBeBruijn
 
-SERIALIZER_GRAPH = nx.MultiDiGraph
+SERIALIZER_GRAPH = ColoredBeBruijn
+UNITIG_GRAPH = nx.MultiDiGraph
 
 
 @attr.s(slots=True)
@@ -145,6 +148,25 @@ def replace_unitig_nodes_with_unitig(out_graph, unitig):
     return out_graph
 
 
+def traverse_unitig_edges(graph, start_node, orientation=EdgeTraversalOrientation.original):
+    node = start_node
+    assert orientation in EdgeTraversalOrientation
+    if orientation == EdgeTraversalOrientation.original:
+        edges_func = graph.out_edges
+    else:
+        edges_func = graph.in_edges
+    while node:
+        edges = list(edges_func(node))
+        if len(edges) != 1:
+            break
+        edge = edges[0]
+        yield edge[0], edge[1], None
+        if orientation == EdgeTraversalOrientation.original:
+            node = edge[1]
+        else:
+            node = edge[0]
+
+
 @attr.s(slots=True)
 class UnitigFinder(object):
     graph = attr.ib()
@@ -164,7 +186,7 @@ class UnitigFinder(object):
         returns a graph containing unitig subgraphs
         """
 
-        unitig_graph = self.graph.copy()
+        unitig_graph = UNITIG_GRAPH()
         visited_nodes = set()
         for start_node in self.graph:
             if start_node in visited_nodes:
@@ -174,8 +196,10 @@ class UnitigFinder(object):
             assert visited_nodes & unitig_graph_set == set(), "{} is not disjoint from {}".format(
                 visited_nodes, unitig_graph_set)
             visited_nodes |= unitig_graph_set
-
-            unitig_graph = replace_unitig_nodes_with_unitig(unitig_graph, unitig)
+            unitig_graph.add_edge(unitig.left_node, unitig.right_node, unitig=unitig)
+            for edge in chain(self.graph.in_edges(unitig.left_node, keys=True),
+                              self.graph.out_edges(unitig.right_node, keys=True)):
+                unitig_graph.add_edge(*edge)
         return unitig_graph
 
     def find_unitig_from(self, start_node):
@@ -189,13 +213,14 @@ class UnitigFinder(object):
 
         In addition, the colors of the in-edges and out-edges must match.
         """
-        unitig_graph = SERIALIZER_GRAPH()
+        unitig_graph = UNITIG_GRAPH()
         unitig_graph.add_node(start_node)
         end_nodes = {EdgeTraversalOrientation.original: start_node,
                      EdgeTraversalOrientation.reverse: start_node}
         for orientation in EdgeTraversalOrientation:
             if not self.is_unitig_end(start_node, orientation):
-                for edge_info in nx.edge_dfs(self.graph, start_node, orientation=orientation.name):
+                for edge_info in traverse_unitig_edges(self.graph, start_node,
+                                                       orientation=orientation):
                     source, target, _ = edge_info[:3]
                     if orientation == EdgeTraversalOrientation.reverse:
                         source, target = target, source
@@ -204,7 +229,7 @@ class UnitigFinder(object):
                     end_nodes[orientation] = target
                     unitig_graph.add_edge(*edge_info[:3])
         for node in unitig_graph:
-            unitig_graph.add_node(node, **self.graph.node[node])
+            unitig_graph.add_node(node, kmer=self.graph.node[node])
         return Unitig(unitig_graph,
                       end_nodes[EdgeTraversalOrientation.reverse],
                       end_nodes[EdgeTraversalOrientation.original])
@@ -264,8 +289,8 @@ class UnitigCollapser(object):
 
         :return graph:
         """
-        self.unitig_graph = self.unitig_finder.find_unitigs()
-        out_graph = self.unitig_graph.copy()
+        self.unitig_finder.find_unitigs()
+        out_graph = self.graph
         for unitig_graph, data in self.unitig_graph.nodes.data():
             assert data['is_unitig']
             left_node = data['left_node']

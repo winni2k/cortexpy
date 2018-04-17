@@ -1,3 +1,6 @@
+from datetime import datetime
+
+import attr
 from Bio.Seq import reverse_complement
 
 
@@ -21,3 +24,21 @@ def get_graph_stream_iterator(file_handle):
             yield nx.read_gpickle(file_handle)
         except EOFError:
             break
+
+
+@attr.s(slots=True)
+class IntervalLogger(object):
+    logger = attr.ib()
+    min_log_interval_seconds = attr.ib(0)
+    last_log_time = attr.ib(init=False)
+
+    def __attrs_post_init__(self):
+        self.last_log_time = datetime.now()
+
+    def _ok_to_log(self):
+        return (datetime.now() - self.last_log_time).total_seconds() > self.min_log_interval_seconds
+
+    def info(self, *args, **kwargs):
+        if self._ok_to_log():
+            self.last_log_time = datetime.now()
+            return self.logger.info(*args, **kwargs)

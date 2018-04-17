@@ -28,7 +28,8 @@ class KmerGraphExpectation(object):
     graph = attr.ib()
 
     def __attrs_post_init__(self):
-        logger.info(nx.node_link_data(self.graph))
+        # logger.info(nx.node_link_data(self.graph))
+        pass
 
     def has_node_coverages(self, *node_coverage_strings):
         for node_coverage_string in node_coverage_strings:
@@ -82,7 +83,7 @@ class KmerNodeExpectation(object):
     def has_coverages(self, *coverages):
         if len(coverages) == 1 and isinstance(coverages[0], str):
             coverages = [int(c) for c in coverages[0].split(' ')]
-        assert np.all(self.kmer_node['kmer'].coverage == np.array(coverages))
+        assert np.all(np.array(coverages) == self.kmer_node['kmer'].coverage)
         return self
 
     def is_missing(self):

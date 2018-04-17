@@ -81,10 +81,14 @@ def traverse(argv):
             engine.traversal_colors = tuple(list(range(engine.ra_parser.num_colors)))
         logger.info('Traversing colors: ' + ','.join([str(c) for c in engine.traversal_colors]))
 
+        from pympler import tracker
+        tr = tracker.SummaryTracker()
+        tr.print_diff()
         if args.initial_fasta:
             engine.traverse_from_each_kmer_in_fasta(args.initial_contig)
         else:
             engine.traverse_from_each_kmer_in(args.initial_contig)
+        tr.print_diff()
 
         output_graph = engine.graph
         if args.subgraphs and len(output_graph) > 0:
