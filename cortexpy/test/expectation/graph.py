@@ -68,7 +68,7 @@ class KmerGraphExpectation(object):
                 edge[2] = int(edge[2])
             expected_edges.append(tuple(edge))
 
-        assert set(expected_edges) == set(self.graph.edges)
+        assert set(expected_edges) == set(self.graph.edges(keys=True))
         return self
 
     def has_edge(self, source, target, color):

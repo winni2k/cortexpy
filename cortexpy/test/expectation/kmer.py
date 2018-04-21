@@ -12,6 +12,7 @@ class CollapsedKmerNodeExpectation(object):
     kmer_node = attr.ib()
 
     def has_coverages(self, *coverages):
+        print(self.kmer_node)
         assert np.all(self.kmer_node['coverage'] == np.array(coverages, dtype=np.uint32))
         return self
 

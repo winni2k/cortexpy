@@ -9,6 +9,8 @@ from Bio.SeqRecord import SeqRecord
 from networkx.readwrite import json_graph
 
 from cortexpy.constants import EdgeTraversalOrientation
+from cortexpy.graph.parser.kmer import flip_kmer_string_to_match
+from cortexpy.utils import lexlo
 from .colored_de_bruijn import ColoredBeBruijn
 
 SERIALIZER_GRAPH = ColoredBeBruijn
@@ -71,25 +73,31 @@ class Serializer(object):
             node_data['coverage'] = coverage
 
 
-@attr.s(slots=True)
+@attr.s(slots=True, hash=True)
 class Unitig(object):
     graph = attr.ib()
     left_node = attr.ib()
     right_node = attr.ib()
-    _coverage = attr.ib(None, init=False)
+    is_cycle = attr.ib(False)
+    coverage = attr.ib(init=False)
+
+    def __attrs_post_init__(self):
+        coverage = [tuple(self.graph.node[self.left_node]['kmer'].coverage)]
+        for _, target, _ in traverse_unitig_edges(
+            self.graph,
+            self.left_node,
+            orientation=EdgeTraversalOrientation.original
+        ):
+            coverage.append(tuple(self.graph.node[target]['kmer'].coverage))
+        self.coverage = tuple(coverage)
 
     @property
-    def coverage(self):
-        if self._coverage is None:
-            coverage = [self.graph.node[self.left_node]['kmer'].coverage]
-            for _, target, _ in nx.edge_dfs(
-                self.graph,
-                self.left_node,
-                orientation=EdgeTraversalOrientation.original.name
-            ):
-                coverage.append(self.graph.node[target]['kmer'].coverage)
-            self._coverage = coverage
-        return self._coverage
+    def unitig_edge_colors(self):
+        try:
+            an_edge = next(iter(self.graph.edges))
+        except StopIteration:
+            return []
+        return list(self.graph.succ[an_edge[0]][an_edge[1]])
 
 
 @attr.s(slots=True)
@@ -156,10 +164,10 @@ def traverse_unitig_edges(graph, start_node, orientation=EdgeTraversalOrientatio
     else:
         edges_func = graph.in_edges
     while node:
-        edges = list(edges_func(node))
+        edges = set(edges_func(node))
         if len(edges) != 1:
             break
-        edge = edges[0]
+        edge = next(iter(edges))
         yield edge[0], edge[1], None
         if orientation == EdgeTraversalOrientation.original:
             node = edge[1]
@@ -229,10 +237,32 @@ class UnitigFinder(object):
                     end_nodes[orientation] = target
                     unitig_graph.add_edge(*edge_info[:3])
         for node in unitig_graph:
-            unitig_graph.add_node(node, kmer=self.graph.node[node])
-        return Unitig(unitig_graph,
-                      end_nodes[EdgeTraversalOrientation.reverse],
-                      end_nodes[EdgeTraversalOrientation.original])
+            unitig_graph.add_node(node, **self.graph.node[node])
+        ret_unitig = Unitig(unitig_graph,
+                            end_nodes[EdgeTraversalOrientation.reverse],
+                            end_nodes[EdgeTraversalOrientation.original])
+        self.set_unitig_cycle(ret_unitig)
+        return ret_unitig
+
+    def set_unitig_cycle(self, unitig):
+        unitig.is_cycle = False
+        try:
+            flipped_string, is_flipped = flip_kmer_string_to_match(unitig.left_node,
+                                                                   unitig.right_node,
+                                                                   flip_is_after_reference_kmer=True)
+        except ValueError:
+            return
+        if lexlo(unitig.right_node) == unitig.right_node:
+            edge_letter = flipped_string[-1].upper()
+        else:
+            edge_letter = lexlo(flipped_string[-1]).lower()
+        colors = unitig.unitig_edge_colors
+        if len(colors) == 0:
+            return
+        for color in colors:
+            if not self.graph.node[unitig.right_node]['kmer'].edges[color].is_edge(edge_letter):
+                return
+        unitig.is_cycle = True
 
     def is_unitig_end(self, node, orientation):
         """Returns true if the unitig ends in any color
@@ -275,7 +305,8 @@ class UnitigCollapser(object):
 
     @graph.validator
     def is_a_multi_di_graph(self, attribute, value):  # noqa
-        assert isinstance(value, SERIALIZER_GRAPH)
+        assert value.is_multigraph()
+        assert value.is_directed()
 
     def collapse_kmer_unitigs(self):
         """Collapses unitig kmers into a single graph node.
@@ -289,22 +320,51 @@ class UnitigCollapser(object):
 
         :return graph:
         """
-        self.unitig_finder.find_unitigs()
-        out_graph = self.graph
-        for unitig_graph, data in self.unitig_graph.nodes.data():
-            assert data['is_unitig']
-            left_node = data['left_node']
-            kmer_suffices = [left_node[-1]]
-            seen_nodes = set()
-            for _, target, _ in nx.edge_dfs(unitig_graph, source=left_node):
-                if target not in seen_nodes:
-                    seen_nodes.add(target)
-                    kmer_suffices.append(target[-1])
-            unitig_repr = ''.join(kmer_suffices)
-            unitig_string = left_node[:-1] + unitig_repr
-            if self.graph.in_degree(left_node) == 0:
-                unitig_repr = unitig_string
-            out_graph.nodes[unitig_graph]['repr'] = unitig_repr
-            out_graph.nodes[unitig_graph]['unitig'] = ''.join(unitig_string)
-        self.unitig_graph = out_graph
+        unitig_graph = self.unitig_finder.find_unitigs()
+        out = UNITIG_GRAPH()
+        for _, _, unitig in unitig_graph.edges(data='unitig'):
+            if unitig is None:
+                continue
+            unitig_repr, unitig_string = self._summarize_unitig(unitig)
+            out.add_node(unitig, repr=unitig_repr, unitig=unitig_string, coverage=unitig.coverage)
+            out.add_edge(unitig.left_node, unitig)
+            out.add_edge(unitig, unitig.right_node)
+            for pred in self.graph.pred[unitig.left_node]:
+                for color in self.graph.pred[unitig.left_node][pred]:
+                    out.add_edge(pred, unitig.left_node, color)
+            for succ in self.graph.succ[unitig.right_node]:
+                for color in self.graph.succ[unitig.right_node][succ]:
+                    out.add_edge(unitig.right_node, succ, color)
+        new_edges = []
+        for unitig in out.nodes:
+            if isinstance(unitig, Unitig):
+                for other_right_node in out.pred[unitig.left_node]:
+                    for other_unitig in out.pred[other_right_node]:
+                        if isinstance(other_unitig, Unitig) and other_unitig is not unitig:
+                            for color in out.pred[unitig.left_node][other_right_node]:
+                                new_edges.append((other_unitig, unitig, color))
+        for source, target, color in new_edges:
+            out.add_edge(source, target, color)
+        for node in list(out.nodes):
+            if not isinstance(node, Unitig):
+                out.remove_node(node)
+            elif node.is_cycle:
+                for color in node.unitig_edge_colors:
+                    out.add_edge(node, node, color)
+
+        self.unitig_graph = out
         return self
+
+    def _summarize_unitig(self, unitig):
+        left_node = unitig.left_node
+        kmer_suffices = [left_node[-1]]
+        seen_nodes = set()
+        for _, target, _ in nx.edge_dfs(unitig.graph, source=left_node):
+            assert target not in seen_nodes
+            seen_nodes.add(target)
+            kmer_suffices.append(target[-1])
+        unitig_repr = ''.join(kmer_suffices)
+        unitig_string = left_node[:-1] + unitig_repr
+        if self.graph.in_degree(left_node) == 0:
+            unitig_repr = unitig_string
+        return unitig_repr, unitig_string

@@ -23,6 +23,14 @@ class UnitigExpectation(object):
         assert not self.unitig_data.get('is_missing')
         return self
 
+    def is_cycle(self):
+        assert self.unitig_data.is_cycle
+        return self
+
+    def is_not_cycle(self):
+        assert not self.unitig_data.is_cycle
+        return self
+
 
 @attr.s(slots=True)
 class GraphWithUnitigExpectation(object):
@@ -44,7 +52,7 @@ class GraphWithUnitigExpectation(object):
         return self
 
     def has_n_edges(self, n):
-        assert len(self.graph.edges) == n
+        assert n == len(self.graph.edges)
         return self
 
     def has_n_unitigs(self, n):
