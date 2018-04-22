@@ -1,7 +1,7 @@
 import attr
 from hypothesis import given, strategies as s
 
-from cortexpy.graph.serializer import SERIALIZER_GRAPH
+from cortexpy.graph.serializer.constants import SERIALIZER_GRAPH
 from cortexpy.constants import EdgeTraversalOrientation
 from cortexpy.graph.traversal.branch import Traversed, Queuer
 from cortexpy.graph.traversal import EngineTraversalOrientation

@@ -1,7 +1,8 @@
 import attr
 
 from cortexpy import graph as graph
-from cortexpy.graph import traversal, parser, serializer as serializer
+from cortexpy.graph import traversal, parser
+from cortexpy.graph.serializer import unitig
 from cortexpy.test import builder as builder
 from cortexpy.test.expectation.kmer import CollapsedKmerUnitgGraphExpectation
 
@@ -62,7 +63,7 @@ class CollapseKmerUnitigsTestDriver(object):
 
     def run(self):
         kmer_graph = self.serializer_driver.run()
-        collapser = (serializer
+        collapser = (unitig
                      .UnitigCollapser(kmer_graph)
                      .collapse_kmer_unitigs())
         return CollapsedKmerUnitgGraphExpectation(collapser.unitig_graph)

@@ -1,3 +1,4 @@
+import io
 import random
 from unittest import mock
 
@@ -10,6 +11,7 @@ import cortexpy.graph.parser as parser
 from cortexpy.graph.parser import RandomAccess
 from cortexpy.graph.parser.header import from_stream
 from cortexpy.graph.parser.random_access import KmerUintSequence
+import cortexpy.graph.serializer.kmer as kmer_serializer
 from cortexpy.test.builder.graph.body import KmerRecord, as_edge_set
 from cortexpy.test.builder.graph.kmer import kmers
 from cortexpy.utils import lexlo
@@ -108,8 +110,9 @@ class TestDunderIterDunder(object):
     @given(s.data(),
            s.integers(min_value=1, max_value=10),
            s.integers(min_value=1, max_value=10),
-           s.integers(min_value=0, max_value=4))
-    def test_parses_records(self, data, kmer_size, num_colors, n_kmers):
+           s.integers(min_value=0, max_value=4),
+           s.booleans())
+    def test_parses_records(self, data, kmer_size, num_colors, n_kmers, test_serializer):
         # given
         graph_builder = (builder.Graph()
                          .without_sorted_kmers()
@@ -122,6 +125,20 @@ class TestDunderIterDunder(object):
             graph_builder.with_kmer_record(kmer)
             expected_kmers.append(kmer)
         ra_parser = parser.RandomAccess(graph_builder.build())
+
+        if test_serializer:
+            for real_kmer in ra_parser:
+                buffer = io.BytesIO()
+                real_kmer.dump(buffer)
+                assert real_kmer._kmer_data._data == buffer.getvalue()
+            buffer = io.BytesIO()
+            kmer_serializer \
+                .Kmers(ra_parser,
+                       kmer_size=kmer_size,
+                       num_colors=num_colors) \
+                .dump(buffer)
+            buffer.seek(0)
+            ra_parser = parser.RandomAccess(buffer)
 
         # when
         for kmer, expected_kmer in zip(ra_parser, expected_kmers):

@@ -1,4 +1,5 @@
 from struct import unpack
+import struct
 import attr
 import numpy as np
 import math
@@ -7,7 +8,7 @@ import cortexpy.edge_set
 from cortexpy.edge_set import EdgeSet
 from cortexpy.graph.parser.constants import (
     NUM_TO_LETTER, UINT64_T, UINT32_T, LETTER_TO_NUM,
-    LETTERS_PER_BYTE,
+    NUM_LETTERS_PER_UINT,
 )
 from cortexpy.utils import revcomp, lexlo
 
@@ -150,18 +151,21 @@ class RawKmerConverter(object):
 NUM_TO_BITS = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
 
 
+def calc_kmer_container_size(kmer_size):
+    return math.ceil(kmer_size / NUM_LETTERS_PER_UINT)
+
+
 @attr.s(slots=True)
 class StringKmerConverter(object):
+    """Converts kmer strings to various binary representations"""
     kmer_size = attr.ib()
     _kmer_container_size_in_uint64ts = attr.ib(init=False)
     _padding_array = attr.ib(init=False)
 
     def __attrs_post_init__(self):
-        num_letters_per_uint = UINT64_T * LETTERS_PER_BYTE
-        self._kmer_container_size_in_uint64ts = math.ceil(
-            self.kmer_size / num_letters_per_uint)
-        padding_size = num_letters_per_uint - self.kmer_size % num_letters_per_uint
-        if padding_size == num_letters_per_uint:
+        self._kmer_container_size_in_uint64ts = calc_kmer_container_size(self.kmer_size)
+        padding_size = NUM_LETTERS_PER_UINT - self.kmer_size % NUM_LETTERS_PER_UINT
+        if padding_size == NUM_LETTERS_PER_UINT:
             padding_size = 0
         self._padding_array = np.zeros(padding_size, dtype=np.uint8)
 
@@ -183,7 +187,7 @@ class KmerData(object):
     _data = attr.ib()
     kmer_size = attr.ib()
     num_colors = attr.ib()
-    _kmer_container_size_in_uint64ts = attr.ib(1)
+    kmer_container_size_in_uint64ts = attr.ib(1)
     _kmer = attr.ib(None)
     _coverage = attr.ib(None)
     _edges = attr.ib(None)
@@ -198,18 +202,20 @@ class KmerData(object):
             object.__setattr__(self, "_kmer_vals_to_delete",
                                np.arange(0, n_vals_to_remove) + self.kmer_size - n_vals_left_over)
 
+    def get_raw_kmer(self):
+        return self._data[:self.kmer_container_size_in_uint64ts * UINT64_T]
+
     @property
     def kmer(self):
         if self._kmer is None:
-            raw_kmer = self._data[:self._kmer_container_size_in_uint64ts * UINT64_T]
-            kmer_letters = RawKmerConverter(self.kmer_size).to_letters(raw_kmer)
+            kmer_letters = RawKmerConverter(self.kmer_size).to_letters(self.get_raw_kmer())
             object.__setattr__(self, "_kmer", kmer_letters.astype('|S1').tostring().decode('utf-8'))
         return self._kmer
 
     @property
     def coverage(self):
         if self._coverage is None:
-            start = self._kmer_container_size_in_uint64ts * UINT64_T
+            start = self.kmer_container_size_in_uint64ts * UINT64_T
             coverage_raw = self._data[start:(start + self.num_colors * UINT32_T)]
             fmt_string = ''.join(['I' for _ in range(self.num_colors)])
             object.__setattr__(self, "_coverage",
@@ -220,7 +226,7 @@ class KmerData(object):
     def edges(self):
         if self._edges is None:
             start = (
-                self._kmer_container_size_in_uint64ts * UINT64_T + self.num_colors * UINT32_T
+                self.kmer_container_size_in_uint64ts * UINT64_T + self.num_colors * UINT32_T
             )
             edge_bytes = np.frombuffer(self._data[start:], dtype=np.uint8)
             edge_sets = np.unpackbits(edge_bytes)
@@ -243,6 +249,10 @@ class Kmer(object):
     def __attrs_post_init__(self):
         self.kmer_size = self._kmer_data.kmer_size
         self.num_colors = self._kmer_data.num_colors
+
+    @property
+    def kmer_container_size(self):
+        return self._kmer_data.kmer_container_size_in_uint64ts
 
     @property
     def kmer(self):
@@ -331,6 +341,16 @@ class Kmer(object):
         if edge_set.is_edge(other_kmer_letter) != other.edges[color].is_edge(this_kmer_letter):
             raise ValueError('Kmers do not agree on connection')
         return edge_set.is_edge(other_kmer_letter)
+
+    def dump(self, buffer):
+        if self.kmer == self._kmer_data.kmer:
+            buffer.write(self._kmer_data.get_raw_kmer())
+        else:
+            raise NotImplementedError
+        for cov in self.coverage:
+            buffer.write(struct.pack('I', cov))
+        for edge_set in self.edges:
+            edge_set.dump(buffer)
 
 
 @attr.s(slots=True, cmp=False)

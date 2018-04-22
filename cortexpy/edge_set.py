@@ -114,6 +114,11 @@ class EdgeSet(object):
     def oriented(self, orientation):
         return OrientedEdgeSet(self, orientation)
 
+    def dump(self, buffer):
+        binary = np.packbits(self.data)
+        assert 1 == len(binary)
+        buffer.write(binary[0])
+
 
 def empty():
     return EdgeSet(np.zeros(EDGE_SET_LENGTH, dtype=np.uint8))

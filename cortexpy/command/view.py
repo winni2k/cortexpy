@@ -83,7 +83,7 @@ def view_contig(argv):
     args = parser.parse_args(argv)
 
     from cortexpy.graph import ContigRetriever
-    from cortexpy.graph.serializer import Serializer
+    from cortexpy.graph.serializer.unitig import Serializer
 
     contig_retriever = ContigRetriever(open(args.graph, 'rb'))
     if args.to_json:

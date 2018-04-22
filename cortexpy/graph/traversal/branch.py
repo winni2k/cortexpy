@@ -1,6 +1,6 @@
 import attr
 from cortexpy import graph
-from cortexpy.graph.serializer import SERIALIZER_GRAPH
+from cortexpy.graph.serializer.constants import SERIALIZER_GRAPH
 from cortexpy.constants import EdgeTraversalOrientation
 from .constants import EngineTraversalOrientation
 

@@ -4,29 +4,14 @@ import attr
 from itertools import chain
 import networkx as nx
 
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
 from networkx.readwrite import json_graph
 
 from cortexpy.constants import EdgeTraversalOrientation
 from cortexpy.graph.parser.kmer import flip_kmer_string_to_match
+from cortexpy.graph.traversal.utils import OrientedGraphFuncs
 from cortexpy.utils import lexlo
-from .colored_de_bruijn import ColoredDeBruijn
 
-SERIALIZER_GRAPH = ColoredDeBruijn
 UNITIG_GRAPH = nx.MultiDiGraph
-
-
-@attr.s(slots=True)
-class Kmers(object):
-    """Serializes kmer graphs."""
-    graph = attr.ib()
-
-    def to_seq_records(self):
-        return (
-            SeqRecord(Seq(str(node)), id=str(node_idx)) for node_idx, node in
-            enumerate(self.graph.nodes())
-        )
 
 
 @attr.s(slots=True)
@@ -100,31 +85,6 @@ class Unitig(object):
         return list(self.graph.succ[an_edge[0]][an_edge[1]])
 
 
-@attr.s(slots=True)
-class OrientedGraphFuncs(object):
-    graph = attr.ib()
-    orientation = attr.ib()
-    color = attr.ib(0)
-    edges = attr.ib(init=False)
-    other_edge_node = attr.ib(init=False)
-
-    def __attrs_post_init__(self):
-        assert self.orientation in EdgeTraversalOrientation
-        if self.orientation == EdgeTraversalOrientation.original:
-            self.edges = self.graph.out_edges
-            self.other_edge_node = lambda edge: edge[1]
-        else:
-            self.edges = self.graph.in_edges
-            self.other_edge_node = lambda edge: edge[0]
-
-    def degree(self, node):
-        degree = 0
-        for _, _, color in self.edges(node, keys=True, default=0):
-            if color == self.color:
-                degree += 1
-        return degree
-
-
 def is_unitig_end_of_color(node, graph, orientation, *, color=0):
     """Returns true if node is a unitig end in orientation direction"""
     assert orientation in EdgeTraversalOrientation
@@ -137,23 +97,6 @@ def is_unitig_end_of_color(node, graph, orientation, *, color=0):
     if reverse.degree(next_node) != 1:
         return True
     return False
-
-
-def replace_unitig_nodes_with_unitig(out_graph, unitig):
-    out_graph.add_node(unitig.graph, is_unitig=True,
-                       left_node=unitig.left_node,
-                       right_node=unitig.right_node,
-                       coverage=unitig.coverage)
-    for source, _, color in out_graph.in_edges(unitig.left_node, keys=True):
-        out_graph.add_edge(source, unitig.graph, color)
-        if source == unitig.right_node:
-            out_graph.add_edge(unitig.graph, unitig.graph, color)
-    for _, target, color in out_graph.out_edges(unitig.right_node, keys=True):
-        out_graph.add_edge(unitig.graph, target, color)
-        if target == unitig.left_node:
-            out_graph.add_edge(unitig.graph, unitig.graph, color)
-    out_graph.remove_nodes_from(unitig.graph)
-    return out_graph
 
 
 def traverse_unitig_edges(graph, start_node, orientation=EdgeTraversalOrientation.original):

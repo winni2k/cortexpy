@@ -37,7 +37,7 @@ class RandomAccess(Mapping):
         self.graph_handle.seek(0, SEEK_END)
         body_size = self.graph_handle.tell() - body_start_stream_position
         if body_size % self._header.record_size != 0:
-            raise RuntimeError(
+            raise ValueError(
                 "Body size ({}) % Record size ({}) != 0".format(body_size,
                                                                 self._header.record_size))
         self.n_records = body_size // self._header.record_size

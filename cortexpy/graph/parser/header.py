@@ -5,6 +5,7 @@ import attr
 from cortexpy.graph.parser.constants import (
     CORTEX_MAGIC_WORD, CORTEX_VERSION, UINT8_T, UINT32_T,
     UINT64_T,
+    ERROR_RATE_SIZE,
 )
 
 
@@ -19,10 +20,10 @@ class Header(object):
     kmer_size = attr.ib(None, validator=[none_or_greater_than_zero])
     kmer_container_size = attr.ib(None, validator=[none_or_greater_than_zero])
     num_colors = attr.ib(None, validator=[none_or_greater_than_zero])
-    mean_read_lengths = attr.ib(None)
-    mean_total_sequence = attr.ib(None)
+    _mean_read_lengths = attr.ib(None)
+    _total_sequences = attr.ib(None)
     sample_names = attr.ib(None)
-    error_rate = attr.ib(None)
+    _error_rates = attr.ib(None)
     color_info_blocks = attr.ib(attr.Factory(list))
 
     @property
@@ -32,6 +33,48 @@ class Header(object):
     @property
     def colors(self):
         return tuple(range(self.num_colors))
+
+    @property
+    def mean_read_lengths(self):
+        if self._mean_read_lengths is None:
+            return [0 for _ in range(self.num_colors)]
+        return self._mean_read_lengths
+
+    @property
+    def total_sequences(self):
+        if self._total_sequences is None:
+            return [0 for _ in range(self.num_colors)]
+        return self._total_sequences
+
+    @property
+    def error_rates(self):
+        if self._error_rates is None:
+            empty_bytes = bytes([0 for _ in range(ERROR_RATE_SIZE)])
+            return [empty_bytes for _ in range(self.num_colors)]
+        return self._error_rates
+
+    def dump(self, buffer):
+        magic_word = b''.join(CORTEX_MAGIC_WORD)
+        assert struct.calcsize('L') == UINT64_T
+        assert struct.calcsize('I') == UINT32_T
+        buffer.write(magic_word)
+        buffer.write(struct.pack('4I',
+                                 self.version,
+                                 self.kmer_size,
+                                 self.kmer_container_size,
+                                 self.num_colors))
+        for mean_read_length in self.mean_read_lengths:
+            buffer.write(struct.pack('I', mean_read_length))
+        for total_sequence in self.total_sequences:
+            buffer.write(struct.pack('L', total_sequence))
+        for sample_name in self.sample_names:
+            buffer.write(struct.pack('I', len(sample_name)))
+            buffer.write(sample_name)
+        for error_rate in self.error_rates:
+            buffer.write(error_rate)
+        for info_block in self.color_info_blocks:
+            info_block.dump(buffer)
+        buffer.write(magic_word)
 
 
 @attr.s(slots=True)
@@ -87,12 +130,13 @@ class HeaderFromStreamBuilder(object):
         )
         return self
 
-    def extract_mean_total_sequence(self):
+    def extract_total_sequences(self):
+        assert struct.calcsize('L') == UINT64_T
         self.header = attr.evolve(
             self.header,
-            mean_total_sequence=unpack(
+            total_sequences=unpack(
                 '{}L'.format(self.header.num_colors),
-                self.stream.read(struct.calcsize('L') * self.header.num_colors)
+                self.stream.read(UINT64_T * self.header.num_colors)
             )
         )
         return self
@@ -108,11 +152,11 @@ class HeaderFromStreamBuilder(object):
         self.header = attr.evolve(self.header, sample_names=tuple(sample_names))
         return self
 
-    def extract_error_rate(self):
+    def extract_error_rates(self):
         error_rates = []
         for _ in range(self.header.num_colors):
-            error_rates.append(unpack('16c', self.stream.read(16)))
-        self.header = attr.evolve(self.header, error_rate=tuple(error_rates))
+            error_rates.append(self.stream.read(16))
+        self.header = attr.evolve(self.header, error_rates=tuple(error_rates))
         return self
 
     def extract_color_info_blocks(self):
@@ -125,12 +169,13 @@ class HeaderFromStreamBuilder(object):
 
 
 def from_stream(stream):
-    return (HeaderFromStreamBuilder(stream)
-            .extract_initial_magic_word()
-            .fill_first_four_params()
-            .extract_mean_read_lengths()
-            .extract_mean_total_sequence()
-            .extract_sample_names_from_stream()
-            .extract_error_rate()
-            .extract_color_info_blocks()
-            .extract_concluding_magic_word())
+    header = (HeaderFromStreamBuilder(stream)
+              .extract_initial_magic_word()
+              .fill_first_four_params()
+              .extract_mean_read_lengths()
+              .extract_total_sequences()
+              .extract_sample_names_from_stream()
+              .extract_error_rates()
+              .extract_color_info_blocks()
+              .extract_concluding_magic_word())
+    return header

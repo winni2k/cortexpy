@@ -94,7 +94,7 @@ class TestHeaderParser(object):
         kmer_size = data.draw(s.integers(min_value=1, max_value=100))
         kmer_container_size = data.draw(s.integers(min_value=1, max_value=5))
 
-        mean_read_lengths = data.draw(
+        read_lengths = data.draw(
             s.lists(elements=s.integers(min_value=0, max_value=MAX_UINT),
                     min_size=num_colors, max_size=num_colors))
 
@@ -110,7 +110,7 @@ class TestHeaderParser(object):
                .with_kmer_size(kmer_size)
                .with_kmer_container_size(kmer_container_size)
                .with_num_colors(num_colors)
-               .with_mean_read_lengths(mean_read_lengths)
+               .with_mean_read_lengths(read_lengths)
                .with_total_sequence(total_sequence)
                .with_color_names(*color_names)
                .with_error_rates(*[data.draw(s.binary(min_size=16, max_size=16))
@@ -128,7 +128,7 @@ class TestHeaderParser(object):
         assert cgh.kmer_size == kmer_size
         assert cgh.kmer_container_size == kmer_container_size
         assert cgh.num_colors == num_colors
-        assert cgh.mean_read_lengths == tuple(mean_read_lengths)
-        assert cgh.mean_total_sequence == tuple(total_sequence)
+        assert cgh.mean_read_lengths == tuple(read_lengths)
+        assert cgh.total_sequences == tuple(total_sequence)
         assert cgh.sample_names == tuple(color_names)
         assert cgh.record_size == UINT64_T * kmer_container_size + (UINT32_T + UINT8_T) * num_colors

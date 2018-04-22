@@ -1,6 +1,6 @@
 import attr
 
-from cortexpy.graph.serializer import UnitigFinder
+from cortexpy.graph.serializer.unitig import UnitigFinder
 from cortexpy.test.builder.graph import colored_de_bruijn
 
 @attr.s(slots=True)

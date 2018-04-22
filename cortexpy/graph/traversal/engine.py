@@ -11,7 +11,7 @@ from cortexpy.graph.parser.kmer import EmptyKmerBuilder
 from cortexpy.utils import lexlo, IntervalLogger
 from .constants import EngineTraversalOrientation
 from . import branch
-from cortexpy.graph.serializer import SERIALIZER_GRAPH
+from cortexpy.graph.serializer.constants import SERIALIZER_GRAPH
 from cortexpy.constants import EdgeTraversalOrientation
 import logging
 
