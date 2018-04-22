@@ -4,6 +4,8 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 import logging
 
+from .colored_de_bruijn import ColoredDeBruijn
+
 logger = logging.getLogger(__name__)
 
 
@@ -13,6 +15,8 @@ class Interactor(object):
     colors = attr.ib()
 
     def add_edge_to_graph_for_kmer_pair(self, kmer1, kmer2, kmer1_string, kmer2_string):
+        if isinstance(self.graph, ColoredDeBruijn):
+            return self
         first_is_revcomp = bool(kmer1.kmer != kmer1_string)
         for color in self.colors:
             if first_is_revcomp:

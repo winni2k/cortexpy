@@ -1,3 +1,6 @@
+import json
+
+
 def traverse(argv):
     import argparse
     from cortexpy.graph import traversal
@@ -28,8 +31,6 @@ def traverse(argv):
                         """, default=None)
     parser.add_argument('--initial-fasta', action='store_true',
                         help='Treat initial_contig as a file in FASTA format')
-    parser.add_argument('--subgraphs', action='store_true',
-                        help='Emit traversal as sequence of networkx subgraphs')
     parser.add_argument('--max-nodes', type=int, default=None,
                         help='Maximum number of nodes to traverse (int).'
                              '  Die without output if max nodes is exceeded')
@@ -81,19 +82,11 @@ def traverse(argv):
             engine.traversal_colors = tuple(list(range(engine.ra_parser.num_colors)))
         logger.info('Traversing colors: ' + ','.join([str(c) for c in engine.traversal_colors]))
 
-        from pympler import tracker
-        tr = tracker.SummaryTracker()
-        tr.print_diff()
         if args.initial_fasta:
             engine.traverse_from_each_kmer_in_fasta(args.initial_contig)
         else:
             engine.traverse_from_each_kmer_in(args.initial_contig)
-        tr.print_diff()
 
-        output_graph = engine.graph
-        if args.subgraphs and len(output_graph) > 0:
-            for subgraph in sorted(nx.weakly_connected_component_subgraphs(output_graph),
-                                   key=lambda g: len(g), reverse=True):
-                nx.write_gpickle(subgraph, output)
-        else:
-            nx.write_gpickle(output_graph, output)
+
+        # json.dumps(nx.node_link_data(engine.graph))
+

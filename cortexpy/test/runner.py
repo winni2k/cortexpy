@@ -112,6 +112,7 @@ class Cortexpy(object):
 
     def traverse(self, *, graphs, out, contig, contig_fasta=False, colors=None, max_nodes=None,
                  subgraphs=True, verbose=False, silent=False, logging_interval=None):
+        assert not subgraphs
         cmd = ['traverse', contig, '--out', out]
         assert len(graphs) > 0
         cmd.append('--graphs')
@@ -123,8 +124,6 @@ class Cortexpy(object):
             cmd.append('--initial-fasta')
         if max_nodes:
             cmd.extend(['--max-nodes', max_nodes])
-        if subgraphs:
-            cmd.append('--subgraphs')
         if verbose:
             cmd.append('--verbose')
         if silent:

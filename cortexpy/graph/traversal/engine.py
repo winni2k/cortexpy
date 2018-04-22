@@ -6,6 +6,7 @@ import networkx as nx
 from Bio import SeqIO
 
 from cortexpy import graph
+from cortexpy.graph import ColoredDeBruijn
 from cortexpy.graph.parser.kmer import EmptyKmerBuilder
 from cortexpy.utils import lexlo, IntervalLogger
 from .constants import EngineTraversalOrientation
@@ -23,7 +24,8 @@ def add_graph_to(graph, graph_to_add):
         assert g.is_multigraph()
         assert g.is_directed()
     graph.add_nodes_from(graph_to_add.nodes(data=True))
-    graph.add_edges_from(graph_to_add.edges(keys=True))
+    if not isinstance(graph_to_add, ColoredDeBruijn):
+        graph.add_edges_from(graph_to_add.edges(keys=True))
 
 
 @attr.s(slots=True)

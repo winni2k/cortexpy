@@ -142,6 +142,7 @@ class Traverse(object):
         self.traversal_contigs = contigs
 
     def with_subgraph_output(self):
+        assert False
         self.output_subgraphs = True
         return self
 

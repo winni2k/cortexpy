@@ -31,7 +31,7 @@ class Traverser(object):
         if parent_graph is None:
             parent_graph = set()
         self.parent_graph = parent_graph
-        self.graph = graph.ColoredBeBruijn()
+        self.graph = graph.ColoredDeBruijn()
         self.kmer_string = first_kmer_string = kmer_string
         self.orientation = orientation
         self.prev_kmer_string = None

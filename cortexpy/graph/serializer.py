@@ -11,9 +11,9 @@ from networkx.readwrite import json_graph
 from cortexpy.constants import EdgeTraversalOrientation
 from cortexpy.graph.parser.kmer import flip_kmer_string_to_match
 from cortexpy.utils import lexlo
-from .colored_de_bruijn import ColoredBeBruijn
+from .colored_de_bruijn import ColoredDeBruijn
 
-SERIALIZER_GRAPH = ColoredBeBruijn
+SERIALIZER_GRAPH = ColoredDeBruijn
 UNITIG_GRAPH = nx.MultiDiGraph
 
 
