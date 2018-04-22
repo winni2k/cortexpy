@@ -63,7 +63,7 @@ class KmerRecord(object):
 
 @attr.s(slots=True)
 class Body(object):
-    sort_kmers = attr.ib(False)
+    sort_kmers = attr.ib(True)
     kmer_records = attr.ib(Factory(list), init=False)
     kmer_size = attr.ib(None)
     _kmer_container_size = attr.ib(None)

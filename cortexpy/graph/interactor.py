@@ -4,9 +4,18 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 import logging
 
+from networkx.algorithms.coloring import strategy_connected_sequential_dfs
+
+from cortexpy.constants import EdgeTraversalOrientation, NodeEdgeDirection
 from .colored_de_bruijn import ColoredDeBruijn
 
 logger = logging.getLogger(__name__)
+
+
+def make_multi_graph(graph):
+    if isinstance(graph, ColoredDeBruijn):
+        return graph
+    return nx.MultiGraph(graph)
 
 
 @attr.s(slots=True)
@@ -30,36 +39,35 @@ class Interactor(object):
     def prune_tips_less_than(self, n):
         nodes_to_prune = set()
         assert self.colors is None
-        graph = nx.DiGraph(self.graph)
-        for sources, next_node_func, direction in [
-            (in_nodes_of(graph), graph.successors, 'incoming'),
-            (out_nodes_of(graph), graph.predecessors, 'outgoing'),
-        ]:
-            num_tips = 0
-            num_tips_to_prune = 0
-            for source in sources:
-                tip = find_tip_from(source, n=n, graph=graph, next_node_func=next_node_func)
-                num_tips += 1
-                if tip:
-                    nodes_to_prune |= tip
-                    num_tips_to_prune += 1
-            logger.info(
-                'Found {} of {} {} tips shorter than {}.'.format(num_tips_to_prune, num_tips,
-                                                                 direction, n))
-        logger.info('Pruning {} nodes'.format(len(nodes_to_prune)))
+        graph = make_multi_graph(self.graph)
+        num_tips = 0
+        num_tips_to_prune = 0
+        for node, direction in edge_nodes_of(self.graph):
+            tip = find_tip_from(
+                n=n,
+                graph=self.graph,
+                next_node_generator=nx.dfs_preorder_nodes(graph, source=node)
+            )
+            num_tips += 1
+            if tip:
+                nodes_to_prune |= tip
+                num_tips_to_prune += 1
+        logger.info('Found %s of %s tips shorter than %s.', num_tips_to_prune, num_tips, n)
+        logger.info('Pruning %s nodes', len(nodes_to_prune))
         self.graph.remove_nodes_from(nodes_to_prune)
         return self
 
 
-def find_tip_from(query, *, n, graph, next_node_func):
+def find_tip_from(*, n, graph, next_node_generator):
     tip = set()
-    for node_num in range(n):
-        if graph.in_degree(query) > 1 or graph.out_degree(query) > 1:
+    query = next(next_node_generator)
+    for _ in range(n):
+        if len(set(graph.in_edges(query))) > 1 or len(set(graph.out_edges(query))) > 1:
             return tip
         else:
             tip.add(query)
             try:
-                query = next(next_node_func(query))
+                query = next(next_node_generator)
             except StopIteration:
                 return tip
     return None
@@ -91,16 +99,22 @@ def convert_kmer_path_to_contig(path):
 
 def in_nodes_of(graph):
     for source in graph.nodes():
-        if graph.in_degree(source) > 0:
-            continue
-        yield source
+        if graph.in_degree(source) == 0:
+            yield source
 
 
 def out_nodes_of(graph):
     for target in graph.nodes():
-        if graph.out_degree(target) != 0:
-            continue
-        yield target
+        if graph.out_degree(target) == 0:
+            yield target
+
+
+def edge_nodes_of(graph):
+    for node in graph.nodes():
+        if graph.out_degree(node) == 0:
+            yield (node, NodeEdgeDirection.outgoing)
+        if graph.in_degree(node) == 0:
+            yield (node, NodeEdgeDirection.incoming)
 
 
 @attr.s(slots=True)

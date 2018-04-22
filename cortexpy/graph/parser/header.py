@@ -14,10 +14,20 @@ def none_or_greater_than_zero(_, attribute, value):
         raise ValueError("'{}' has to be greater than 0!".format(attribute.name))
 
 
+def greater_than_zero(_, attribute, value):
+    if value < 1:
+        raise ValueError("'{}' has to be greater than 0!".format(attribute.name))
+
+
+def odd(_, attribute, value):
+    if value % 2 == 0:
+        raise ValueError("'{}' has to be odd!".format(attribute.name))
+
+
 @attr.s(slots=True, frozen=True)
 class Header(object):
     version = attr.ib(CORTEX_VERSION, validator=[attr.validators.in_([CORTEX_VERSION])])
-    kmer_size = attr.ib(None, validator=[none_or_greater_than_zero])
+    kmer_size = attr.ib(1, validator=[greater_than_zero, odd])
     kmer_container_size = attr.ib(None, validator=[none_or_greater_than_zero])
     num_colors = attr.ib(None, validator=[none_or_greater_than_zero])
     _mean_read_lengths = attr.ib(None)

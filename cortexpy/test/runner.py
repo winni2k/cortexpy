@@ -111,8 +111,7 @@ class Cortexpy(object):
         return self.run(cmd)
 
     def traverse(self, *, graphs, out, contig, contig_fasta=False, colors=None, max_nodes=None,
-                 subgraphs=True, verbose=False, silent=False, logging_interval=None):
-        assert not subgraphs
+                 verbose=False, silent=False, logging_interval=None):
         cmd = ['traverse', contig, '--out', out]
         assert len(graphs) > 0
         cmd.append('--graphs')

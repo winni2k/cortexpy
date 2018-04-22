@@ -1,6 +1,3 @@
-import json
-
-
 def traverse(argv):
     import argparse
     from cortexpy.graph import traversal
@@ -43,19 +40,18 @@ def traverse(argv):
 
     from cortexpy.logging_config import configure_logging_from_args
     configure_logging_from_args(args)
-
     import logging
     logger = logging.getLogger('cortexpy.traverse')
 
     import sys
     from contextlib import ExitStack
+    import cortexpy.graph.serializer as serializer
     with ExitStack() as stack:
         if args.out == '-':
             output = sys.stdout.buffer
         else:
             output = stack.enter_context(open(args.out, 'wb'))
 
-        import networkx as nx
         from cortexpy.graph import parser as g_parser, traversal
         if len(args.graphs) == 1:
             ra_parser = g_parser.RandomAccess(
@@ -87,6 +83,7 @@ def traverse(argv):
         else:
             engine.traverse_from_each_kmer_in(args.initial_contig)
 
-
-        # json.dumps(nx.node_link_data(engine.graph))
-
+        serializer \
+            .Kmers(kmers=(kmer for _, kmer in engine.graph.nodes(data=True)),
+                   sample_names=ra_parser.sample_names) \
+            .dump(output)

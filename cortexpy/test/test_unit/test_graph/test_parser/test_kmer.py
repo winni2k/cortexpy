@@ -6,7 +6,12 @@ from hypothesis import given, assume, settings
 from hypothesis import strategies as s
 
 import cortexpy.edge_set
-from cortexpy.graph.parser.kmer import EmptyKmerBuilder, connect_kmers, StringKmerConverter
+from cortexpy.graph.parser.kmer import (
+    EmptyKmerBuilder, connect_kmers, StringKmerConverter, Kmer,
+    KmerData,
+    disconnect_kmers,
+)
+from cortexpy.test.builder.graph.body import KmerRecord
 from cortexpy.test.builder.graph.kmer import dna_sequences, kmer_strings
 
 
@@ -64,6 +69,13 @@ class TestBuildKmer(object):
 
         # then
         assert kmer1 is kmer2
+
+    def test_raises_on_non_lexlo_kmer(self):
+        # when
+        rec = KmerRecord('AAA', [], [])
+        kmer = Kmer(KmerData(rec.to_bytestring(), kmer_size=3, num_colors=0))
+        with pytest.raises(AssertionError):
+            kmer.kmer = reverse_complement(kmer.kmer)
 
 
 class TestAddColor(object):
@@ -204,6 +216,10 @@ class TestConnectKmers(object):
             else:
                 assert kmer1.has_incoming_edge_from_kmer_in_color(kmer2, color)
 
+            # and let's check disconnect kmers
+            # disconnect_kmers(kmer1, kmer2, [color])
+            # assert not kmer1.edges[color].is_edge(kmer1_edge_letter)
+            # assert not kmer2.edges[color].is_edge(kmer2_edge_letter)
 
 class TestHasEdgeTo(object):
     @given(s.integers(min_value=0, max_value=2))

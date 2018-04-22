@@ -11,6 +11,8 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
+from cortexpy.graph import ColoredDeBruijn
+from cortexpy.graph.parser import RandomAccess
 from cortexpy.test import builder, expectation
 from cortexpy.test import runner
 
@@ -84,15 +86,15 @@ class Prune(object):
     def run(self):
         mccortex_graph = self.mccortex_builder.build(self.tmpdir)
 
-        cortexpy_graph = self.tmpdir / 'cortexpy_graph.pickle'
+        cortexpy_graph = self.tmpdir / 'traversal.ctx'
         contig_fasta = self.tmpdir / 'initial_contigs.fa'
         with open(str(contig_fasta), 'w') as fh:
             SeqIO.write(self.records, fh, 'fasta')
         ctp_runner = runner.Cortexpy(SPAWN_PROCESS)
         ctp_runner.traverse(graphs=[mccortex_graph], out=cortexpy_graph, contig=contig_fasta,
-                            contig_fasta=True, subgraphs=True)
+                            contig_fasta=True)
 
-        pruned_graph = Path(str(cortexpy_graph)).with_suffix('.pruned.pickle')
+        pruned_graph = Path(str(cortexpy_graph)).with_suffix('.pruned.ctx')
         completed_process = ctp_runner.prune(graph=cortexpy_graph, out=pruned_graph,
                                              remove_tips=self.min_tip_length, verbose=True)
 
@@ -100,8 +102,7 @@ class Prune(object):
         print(completed_process.stdout)
         print(completed_process.stderr, file=sys.stderr)
 
-        subgraphs = list(load_graph_stream(str(pruned_graph)))
-        return expectation.graph.KmerGraphsExpectation(subgraphs)
+        return expectation.graph.KmerGraphExpectation(load_de_bruijn_graph(pruned_graph))
 
 
 @attr.s(slots=True)
@@ -113,7 +114,7 @@ class Traverse(object):
     traversal_contigs = attr.ib(None)
     added_records = attr.ib(attr.Factory(list))
     output_subgraphs = attr.ib(False)
-    cortexpy_graph = attr.ib(init=False)
+    traversal = attr.ib(init=False)
     colors = attr.ib(None)
     spawn_process = attr.ib(None)
     verbose = attr.ib(False)
@@ -191,18 +192,17 @@ class Traverse(object):
         with open(str(contig_fasta), 'w') as fh:
             Bio.SeqIO.write([SeqRecord(Seq(s)) for s in initial_contigs], fh, 'fasta')
 
-        self.cortexpy_graph = self.tmpdir / 'cortexpy_graph.pickle'
+        self.traversal = self.tmpdir / 'traversal.ctx'
         if self.spawn_process is None:
             ctp_runner = runner.Cortexpy(SPAWN_PROCESS)
         else:
             ctp_runner = runner.Cortexpy(self.spawn_process)
         return ctp_runner.traverse(graphs=mccortex_graphs,
-                                   out=self.cortexpy_graph,
+                                   out=self.traversal,
                                    contig=contig_fasta,
                                    contig_fasta=True,
                                    verbose=self.verbose,
                                    silent=self.silent,
-                                   subgraphs=self.output_subgraphs,
                                    colors=self.colors,
                                    logging_interval=self.logging_interval_seconds)
 
@@ -214,10 +214,10 @@ class Traverse(object):
 
     def run(self):
         completed_process = self._run()
-        subgraphs = list(load_graph_stream(self.cortexpy_graph))
+
         assert completed_process.returncode == 0, completed_process
 
-        return expectation.graph.KmerGraphsExpectation(subgraphs)
+        return expectation.graph.KmerGraphExpectation(load_de_bruijn_graph(self.traversal))
 
 
 @attr.s(slots=True)
@@ -276,7 +276,7 @@ class ViewTraversal(object):
         else:
             out_prefix = None
         ret = runner.Cortexpy(SPAWN_PROCESS).view(
-            cortexpy_graph=self.traverse_driver.cortexpy_graph,
+            cortexpy_graph=self.traverse_driver.traversal,
             to_json=self.to_json,
             subgraphs=out_prefix,
         )
@@ -288,6 +288,11 @@ class ViewTraversal(object):
             else:
                 return expectation.JsonGraph(json.loads(ret.stdout))
         return expectation.Fasta(ret.stdout)
+
+
+def load_de_bruijn_graph(path):
+    with open(str(path), 'rb') as fh:
+        return ColoredDeBruijn({k.kmer: k for k in RandomAccess(fh)})
 
 
 def load_graph_stream(path):

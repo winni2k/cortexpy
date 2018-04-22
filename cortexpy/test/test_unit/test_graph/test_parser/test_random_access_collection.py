@@ -1,7 +1,7 @@
 import attr
 import numpy as np
 import pytest
-from hypothesis import given
+from hypothesis import given, assume
 from hypothesis import strategies as s
 import cortexpy.test.builder as builder
 import cortexpy.graph.parser as parser
@@ -48,6 +48,7 @@ class TestDunderGetitemDunder(object):
            s.integers(min_value=0, max_value=5))
     def test_record_retrieval(self, data, kmer_size, num_colors_per_graph, n_kmers):
         # given
+        assume(kmer_size % 2 == 1)
         num_colors = sum(num_colors_per_graph)
         collection_builder = GraphCollection(n_colors_per_graph=num_colors_per_graph,
                                              kmer_size=kmer_size)

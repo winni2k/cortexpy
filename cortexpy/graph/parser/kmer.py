@@ -74,11 +74,7 @@ def flip_kmer_string_to_match(flip, ref, flip_is_after_reference_kmer=True):
         raise ValueError
 
 
-def connect_kmers(first, second, color, identical_kmer_check=True):
-    """Connect two kmers"""
-    if identical_kmer_check and first == second and first is not second:
-        raise ValueError('Kmers are equal, but not the same object')
-    connection_is_set = False
+def find_letters_for_ref_and_flip_kmers(first, second):
     for flip_is_after_reference_kmer in [True, False]:
         for reverse_first_second in [True, False]:
             if reverse_first_second:
@@ -93,7 +89,6 @@ def connect_kmers(first, second, color, identical_kmer_check=True):
             except ValueError:
                 pass
             else:
-                connection_is_set = True
                 if flip_is_after_reference_kmer:
                     ref_letter = flipped_string[-1]
                     flip_letter = ref_kmer.kmer[0].lower()
@@ -103,14 +98,30 @@ def connect_kmers(first, second, color, identical_kmer_check=True):
 
                 if is_flipped:
                     flip_letter = revcomp(flip_letter).swapcase()
-                ref_kmer.edges[color].add_edge(ref_letter)
-                flip_kmer.edges[color].add_edge(flip_letter)
+                return ref_kmer, flip_kmer, ref_letter, flip_letter
 
-    if not connection_is_set:
-        raise ValueError(
-            'first kmer ({}) cannot be connected to second kmer ({})'.format(first.kmer,
-                                                                             second.kmer)
-        )
+    raise ValueError(
+        'first kmer ({}) cannot be connected to second kmer ({})'.format(first.kmer,
+                                                                         second.kmer)
+    )
+
+
+def connect_kmers(first, second, color, identical_kmer_check=True):
+    """Connect two kmers"""
+    if identical_kmer_check and first == second and first is not second:
+        raise ValueError('Kmers are equal, but not the same object')
+    ref_kmer, flip_kmer, ref_letter, flip_letter = find_letters_for_ref_and_flip_kmers(first,
+                                                                                       second)
+    ref_kmer.edges[color].add_edge(ref_letter)
+    flip_kmer.edges[color].add_edge(flip_letter)
+
+
+def disconnect_kmers(first, second, colors):
+    ref_kmer, flip_kmer, ref_letter, flip_letter = find_letters_for_ref_and_flip_kmers(first,
+                                                                                       second)
+    for color in colors:
+        ref_kmer.edges[color].remove_edge(ref_letter)
+        flip_kmer.edges[color].remove_edge(flip_letter)
 
 
 def kmer_eq(self, other):
@@ -187,12 +198,9 @@ class KmerData(object):
     _data = attr.ib()
     kmer_size = attr.ib()
     num_colors = attr.ib()
-    kmer_container_size_in_uint64ts = attr.ib(1)
-    _kmer = attr.ib(None)
-    _coverage = attr.ib(None)
-    _edges = attr.ib(None)
-    _incoming_kmers = attr.ib(None)
-    _outgoing_kmers = attr.ib(None)
+    _kmer = attr.ib(None, init=False)
+    _coverage = attr.ib(None, init=False)
+    _edges = attr.ib(None, init=False)
     _kmer_vals_to_delete = attr.ib(init=False)
 
     def __attrs_post_init__(self):
@@ -236,6 +244,10 @@ class KmerData(object):
             object.__setattr__(self, "_edges", edge_sets)
         return self._edges
 
+    @property
+    def kmer_container_size_in_uint64ts(self):
+        return calc_kmer_container_size(self.kmer_size)
+
 
 @attr.s(slots=True, cmp=False)
 class Kmer(object):
@@ -262,6 +274,7 @@ class Kmer(object):
 
     @kmer.setter
     def kmer(self, val):
+        assert lexlo(val) == val
         self._kmer = val
 
     @property
@@ -306,6 +319,9 @@ class Kmer(object):
         string_parts += [e.to_str() for e in self.edges]
         return ' '.join(string_parts)
 
+    def __repr__(self):
+        return str(self)
+
     @property
     def colors(self):
         return range(self.num_colors)
@@ -342,9 +358,12 @@ class Kmer(object):
             raise ValueError('Kmers do not agree on connection')
         return edge_set.is_edge(other_kmer_letter)
 
+    def get_raw_kmer(self):
+        return self._kmer_data.get_raw_kmer()
+
     def dump(self, buffer):
         if self.kmer == self._kmer_data.kmer:
-            buffer.write(self._kmer_data.get_raw_kmer())
+            buffer.write(self.get_raw_kmer())
         else:
             raise NotImplementedError
         for cov in self.coverage:

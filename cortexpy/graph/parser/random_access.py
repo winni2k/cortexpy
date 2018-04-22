@@ -142,7 +142,6 @@ class KmerRecordSequence(Sequence):
             kmer_bytes,
             kmer_size=self.kmer_size,
             num_colors=self.num_colors,
-            kmer_container_size_in_uint64ts=self.kmer_container_size,
         )
 
 

@@ -1,4 +1,5 @@
 from cortexpy.graph import Interactor
+from cortexpy.graph.parser.streaming import load_de_bruijn_graph
 from cortexpy.utils import get_graph_stream_iterator
 
 
@@ -26,13 +27,12 @@ def prune(argv):
     else:
         output = open(args.out, 'wb')
 
+    logger.info('Loading de Bruijn graph')
     if args.graph == '-':
-        graphs = get_graph_stream_iterator(sys.stdin.buffer)
+        graph = load_de_bruijn_graph(sys.stdin.buffer)
     else:
-        graphs = get_graph_stream_iterator(open(args.graph, 'rb'))
+        graph = load_de_bruijn_graph(open(args.graph, 'rb'))
 
     logger.info('Removing tips shorter than {} k-mers'.format(args.remove_tips))
-    for graph_idx, graph in enumerate(graphs):
-        logger.info('Processing graph {}'.format(graph_idx))
-        Interactor(graph, colors=None).prune_tips_less_than(args.remove_tips)
-        nx.write_gpickle(graph, output)
+    Interactor(graph, colors=None).prune_tips_less_than(args.remove_tips)
+    nx.write_gpickle(graph, output)

@@ -2,10 +2,13 @@ import random
 from unittest import mock
 
 import numpy as np
-from hypothesis import given
+from hypothesis import given, assume
 from hypothesis import strategies as s
 
-from cortexpy.graph.parser.streaming import kmer_generator_from_stream_and_header
+from cortexpy.graph.parser.streaming import (
+    kmer_generator_from_stream_and_header,
+    kmer_list_generator_from_stream_and_header,
+)
 from cortexpy.test.builder.graph.body import Body, KmerRecord
 from cortexpy.test.builder.graph.kmer import kmers
 from cortexpy.test.mock.graph import Header
@@ -14,12 +17,15 @@ from cortexpy.utils import lexlo
 
 class TestStreamKmerGenerator(object):
     @given(s.data(),
-           s.integers(min_value=1, max_value=260),
+           s.integers(min_value=1, max_value=129),
            s.integers(min_value=0, max_value=10),
-           s.integers(min_value=0, max_value=4))
-    def test_parses_records(self, data, kmer_size, num_colors, n_kmers):
+           s.integers(min_value=0, max_value=4),
+           s.sampled_from([kmer_generator_from_stream_and_header,
+                           kmer_list_generator_from_stream_and_header]))
+    def test_parses_records(self, data, kmer_size, num_colors, n_kmers, stream_func):
         # given
-        builder = Body(kmer_size=kmer_size)
+        assume(kmer_size % 2 == 1)
+        builder = Body(sort_kmers=False, kmer_size=kmer_size)
 
         expected_kmers = []
         for _ in range(n_kmers):
@@ -30,14 +36,17 @@ class TestStreamKmerGenerator(object):
         header = Header(kmer_size, builder.kmer_container_size, num_colors)
 
         # when
-        for kmer, expected_kmer in zip(
-            kmer_generator_from_stream_and_header(builder.build(), header),
+        for val, expected_kmer in zip(
+            stream_func(builder.build(), header),
             expected_kmers
         ):
             # then
-            assert expected_kmer.kmer == kmer.kmer
-            assert np.all(expected_kmer.coverage == kmer.coverage)
-            assert expected_kmer.edges == kmer.edges
+            if stream_func == kmer_generator_from_stream_and_header:
+                assert expected_kmer.kmer == val.kmer
+                assert np.all(expected_kmer.coverage == val.coverage)
+                assert expected_kmer.edges == val.edges
+            else:
+                assert expected_kmer.kmer == ''.join(val)
 
     @given(s.integers(min_value=0, max_value=16))
     def test_complexity(self, n_kmers):

@@ -88,10 +88,11 @@ class TestHeaderParser(object):
         assert 'Concluding magic word' in str(excinfo.value)
 
     @given(s.data(),
-           s.integers(min_value=1, max_value=3))
-    def test_loads_entire_header_successfully(self, data, num_colors):
+           s.integers(min_value=1, max_value=3),
+           s.integers(min_value=1, max_value=100))
+    def test_loads_entire_header_successfully(self, data, num_colors, kmer_size):
         # given
-        kmer_size = data.draw(s.integers(min_value=1, max_value=100))
+        assume(kmer_size % 2 == 1)
         kmer_container_size = data.draw(s.integers(min_value=1, max_value=5))
 
         read_lengths = data.draw(

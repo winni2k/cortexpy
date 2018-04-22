@@ -51,24 +51,20 @@ class ColorInformationBlock(object):
 class Kmers(object):
     """Serializes kmers to cortex binary format"""
     kmers = attr.ib()
+    sample_names = attr.ib()
     kmer_size = attr.ib(None)
-    sample_names = attr.ib(None)
-    kmer_container_size = attr.ib(None)
     num_colors = attr.ib(None)
+    kmer_container_size = attr.ib(init=False)
     n_kmers = attr.ib(init=False)
 
     def __attrs_post_init__(self):
-        self.kmers = list(self.kmers)
+        self.kmers = sorted(list(self.kmers), key=lambda k: k.kmer)
         self.n_kmers = len(self.kmers)
         if self.kmer_size is None:
             self.kmer_size = self.kmers[0].kmer_size
-        if self.kmer_container_size is None:
-            self.kmer_container_size = calc_kmer_container_size(self.kmer_size)
+        self.kmer_container_size = calc_kmer_container_size(self.kmer_size)
         if self.num_colors is None:
             self.num_colors = self.kmers[0].num_colors
-        if self.sample_names is None:
-            assert self.num_colors > 0
-            self.sample_names = [str(i).encode() for i in range(self.num_colors)]
 
     @property
     def header(self):
