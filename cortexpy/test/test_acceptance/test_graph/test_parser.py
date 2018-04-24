@@ -26,7 +26,7 @@ class TestHeaderFromStream(object):
                                       'kmer_container_size': 1,
                                       'num_colors': 1,
                                       'mean_read_lengths': (len(dna_sequence),),
-                                      'mean_total_sequence': (len(dna_sequence),),
+                                      'total_sequences': (len(dna_sequence),),
                                       'sample_names': (sample_name.encode(),)}
 
         # when

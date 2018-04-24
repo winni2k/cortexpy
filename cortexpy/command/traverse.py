@@ -1,3 +1,6 @@
+from cortexpy.graph.serializer.kmer import dump_colored_de_bruijn_graph_to_cortex
+
+
 def traverse(argv):
     import argparse
     from cortexpy.graph import traversal
@@ -45,7 +48,6 @@ def traverse(argv):
 
     import sys
     from contextlib import ExitStack
-    import cortexpy.graph.serializer as serializer
     with ExitStack() as stack:
         if args.out == '-':
             output = sys.stdout.buffer
@@ -83,7 +85,4 @@ def traverse(argv):
         else:
             engine.traverse_from_each_kmer_in(args.initial_contig)
 
-        serializer \
-            .Kmers(kmers=(kmer for _, kmer in engine.graph.nodes(data=True)),
-                   sample_names=ra_parser.sample_names) \
-            .dump(output)
+        dump_colored_de_bruijn_graph_to_cortex(engine.graph, output)

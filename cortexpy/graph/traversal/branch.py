@@ -1,5 +1,6 @@
 import attr
 from cortexpy import graph
+from cortexpy.graph.colored_de_bruijn import build_cdb_graph_from_header, build_cdb_graph, build_cdb_graph_from_ra_parser
 from cortexpy.graph.serializer.constants import SERIALIZER_GRAPH
 from cortexpy.constants import EdgeTraversalOrientation
 from .constants import EngineTraversalOrientation
@@ -31,7 +32,7 @@ class Traverser(object):
         if parent_graph is None:
             parent_graph = set()
         self.parent_graph = parent_graph
-        self.graph = graph.ColoredDeBruijn()
+        self.graph = build_cdb_graph_from_ra_parser(self.ra_parser)
         self.kmer_string = first_kmer_string = kmer_string
         self.orientation = orientation
         self.prev_kmer_string = None

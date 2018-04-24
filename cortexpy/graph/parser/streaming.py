@@ -1,6 +1,6 @@
 import io
 
-from ..colored_de_bruijn import ColoredDeBruijn
+from ..colored_de_bruijn import ColoredDeBruijnDiGraph, build_cdb_graph_from_header
 from cortexpy.graph.parser.kmer import Kmer, KmerData, RawKmerConverter
 from cortexpy.graph.parser.constants import UINT64_T
 from cortexpy.graph.parser.header import from_stream
@@ -53,5 +53,7 @@ def kmer_list_generator_from_stream_and_header(stream, header):
         raw_kmer = stream.read(kmer_container_size)
 
 
-def load_de_bruijn_graph(file_handle):
-    return ColoredDeBruijn({k.kmer: k for k in kmer_generator_from_stream(file_handle)})
+def load_de_bruijn_graph(stream):
+    header = from_stream(stream)
+    kmer_generator = kmer_generator_from_stream_and_header(stream, header)
+    return build_cdb_graph_from_header(header, kmer_generator=kmer_generator)

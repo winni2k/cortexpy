@@ -1,20 +1,24 @@
 import attr
+import copy
 import networkx as nx
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 import logging
 
-from networkx.algorithms.coloring import strategy_connected_sequential_dfs
-
-from cortexpy.constants import EdgeTraversalOrientation, NodeEdgeDirection
-from .colored_de_bruijn import ColoredDeBruijn
+from cortexpy.constants import NodeEdgeDirection
+from cortexpy.graph.parser.kmer import revcomp_kmer_string_to_match
+from cortexpy.utils import lexlo, revcomp
+from .colored_de_bruijn import (
+    ColoredDeBruijnDiGraph, ColoredDeBruijnGraph,
+    ConsistentColoredDeBruijnDiGraph,
+)
 
 logger = logging.getLogger(__name__)
 
 
 def make_multi_graph(graph):
-    if isinstance(graph, ColoredDeBruijn):
-        return graph
+    if isinstance(graph, ColoredDeBruijnDiGraph):
+        return ColoredDeBruijnGraph(graph)
     return nx.MultiGraph(graph)
 
 
@@ -24,7 +28,7 @@ class Interactor(object):
     colors = attr.ib()
 
     def add_edge_to_graph_for_kmer_pair(self, kmer1, kmer2, kmer1_string, kmer2_string):
-        if isinstance(self.graph, ColoredDeBruijn):
+        if isinstance(self.graph, ColoredDeBruijnDiGraph):
             return self
         first_is_revcomp = bool(kmer1.kmer != kmer1_string)
         for color in self.colors:
@@ -56,6 +60,48 @@ class Interactor(object):
         logger.info('Pruning %s nodes', len(nodes_to_prune))
         self.graph.remove_nodes_from(nodes_to_prune)
         return self
+
+    def make_graph_nodes_consistent(self, seed_kmer_strings=None):
+        """
+        Take a CDB and make all nodes have kmer_strings that are consistent with each other.
+        If a seed kmer string is provided, then start with that seed kmer.
+        """
+        graph = ColoredDeBruijnGraph(self.graph)
+        new_graph = ConsistentColoredDeBruijnDiGraph(ColoredDeBruijnDiGraph(graph=self.graph.graph))
+
+        unseen_lexlo_kmer_strings = set(
+            sorted([lexlo(k_string) for k_string in self.graph.nodes()]))
+
+        seeds = seed_kmer_string_generator(seed_kmer_strings, unseen_lexlo_kmer_strings)
+
+        for seed, lexlo_seed in seeds:
+            new_graph.add_node(seed, kmer=self.graph.node[lexlo_seed])
+            unseen_lexlo_kmer_strings.remove(lexlo_seed)
+            for source, target in nx.dfs_edges(graph, lexlo_seed):
+                if source not in new_graph.node:
+                    source = revcomp(source)
+                try:
+                    matched_target, was_revcomped = revcomp_kmer_string_to_match(target, source)
+                except ValueError:
+                    matched_target, was_revcomped = revcomp_kmer_string_to_match(
+                        target, source, rc_is_after_reference_kmer=False
+                    )
+                new_graph.add_node(matched_target, kmer=graph.node[target])
+                unseen_lexlo_kmer_strings.remove(lexlo(target))
+        self.graph = new_graph
+        return self
+
+
+def seed_kmer_string_generator(seed_kmer_strings, unseen_lexlo_kmer_strings):
+    while seed_kmer_strings:
+        seed = seed_kmer_strings.pop()
+        lexlo_seed = lexlo(seed)
+        if lexlo_seed not in unseen_lexlo_kmer_strings:
+            continue
+        yield seed, lexlo_seed
+    while unseen_lexlo_kmer_strings:
+        seed = lexlo_seed = unseen_lexlo_kmer_strings.pop()
+        yield seed, lexlo_seed
 
 
 def find_tip_from(*, n, graph, next_node_generator):
@@ -123,6 +169,7 @@ class Contigs(object):
     color = attr.ib(None)
 
     def all_simple_paths(self):
+        assert self.graph.is_consistent()
         if self.color is not None:
             graph = make_copy_of_color(self.graph, self.color, include_self_refs=False)
         else:

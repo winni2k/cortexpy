@@ -19,7 +19,7 @@ def kmer_strings(draw, min_size=3, max_size=7):
 
 
 @s.composite
-def kmers(draw, kmer_size, num_colors, kmer_strings=dna_sequences):
+def kmer_records(draw, kmer_size, num_colors, kmer_strings=dna_sequences):
     kmer = draw(kmer_strings(min_size=kmer_size, max_size=kmer_size))
     coverage = tuple(
         draw(s.lists(s.integers(min_value=0), min_size=num_colors, max_size=num_colors)))

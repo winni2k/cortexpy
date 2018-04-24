@@ -36,14 +36,12 @@ def test_prunes_two_tips_on_two_subgraphs(tmpdir):
     )
     d.prune_tips_less_than(tip_length)
     d.with_kmer_size(5)
-    expected_nodes = ['CCCCC', 'AAAAA']
 
     # when
     expect = d.run()
 
     # then
-    expect.has_nodes(*expected_nodes)
-    expect.has_n_graphs(2)
+    expect.has_nodes('CCCCC', 'AAAAA')
 
 
 def test_prunes_contig_that_is_too_short(tmpdir):
@@ -53,11 +51,9 @@ def test_prunes_contig_that_is_too_short(tmpdir):
     d.with_records('CCCA')
     d.prune_tips_less_than(tip_length)
     d.with_kmer_size(3)
-    expected_nodes = []
 
     # when
     expect = d.run()
 
     # then
-    expect.has_nodes(*expected_nodes)
-    expect.has_n_graphs(1)
+    expect.has_nodes()

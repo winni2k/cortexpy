@@ -117,6 +117,3 @@ def edge_set_string_to_array(edge_set_string):
         else:
             edge_set.append(1)
     return np.array(edge_set[:4] + list(reversed(edge_set[4:])), dtype=np.uint8)
-
-# def print_kmer(kmer):
-#     print(kmer)

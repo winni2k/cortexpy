@@ -137,7 +137,6 @@ class Test(object):
         expect = driver.run()
 
         # then
-        expect.has_n_unitigs(4)
         expect \
             .has_unitig_with_edges(('CAA', 'AAA')) \
             .with_left_node('CAA') \
@@ -148,6 +147,7 @@ class Test(object):
         expect.has_unitig_with_edges(('AAG', 'AGC'), ('AGC', 'GCC')).with_left_node(
             'AAG').with_right_node('GCC').is_not_cycle()
         expect.has_unitig_with_one_node('CCC').is_not_cycle()
+        expect.has_n_unitigs(4)
 
 
 class TestIsUnitigEnd(object):
@@ -224,9 +224,13 @@ class TestFindUnitigFromTwoColorGraph(object):
     def test_three_node_path_becomes_a_unitig_and_attributes_are_copied_across(self):
         # given
         nodes = ['AAA', 'AAC', 'ACC']
+        colors = [0, 1]
+
         driver = FindUnitigsTestDriver()
         g_builder = driver.graph
-        g_builder.add_path(nodes)
+        g_builder.with_colors(*colors)
+        for color in colors:
+            g_builder.add_path(nodes, color=color)
         for idx, node in enumerate(nodes):
             g_builder.with_node_coverage(node, (idx + 1, 1))
         finder = driver.builder.build()
@@ -236,10 +240,10 @@ class TestFindUnitigFromTwoColorGraph(object):
             unitig = finder.find_unitig_from(start_node)
 
             # then
-            assert unitig.left_node == 'AAA'
-            assert unitig.right_node == 'ACC'
-            assert len(unitig.graph) == 3
-            assert set(unitig.graph.edges(keys=False)) == {('AAA', 'AAC'), ('AAC', 'ACC')}
+            assert 'AAA' == unitig.left_node
+            assert 'ACC' == unitig.right_node
+            assert 3 == len(unitig.graph)
+            assert {('AAA', 'AAC'), ('AAC', 'ACC')} == set(unitig.graph.edges(keys=False))
             for idx, node in enumerate(nodes):
                 assert unitig.graph.node[node]['kmer'].coverage == (idx + 1, 1)
 

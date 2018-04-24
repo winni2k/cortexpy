@@ -6,7 +6,7 @@ from hypothesis import strategies as s
 import cortexpy.test.builder as builder
 import cortexpy.graph.parser as parser
 from cortexpy.test.builder.graph.body import KmerRecord, as_edge_set
-from cortexpy.test.builder.graph.kmer import kmers
+from cortexpy.test.builder.graph.kmer import kmer_records
 
 
 @attr.s(slots=True)
@@ -56,9 +56,9 @@ class TestDunderGetitemDunder(object):
         expected_kmers = []
         seen_kmers = set()
         for _ in range(n_kmers):
-            kmer = data.draw(kmers(kmer_size, num_colors))
+            kmer = data.draw(kmer_records(kmer_size, num_colors))
             while kmer.kmer in seen_kmers:
-                kmer = data.draw(kmers(kmer_size, num_colors))
+                kmer = data.draw(kmer_records(kmer_size, num_colors))
             seen_kmers.add(kmer.kmer)
             collection_builder.with_kmer_record(kmer)
             expected_kmers.append(kmer)

@@ -13,7 +13,7 @@ from cortexpy.graph.parser.header import from_stream
 from cortexpy.graph.parser.random_access import KmerUintSequence
 import cortexpy.graph.serializer.kmer as kmer_serializer
 from cortexpy.test.builder.graph.body import KmerRecord, as_edge_set
-from cortexpy.test.builder.graph.kmer import kmers
+from cortexpy.test.builder.graph.kmer import kmer_records
 from cortexpy.utils import lexlo
 
 
@@ -32,9 +32,9 @@ class TestDunderGetitemDunder(object):
         expected_kmers = []
         seen_kmers = set()
         for _ in range(n_kmers):
-            kmer = data.draw(kmers(kmer_size, num_colors))
+            kmer = data.draw(kmer_records(kmer_size, num_colors))
             while kmer.kmer in seen_kmers:
-                kmer = data.draw(kmers(kmer_size, num_colors))
+                kmer = data.draw(kmer_records(kmer_size, num_colors))
             seen_kmers.add(kmer.kmer)
             graph_builder.with_kmer_record(kmer)
             expected_kmers.append(kmer)
@@ -134,9 +134,9 @@ class TestDunderIterDunder(object):
         expected_kmers = []
         seen = set()
         for _ in range(n_kmers):
-            kmer = data.draw(kmers(kmer_size, num_colors))
+            kmer = data.draw(kmer_records(kmer_size, num_colors))
             while kmer.kmer in seen:
-                kmer = data.draw(kmers(kmer_size, num_colors))
+                kmer = data.draw(kmer_records(kmer_size, num_colors))
             seen.add(kmer.kmer)
             graph_builder.with_kmer_record(kmer)
             expected_kmers.append(kmer)
@@ -214,9 +214,9 @@ class TestKmerUintSequence(object):
         expected_kmers = []
         seen_kmers = set()
         for _ in range(n_kmers):
-            kmer = data.draw(kmers(kmer_size, num_colors))
+            kmer = data.draw(kmer_records(kmer_size, num_colors))
             while kmer.kmer in seen_kmers:
-                kmer = data.draw(kmers(kmer_size, num_colors))
+                kmer = data.draw(kmer_records(kmer_size, num_colors))
             seen_kmers.add(kmer.kmer)
             graph_builder.with_kmer_record(kmer)
             expected_kmers.append(kmer)

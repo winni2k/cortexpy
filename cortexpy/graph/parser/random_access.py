@@ -22,7 +22,7 @@ class RandomAccess(Mapping):
     graph_handle = attr.ib()
     kmer_cache_size = attr.ib(None)
     kmer_cache_size_binary_search = attr.ib(None)
-    _header = attr.ib(init=False)
+    header = attr.ib(init=False)
     graph_sequence = attr.ib(init=False)
     graph_kmer_sequence = attr.ib(init=False)
     n_records = attr.ib(init=False)
@@ -31,29 +31,29 @@ class RandomAccess(Mapping):
     def __attrs_post_init__(self):
         assert self.graph_handle.seekable()
         self.graph_handle.seek(0)
-        self._header = cortexpy.graph.parser.header.from_stream(self.graph_handle)
+        self.header = cortexpy.graph.parser.header.from_stream(self.graph_handle)
         body_start_stream_position = self.graph_handle.tell()
 
         self.graph_handle.seek(0, SEEK_END)
         body_size = self.graph_handle.tell() - body_start_stream_position
-        if body_size % self._header.record_size != 0:
+        if body_size % self.header.record_size != 0:
             raise ValueError(
                 "Body size ({}) % Record size ({}) != 0".format(body_size,
-                                                                self._header.record_size))
-        self.n_records = body_size // self._header.record_size
+                                                                self.header.record_size))
+        self.n_records = body_size // self.header.record_size
         if self.kmer_cache_size is None:
             self.kmer_cache_size = self.n_records
         if self.kmer_cache_size_binary_search is None:
             self.kmer_cache_size_binary_search = self.n_records
         self.graph_sequence = KmerRecordSequence(graph_handle=self.graph_handle,
                                                  body_start=body_start_stream_position,
-                                                 header=self._header,
+                                                 header=self.header,
                                                  n_records=self.n_records,
                                                  kmer_cache_size=self.kmer_cache_size)
         self.graph_kmer_sequence = KmerUintSequence(
             graph_handle=self.graph_handle,
             body_start=body_start_stream_position,
-            header=self._header,
+            header=self.header,
             n_records=self.n_records,
             kmer_cache_size=self.kmer_cache_size_binary_search
         )
@@ -80,7 +80,7 @@ class RandomAccess(Mapping):
     def __iter__(self):
         """Iterate over kmers in graph in order stored in graph"""
         self.graph_handle.seek(self.graph_sequence.body_start)
-        return kmer_generator_from_stream_and_header(self.graph_handle, self._header)
+        return kmer_generator_from_stream_and_header(self.graph_handle, self.header)
 
     def get_kmer_for_string(self, string):
         """Will compute the revcomp of kmer string before getting a kmer"""
@@ -88,19 +88,19 @@ class RandomAccess(Mapping):
 
     @property
     def num_colors(self):
-        return self._header.num_colors
+        return self.header.num_colors
 
     @property
     def colors(self):
-        return self._header.colors
+        return self.header.colors
 
     @property
     def sample_names(self):
-        return self._header.sample_names
+        return self.header.sample_names
 
     @property
     def kmer_size(self):
-        return self._header.kmer_size
+        return self.header.kmer_size
 
 
 @attr.s(slots=True)

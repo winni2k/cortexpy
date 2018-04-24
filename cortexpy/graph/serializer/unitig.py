@@ -7,7 +7,7 @@ import networkx as nx
 from networkx.readwrite import json_graph
 
 from cortexpy.constants import EdgeTraversalOrientation
-from cortexpy.graph.parser.kmer import flip_kmer_string_to_match
+from cortexpy.graph.parser.kmer import revcomp_kmer_string_to_match
 from cortexpy.graph.traversal.utils import OrientedGraphFuncs
 from cortexpy.utils import lexlo
 
@@ -43,9 +43,16 @@ class Serializer(object):
         self.unitig_graph = nx.convert_node_labels_to_integers(self.unitig_graph,
                                                                label_attribute='node_key')
         self.unitig_graph.graph['colors'] = self.colors
+        if 'sample_names' in self.unitig_graph.graph:
+            new_names = []
+            for name in self.unitig_graph.graph['sample_names']:
+                if isinstance(name, bytes):
+                    name = name.decode()
+                new_names.append(name)
+            self.unitig_graph.graph['sample_names'] = new_names
+
         for _, node_data in self.unitig_graph.nodes.items():
-            if isinstance(node_data.get('node_key'), nx.Graph):
-                node_data['node_key'] = repr(node_data['node_key'])
+            del node_data['node_key']
 
             coverage = []
             for coverage_list in node_data['coverage']:
@@ -54,7 +61,7 @@ class Serializer(object):
                 except AttributeError:
                     pass
                 finally:
-                    coverage.append(coverage_list)
+                    coverage.append([int(i) for i in coverage_list])
             node_data['coverage'] = coverage
 
 
@@ -190,9 +197,9 @@ class UnitigFinder(object):
     def set_unitig_cycle(self, unitig):
         unitig.is_cycle = False
         try:
-            flipped_string, is_flipped = flip_kmer_string_to_match(unitig.left_node,
-                                                                   unitig.right_node,
-                                                                   flip_is_after_reference_kmer=True)
+            flipped_string, is_flipped = revcomp_kmer_string_to_match(unitig.left_node,
+                                                                      unitig.right_node,
+                                                                      rc_is_after_reference_kmer=True)
         except ValueError:
             return
         if lexlo(unitig.right_node) == unitig.right_node:
@@ -265,6 +272,7 @@ class UnitigCollapser(object):
         """
         unitig_graph = self.unitig_finder.find_unitigs()
         out = UNITIG_GRAPH()
+        out.graph = self.graph.graph
         for _, _, unitig in unitig_graph.edges(data='unitig'):
             if unitig is None:
                 continue

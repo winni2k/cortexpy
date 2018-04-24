@@ -31,38 +31,30 @@ def view_traversal(argv):
     parser.add_argument('--to-json', action='store_true')
     parser.add_argument('--kmers', action='store_true')
     parser.add_argument('--color', type=int, help='Restrict view to single color')
-    parser.add_argument('--subgraphs', default=None,
-                        help='Do not merge subgraphs and store under this prefix')
     args = parser.parse_args(argv)
 
     from Bio import SeqIO
     import sys
     from cortexpy.graph import interactor
     from cortexpy.graph import serializer
-    import networkx as nx
-    from cortexpy.utils import get_graph_stream_iterator
+    from cortexpy.graph.serializer import unitig
+    from cortexpy.graph.parser.streaming import load_de_bruijn_graph
 
     if args.traversal == '-':
-        graphs = get_graph_stream_iterator(sys.stdin.buffer)
+        graph = load_de_bruijn_graph(sys.stdin.buffer)
     else:
-        graphs = get_graph_stream_iterator(open(args.traversal, 'rb'))
+        with open(args.traversal, 'rb') as fh:
+            graph = load_de_bruijn_graph(fh)
 
     if args.to_json:
-        if args.subgraphs:
-            for graph_idx, graph in enumerate(graphs):
-                with open('{}_{}.json'.format(args.subgraphs, graph_idx), 'w') as fh:
-                    fh.write(serializer.Serializer(graph).to_json())
-        else:
-            graph = nx.compose_all(list(graphs))
-            print(serializer.Serializer(graph).to_json())
+        print(unitig.Serializer(graph).to_json())
     else:
-        for graph_idx, graph in enumerate(graphs):
-            if args.kmers:
-                seq_record_generator = serializer.Kmers(graph).to_seq_records()
-            else:
-                seq_record_generator = interactor.Contigs(graph, args.color).all_simple_paths()
-            seq_record_generator = annotated_seq_records(seq_record_generator, graph_idx=graph_idx)
-            SeqIO.write(seq_record_generator, sys.stdout, 'fasta')
+        if args.kmers:
+            seq_record_generator = serializer.Kmers(graph).to_seq_records()
+        else:
+            seq_record_generator = interactor.Contigs(graph, args.color).all_simple_paths()
+        seq_record_generator = annotated_seq_records(seq_record_generator, graph_idx=0)
+        SeqIO.write(seq_record_generator, sys.stdout, 'fasta')
 
 
 def view_graph(argv):
@@ -83,11 +75,11 @@ def view_contig(argv):
     args = parser.parse_args(argv)
 
     from cortexpy.graph import ContigRetriever
-    from cortexpy.graph.serializer.unitig import Serializer
+    from cortexpy.graph.serializer import unitig
 
     contig_retriever = ContigRetriever(open(args.graph, 'rb'))
     if args.to_json:
-        serializer = Serializer(contig_retriever.get_kmer_graph(args.contig))
+        serializer = unitig.Serializer(contig_retriever.get_kmer_graph(args.contig))
         print(serializer.to_json())
     else:
         print_contig(contig_retriever, args.contig)

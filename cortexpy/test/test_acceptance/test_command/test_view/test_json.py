@@ -207,19 +207,3 @@ class TestTraversal(object):
         expect.has_repr_edge('A', 'GG', 1)
         expect.has_repr_edge('CAA', 'A', 2)
         expect.has_n_edges(3)
-
-    def test_subgraphs(self, tmpdir):
-        # given
-        d = command.ViewTraversal(tmpdir)
-        d.with_records('AAA', 'CCC')
-        d.with_json_output()
-        d.with_subgraph_view()
-        d.with_kmer_size(3)
-
-        # when
-        expect = d.run()
-
-        # then
-        expect.has_graph_with_node_reprs('AAA')
-        expect.has_graph_with_node_reprs('CCC')
-        expect.has_n_graphs(2)

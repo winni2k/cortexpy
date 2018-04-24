@@ -78,6 +78,8 @@ class Header(object):
         for total_sequence in self.total_sequences:
             buffer.write(struct.pack('L', total_sequence))
         for sample_name in self.sample_names:
+            if isinstance(sample_name, str):
+                sample_name = sample_name.encode()
             buffer.write(struct.pack('I', len(sample_name)))
             buffer.write(sample_name)
         for error_rate in self.error_rates:

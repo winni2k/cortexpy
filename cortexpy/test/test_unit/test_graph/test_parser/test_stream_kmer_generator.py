@@ -10,7 +10,7 @@ from cortexpy.graph.parser.streaming import (
     kmer_list_generator_from_stream_and_header,
 )
 from cortexpy.test.builder.graph.body import Body, KmerRecord
-from cortexpy.test.builder.graph.kmer import kmers
+from cortexpy.test.builder.graph.kmer import kmer_records
 from cortexpy.test.mock.graph import Header
 from cortexpy.utils import lexlo
 
@@ -29,7 +29,7 @@ class TestStreamKmerGenerator(object):
 
         expected_kmers = []
         for _ in range(n_kmers):
-            kmer = data.draw(kmers(kmer_size, num_colors))
+            kmer = data.draw(kmer_records(kmer_size, num_colors))
             builder.with_kmer_record(kmer)
             expected_kmers.append(kmer)
 

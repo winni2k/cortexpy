@@ -2,8 +2,7 @@ import numpy as np
 import pytest
 import math
 from Bio.Seq import reverse_complement
-from hypothesis import given, assume, settings
-from hypothesis import strategies as s
+from hypothesis import given, assume, settings, strategies as s
 
 import cortexpy.edge_set
 from cortexpy.graph.parser.kmer import (
@@ -12,7 +11,7 @@ from cortexpy.graph.parser.kmer import (
     disconnect_kmers,
 )
 from cortexpy.test.builder.graph.body import KmerRecord
-from cortexpy.test.builder.graph.kmer import dna_sequences, kmer_strings
+from cortexpy.test.builder.graph.kmer import dna_sequences, kmer_strings, kmer_records
 
 
 class TestBuildKmer(object):
@@ -188,25 +187,25 @@ class TestConnectKmers(object):
 
         kmer2 = builder.build_or_get(kmer2_string)
 
+        if add_letter_to_revcomp:
+            kmer1_edge_letter = reverse_complement(letter)
+        else:
+            kmer1_edge_letter = letter.lower()
+
+        if add_letter_to_end:
+            kmer1_edge_letter = kmer1_edge_letter.swapcase()
+            kmer2_edge_letter = kmer1_string[0].lower()
+        else:
+            kmer2_edge_letter = kmer1_string[-1]
+
+        if reverse_complement(kmer2_string) < kmer2_string:
+            kmer2_edge_letter = reverse_complement(kmer2_edge_letter).swapcase()
+
         for color in range(num_colors):
             # when
             connect_kmers(kmer1, kmer2, color)
 
             # then
-            if add_letter_to_revcomp:
-                kmer1_edge_letter = reverse_complement(letter)
-            else:
-                kmer1_edge_letter = letter.lower()
-
-            if add_letter_to_end:
-                kmer1_edge_letter = kmer1_edge_letter.swapcase()
-                kmer2_edge_letter = kmer1_string[0].lower()
-            else:
-                kmer2_edge_letter = kmer1_string[-1]
-
-            if reverse_complement(kmer2_string) < kmer2_string:
-                kmer2_edge_letter = reverse_complement(kmer2_edge_letter).swapcase()
-
             assert kmer1.edges[color].is_edge(kmer1_edge_letter)
             assert kmer2.edges[color].is_edge(kmer2_edge_letter)
 
@@ -217,9 +216,10 @@ class TestConnectKmers(object):
                 assert kmer1.has_incoming_edge_from_kmer_in_color(kmer2, color)
 
             # and let's check disconnect kmers
-            # disconnect_kmers(kmer1, kmer2, [color])
-            # assert not kmer1.edges[color].is_edge(kmer1_edge_letter)
-            # assert not kmer2.edges[color].is_edge(kmer2_edge_letter)
+            disconnect_kmers(kmer1, kmer2, [color])
+            assert not kmer1.edges[color].is_edge(kmer1_edge_letter)
+            assert not kmer2.edges[color].is_edge(kmer2_edge_letter)
+
 
 class TestHasEdgeTo(object):
     @given(s.integers(min_value=0, max_value=2))
@@ -337,3 +337,21 @@ class TestStringKmerConverter(object):
         # then
         assert letter_idx == uints[-1]
         assert math.ceil(kmer_size / 32) == len(uints)
+
+    @given(s.data(),
+           s.integers(min_value=0, max_value=129),
+           s.integers(min_value=0, max_value=7),
+           )
+    def test_converts_to_raw(self, data, kmer_size, num_colors):
+        # given
+        assume(kmer_size % 2 == 1)
+        kmer = Kmer(KmerData(data.draw(kmer_records(kmer_size, num_colors)).to_bytestring(),
+                             kmer_size=kmer_size,
+                             num_colors=num_colors))
+        converter = StringKmerConverter(kmer.kmer_size)
+
+        # when
+        raw_kmer = converter.to_raw(kmer.kmer)
+
+        # then
+        assert kmer._kmer_data.get_raw_kmer() == raw_kmer

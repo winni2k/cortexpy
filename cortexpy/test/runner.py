@@ -66,7 +66,7 @@ class Cortexpy(object):
                        to_json=None, kmers=None, out=None,
                        color=0, max_nodes=None, colors=None,
                        # deprecated options
-                       output_format=None, output_type=None, ):
+                       output_format=None, output_type=None):
         assert output_format is None or to_json is None
         assert output_type is None or kmers is None
         if (output_format is None and to_json is None) or output_format == 'json':

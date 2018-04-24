@@ -11,6 +11,7 @@ class Graph(object):
     body = attr.ib(attr.Factory(Body))
     kmer_size_is_set = attr.ib(False, init=False)
     num_colors_is_set = attr.ib(False, init=False)
+    kmer_size = attr.ib(None)
 
     def __attrs_post_init__(self):
         self.header.num_colors = 1
@@ -22,8 +23,9 @@ class Graph(object):
 
     def with_kmer_size(self, size):
         self.kmer_size_is_set = True
-        self.body.kmer_size = size
-        self.header.kmer_size = size
+        self.kmer_size = size
+        self.body.kmer_size = self.kmer_size
+        self.header.kmer_size = self.kmer_size
         return self
 
     def with_kmer(self, kmer_string, color_coverage=0, edges='........',
@@ -52,6 +54,10 @@ class Graph(object):
             edges = [edges]
         if isinstance(color_coverage, int):
             color_coverage = [color_coverage]
+        if self.kmer_size_is_set:
+            assert self.kmer_size == len(kmer_string)
+        else:
+            self.with_kmer_size(len(kmer_string))
         return self.with_kmer_record(
             KmerRecord(kmer_string, color_coverage, tuple([as_edge_set(e) for e in edges])))
 

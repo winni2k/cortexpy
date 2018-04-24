@@ -1,6 +1,6 @@
 from cortexpy.graph import Interactor
 from cortexpy.graph.parser.streaming import load_de_bruijn_graph
-from cortexpy.utils import get_graph_stream_iterator
+from cortexpy.graph.serializer.kmer import dump_colored_de_bruijn_graph_to_cortex
 
 
 def prune(argv):
@@ -19,9 +19,7 @@ def prune(argv):
     import logging
     logger = logging.getLogger('cortexpy.prune')
 
-    import networkx as nx
     import sys
-
     if args.out == '-':
         output = sys.stdout.buffer
     else:
@@ -35,4 +33,5 @@ def prune(argv):
 
     logger.info('Removing tips shorter than {} k-mers'.format(args.remove_tips))
     Interactor(graph, colors=None).prune_tips_less_than(args.remove_tips)
-    nx.write_gpickle(graph, output)
+    dump_colored_de_bruijn_graph_to_cortex(graph, output)
+

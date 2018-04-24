@@ -36,35 +36,47 @@ class ColorInformationBlock(object):
         assert isinstance(self.name_of_graph_cleaned_against, bytes)
         string_length = len(self.name_of_graph_cleaned_against)
         binary = struct.pack('4?3I',
-                                 self.is_clipped,
-                                 self.are_low_cov_unitigs_removed,
-                                 self.are_low_cov_kmers_removed,
-                                 self.is_cleaned_against_another_graph,
-                                 self.cov_threshold_on_unitigs,
-                                 self.cov_threshold_on_kmers,
-                                 string_length)
+                             self.is_clipped,
+                             self.are_low_cov_unitigs_removed,
+                             self.are_low_cov_kmers_removed,
+                             self.is_cleaned_against_another_graph,
+                             self.cov_threshold_on_unitigs,
+                             self.cov_threshold_on_kmers,
+                             string_length)
         buffer.write(binary)
         buffer.write(self.name_of_graph_cleaned_against)
+
+
+def dump_colored_de_bruijn_graph_to_cortex(graph, output_fh):
+    Kmers(kmer_generator=(kmer for _, kmer in graph.nodes(data=True)),
+          sample_names=graph.graph['sample_names'],
+          kmer_size=graph.graph['kmer_size'],
+          num_colors=graph.graph['num_colors']) \
+        .dump(output_fh)
 
 
 @attr.s(slots=True)
 class Kmers(object):
     """Serializes kmers to cortex binary format"""
-    kmers = attr.ib()
+    kmer_generator = attr.ib()
     sample_names = attr.ib()
-    kmer_size = attr.ib(None)
-    num_colors = attr.ib(None)
+    kmer_size = attr.ib()
+    num_colors = attr.ib()
     kmer_container_size = attr.ib(init=False)
-    n_kmers = attr.ib(init=False)
+    _kmers = attr.ib(None, init=False)
 
     def __attrs_post_init__(self):
-        self.kmers = sorted(list(self.kmers), key=lambda k: k.kmer)
-        self.n_kmers = len(self.kmers)
-        if self.kmer_size is None:
-            self.kmer_size = self.kmers[0].kmer_size
         self.kmer_container_size = calc_kmer_container_size(self.kmer_size)
-        if self.num_colors is None:
-            self.num_colors = self.kmers[0].num_colors
+
+    @property
+    def kmers(self):
+        if self._kmers is None:
+            self._kmers = sorted(list(self.kmer_generator), key=lambda k: k.kmer)
+        return self._kmers
+
+    @property
+    def n_kmers(self):
+        return len(self.kmers)
 
     @property
     def header(self):
