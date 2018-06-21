@@ -3,8 +3,6 @@ from itertools import chain
 import attr
 import numpy as np
 
-from cortexpy.graph.parser.kmer import KmerData
-
 
 @attr.s(slots=True, cmp=False, frozen=True)
 class KmerDataCollection(object):

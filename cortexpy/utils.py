@@ -16,16 +16,6 @@ def lexlo(kmer_string):
     return kmer_string
 
 
-def get_graph_stream_iterator(file_handle):
-    """Load a networkx graph from file handle"""
-    import networkx as nx
-    while True:
-        try:
-            yield nx.read_gpickle(file_handle)
-        except EOFError:
-            break
-
-
 @attr.s(slots=True)
 class IntervalLogger(object):
     logger = attr.ib()

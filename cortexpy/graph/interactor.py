@@ -1,5 +1,4 @@
 import attr
-import copy
 import networkx as nx
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -8,10 +7,7 @@ import logging
 from cortexpy.constants import NodeEdgeDirection
 from cortexpy.graph.parser.kmer import revcomp_kmer_string_to_match
 from cortexpy.utils import lexlo, revcomp
-from .colored_de_bruijn import (
-    ColoredDeBruijnDiGraph, ColoredDeBruijnGraph,
-    ConsistentColoredDeBruijnDiGraph,
-)
+from .colored_de_bruijn import ColoredDeBruijnDiGraph, ColoredDeBruijnGraph
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +63,7 @@ class Interactor(object):
         If a seed kmer string is provided, then start with that seed kmer.
         """
         graph = ColoredDeBruijnGraph(self.graph)
-        new_graph = ConsistentColoredDeBruijnDiGraph(ColoredDeBruijnDiGraph(graph=self.graph.graph))
+        new_graph = ColoredDeBruijnDiGraph(graph=self.graph.graph)
 
         seeds = SeedKmerStringIterator(self.graph.nodes(), seed_kmer_strings)
 
@@ -198,7 +194,6 @@ class Contigs(object):
     color = attr.ib(None)
 
     def all_simple_paths(self):
-        assert self.graph.is_consistent()
         if self.color is not None:
             graph = make_copy_of_color(self.graph, self.color, include_self_refs=False)
         else:

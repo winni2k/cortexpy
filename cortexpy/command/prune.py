@@ -34,4 +34,3 @@ def prune(argv):
     logger.info('Removing tips shorter than {} k-mers'.format(args.remove_tips))
     Interactor(graph, colors=None).prune_tips_less_than(args.remove_tips)
     dump_colored_de_bruijn_graph_to_cortex(graph, output)
-

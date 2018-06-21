@@ -23,14 +23,17 @@ class Fasta(object):
     fasta_string = attr.ib()
     fasta_records = attr.ib(init=False)
     fasta_record_dict = attr.ib(init=False)
-    fasta_groups = attr.ib(defaultdict(lambda: 0))
+    fasta_groups = attr.ib(attr.Factory(lambda: defaultdict(lambda: 0)))
 
     def __attrs_post_init__(self):
         self.fasta_records = [rec for rec in SeqIO.parse(io.StringIO(self.fasta_string), "fasta")]
         self.fasta_record_dict = {str(rec.seq): rec for rec in self.fasta_records}
         for rec in self.fasta_records:
+            print(rec.id)
             group_id = rec.id.split('_')[0]
+            print(group_id)
             self.fasta_groups[group_id] += 1
+            print(self.fasta_groups)
 
     def has_n_records(self, n):
         assert n == len(self.fasta_records)

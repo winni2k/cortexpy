@@ -1,6 +1,6 @@
 import attr
 from cortexpy import graph
-from cortexpy.graph.colored_de_bruijn import build_cdb_graph_from_header, build_cdb_graph, build_cdb_graph_from_ra_parser
+from cortexpy.graph.colored_de_bruijn import build_cdb_graph_from_ra_parser
 from cortexpy.graph.serializer.constants import SERIALIZER_GRAPH
 from cortexpy.constants import EdgeTraversalOrientation
 from .constants import EngineTraversalOrientation

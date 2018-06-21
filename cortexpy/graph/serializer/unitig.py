@@ -197,9 +197,11 @@ class UnitigFinder(object):
     def set_unitig_cycle(self, unitig):
         unitig.is_cycle = False
         try:
-            flipped_string, is_flipped = revcomp_kmer_string_to_match(unitig.left_node,
-                                                                      unitig.right_node,
-                                                                      rc_is_after_reference_kmer=True)
+            flipped_string, is_flipped = revcomp_kmer_string_to_match(
+                unitig.left_node,
+                unitig.right_node,
+                rc_is_after_reference_kmer=True
+            )
         except ValueError:
             return
         if lexlo(unitig.right_node) == unitig.right_node:

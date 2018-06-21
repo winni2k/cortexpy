@@ -2,20 +2,15 @@ import copy
 
 import attr
 import collections
-import networkx as nx
 from Bio import SeqIO
 
 from cortexpy import graph
 from cortexpy.graph import ColoredDeBruijnDiGraph
-from cortexpy.graph.colored_de_bruijn import (
-    build_cdb_graph_from_header, build_cdb_graph,
-    build_cdb_graph_from_ra_parser,
-)
+from cortexpy.graph.colored_de_bruijn import build_cdb_graph_from_ra_parser
 from cortexpy.graph.parser.kmer import EmptyKmerBuilder
 from cortexpy.utils import lexlo, IntervalLogger
 from .constants import EngineTraversalOrientation
 from . import branch
-from cortexpy.graph.serializer.constants import SERIALIZER_GRAPH
 from cortexpy.constants import EdgeTraversalOrientation
 import logging
 

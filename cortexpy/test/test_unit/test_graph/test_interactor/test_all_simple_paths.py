@@ -1,7 +1,6 @@
 import networkx as nx
 
 from cortexpy.graph import interactor, Interactor
-from cortexpy.graph.colored_de_bruijn import ConsistentColoredDeBruijnDiGraph
 from cortexpy.test.builder.graph.colored_de_bruijn import (
     ColoredDeBruijnGraphBuilder,
     get_cdb_builder,
@@ -14,7 +13,6 @@ class TestMultiDigraph(object):
         graph = nx.MultiDiGraph()
         graph.add_edge('AAA', 'AAT', key=0)
         graph.add_edge('AAT', 'ATA', key=1)
-        graph = ConsistentColoredDeBruijnDiGraph(graph)
 
         # when
         paths = list(interactor.Contigs(graph, color=0).all_simple_paths())
@@ -27,7 +25,6 @@ class TestMultiDigraph(object):
         graph = nx.MultiDiGraph()
         graph.add_edge('AAA', 'AAT', key=0)
         graph.add_edge('AAT', 'ATA', key=1)
-        graph = ConsistentColoredDeBruijnDiGraph(graph)
 
         # when
         paths = list(interactor.Contigs(graph).all_simple_paths())
@@ -41,7 +38,6 @@ class TestMultiDigraph(object):
         graph.add_edge('AAA', 'AAT', key=0)
         graph.add_edge('AAT', 'ATA', key=1)
         graph.add_edge('AAT', 'ATC', key=2)
-        graph = ConsistentColoredDeBruijnDiGraph(graph)
 
         # when
         paths = list(interactor.Contigs(graph).all_simple_paths())
@@ -57,7 +53,7 @@ class TestDBG(object):
         b = ColoredDeBruijnGraphBuilder()
         b.add_path('CAA', 'AAA')
         b.add_path('TAA', 'AAA')
-        cdb = ConsistentColoredDeBruijnDiGraph(b.build())
+        cdb = b.build()
 
         # when
         paths = list(interactor.Contigs(cdb).all_simple_paths())

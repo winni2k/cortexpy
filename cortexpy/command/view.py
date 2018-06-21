@@ -1,7 +1,5 @@
 import logging
 
-import networkx as nx
-
 logger = logging.getLogger('cortexpy.view')
 
 
