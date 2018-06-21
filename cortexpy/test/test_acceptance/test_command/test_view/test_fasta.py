@@ -1,7 +1,5 @@
 import os
 
-from Bio.Seq import reverse_complement
-
 from cortexpy.test import builder, runner, expectation
 from cortexpy.test.driver import command
 
@@ -12,7 +10,7 @@ else:
 
 
 class Test(object):
-    def test_outputs_fasta(self, tmpdir):
+    def test_outputs_fasta_of_kmers(self, tmpdir):
         # given
         record = 'ATTCC'
         kmer_size = 3
@@ -22,18 +20,17 @@ class Test(object):
             .build(tmpdir)
 
         # when
-        completed_process = (
-            runner.Cortexpy(SPAWN_PROCESS).view_traversal(output_format='fasta', graph=output_graph,
-                                                          contig=record)
-        )
+        completed_process = runner.Cortexpy(SPAWN_PROCESS) \
+            .view_traversal(kmers=True, to_json=False, graph=output_graph, contig=record)
+
         stdout = completed_process.stdout
 
         # then
         assert completed_process.returncode == 0, completed_process
         expect = expectation.Fasta(stdout)
-        expect.has_record('ATT')
-        expect.has_record('TTC')
-        expect.has_record('TCC')
+        expect.has_record('AAT')
+        expect.has_record('GAA')
+        expect.has_record('GGA')
         expect.has_n_records(3)
 
 
@@ -55,15 +52,17 @@ class TestContigs(object):
 
         # when
         completed_process = (
-            runner.Cortexpy(SPAWN_PROCESS).view_traversal(output_format='fasta', graph=output_graph,
-                                                          contig='AAA', output_type='contigs')
+            runner.Cortexpy(SPAWN_PROCESS).view_traversal(to_json=False,
+                                                          kmers=False,
+                                                          graph=output_graph,
+                                                          contig='AAA')
         )
         stdout = completed_process.stdout
 
         # then
         assert completed_process.returncode == 0, completed_process
         expect = expectation.Fasta(stdout)
-        ids = ['g0_p{}'.format(i) for i in range(n_paths)]
+        ids = ['gx_p{}'.format(i) for i in range(n_paths)]
         for record in records:
             expect.has_record(record).has_id_in(*ids)
         expect.has_record('CAACT').has_id_in(*ids)
@@ -100,7 +99,6 @@ class TestContigs(object):
 
     def test_dal19_data(self, tmpdir):
         # given
-        reverse_complement
         records = [
             'CCCCGAGGGAAGCTCTATGAATTCGCCAATCCCAGTATGCAAAAAATGTTGGAGAGGTATCAAAAGTATTCACAAGAAAGT',
             'GTATGCAAAAAATGTTGGAGAGGTATCAAAAGTATTCACAAGAAAGTGACATA',
@@ -116,10 +114,10 @@ class TestContigs(object):
 
         # when
         completed_process = runner.Cortexpy(SPAWN_PROCESS) \
-            .view_traversal(output_format='fasta',
+            .view_traversal(to_json=False,
+                            kmers=False,
                             graph=output_graph,
-                            contig='CAAAAAATGTTGGAGAGGTATCAAAAGTATTCACAAGAAAGTGACAT',
-                            output_type='contigs')
+                            contig='CAAAAAATGTTGGAGAGGTATCAAAAGTATTCACAAGAAAGTGACAT')
         stdout = completed_process.stdout
 
         # then
@@ -195,7 +193,6 @@ class TestTraversal(object):
         # given
         d = command.ViewTraversal(tmpdir)
         d.with_records('CCCGC', 'CCCGA', 'AAAT')
-        d.with_subgraph_traversal()
         d.with_kmer_size(3)
 
         # when
@@ -203,5 +200,5 @@ class TestTraversal(object):
 
         # then
         expect.has_n_records(3)
-        expect.has_record_ids('g0_p0', 'g0_p1', 'g1_p0')
-        expect.has_record('AAAT').has_id_in('g1_p0')
+        expect.has_n_groups(1)
+        expect.has_record_ids('gx_p0', 'gx_p1', 'gx_p2')

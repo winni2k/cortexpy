@@ -1,4 +1,6 @@
 import io
+from collections import defaultdict
+
 from Bio import SeqIO
 import attr
 import logging
@@ -20,14 +22,22 @@ class BioSeqRecord(object):
 class Fasta(object):
     fasta_string = attr.ib()
     fasta_records = attr.ib(init=False)
+    fasta_record_dict = attr.ib(init=False)
+    fasta_groups = attr.ib(defaultdict(lambda: 0))
 
     def __attrs_post_init__(self):
-        logger.info(self.fasta_string)
         self.fasta_records = [rec for rec in SeqIO.parse(io.StringIO(self.fasta_string), "fasta")]
-        logger.info(self.fasta_records)
+        self.fasta_record_dict = {str(rec.seq): rec for rec in self.fasta_records}
+        for rec in self.fasta_records:
+            group_id = rec.id.split('_')[0]
+            self.fasta_groups[group_id] += 1
 
     def has_n_records(self, n):
         assert n == len(self.fasta_records)
+        return self
+
+    def has_n_groups(self, n):
+        assert n == len(self.fasta_groups.keys())
         return self
 
     def has_record_ids(self, *ids):
@@ -35,7 +45,5 @@ class Fasta(object):
         return self
 
     def has_record(self, expected_record_seq):
-        record = next((rec for rec in self.fasta_records if rec.seq == expected_record_seq), None)
-        assert record is not None
-        assert expected_record_seq == record.seq
-        return BioSeqRecord(record)
+        assert expected_record_seq in self.fasta_record_dict.keys()
+        return BioSeqRecord(self.fasta_record_dict[expected_record_seq])

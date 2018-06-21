@@ -87,6 +87,8 @@ class Cortexpy(object):
             command2.append('--to-json')
         if kmers:
             command2.append('--kmers')
+        elif contig:
+            command2 += ['--seed-strings', contig]
         if out:
             command2 += ['--out', out]
         command2_ret = self.run(command2)

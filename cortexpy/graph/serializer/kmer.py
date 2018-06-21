@@ -14,7 +14,7 @@ class KmerGraph(object):
 
     def to_seq_records(self):
         return (
-            SeqRecord(Seq(str(node)), id=str(node_idx)) for node_idx, node in
+            SeqRecord(Seq(str(node)), id=str(node_idx), description="") for node_idx, node in
             enumerate(self.graph.nodes())
         )
 

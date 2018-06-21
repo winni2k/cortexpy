@@ -1,5 +1,7 @@
 import logging
 
+import networkx as nx
+
 logger = logging.getLogger('cortexpy.view')
 
 
@@ -30,6 +32,9 @@ def view_traversal(argv):
                                           " Read traversal from stdin traversal is '-'.")
     parser.add_argument('--to-json', action='store_true')
     parser.add_argument('--kmers', action='store_true')
+    parser.add_argument('--seed-strings', nargs='*', default=[],
+                        help="Strings with seed kmers from which to start contig traversal. "
+                             "Multiple strings can be specified.")
     parser.add_argument('--color', type=int, help='Restrict view to single color')
     args = parser.parse_args(argv)
 
@@ -50,10 +55,15 @@ def view_traversal(argv):
         print(unitig.Serializer(graph).to_json())
     else:
         if args.kmers:
-            seq_record_generator = serializer.Kmers(graph).to_seq_records()
+            seq_record_generator = serializer.KmerGraph(graph).to_seq_records()
         else:
-            seq_record_generator = interactor.Contigs(graph, args.color).all_simple_paths()
-        seq_record_generator = annotated_seq_records(seq_record_generator, graph_idx=0)
+            seed_kmer_strings = strings_to_kmer_strings(args.seed_strings, graph.graph['kmer_size'])
+            consistent_graph = interactor.Interactor(graph,
+                                                     colors=None).make_graph_nodes_consistent(
+                seed_kmer_strings).graph
+            seq_record_generator = interactor.Contigs(consistent_graph,
+                                                      args.color).all_simple_paths()
+        seq_record_generator = annotated_seq_records(seq_record_generator, graph_idx="x")
         SeqIO.write(seq_record_generator, sys.stdout, 'fasta')
 
 
@@ -114,3 +124,12 @@ def annotated_seq_records(seq_record_generator, *, graph_idx):
     for rec in seq_record_generator:
         rec.id = 'g{}_p{}'.format(graph_idx, rec.id)
         yield rec
+
+
+def strings_to_kmer_strings(strings, kmer_size):
+    kmers = []
+    for string in strings:
+        assert len(string) >= kmer_size
+        for pos in range(0, len(string) - kmer_size + 1):
+            kmers.append(string[pos:(pos + kmer_size)])
+    return kmers

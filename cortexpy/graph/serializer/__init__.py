@@ -1,1 +1,1 @@
-from .kmer import Kmers  # noqa
+from .kmer import Kmers, KmerGraph  # noqa

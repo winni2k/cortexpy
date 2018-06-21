@@ -63,33 +63,65 @@ class Interactor(object):
 
     def make_graph_nodes_consistent(self, seed_kmer_strings=None):
         """
-        Take a CDB and make all nodes have kmer_strings that are consistent with each other.
+        Take a CDBG and make all nodes have kmer_strings that are consistent with each other.
         If a seed kmer string is provided, then start with that seed kmer.
         """
         graph = ColoredDeBruijnGraph(self.graph)
         new_graph = ConsistentColoredDeBruijnDiGraph(ColoredDeBruijnDiGraph(graph=self.graph.graph))
 
-        unseen_lexlo_kmer_strings = set(
-            sorted([lexlo(k_string) for k_string in self.graph.nodes()]))
-
-        seeds = seed_kmer_string_generator(seed_kmer_strings, unseen_lexlo_kmer_strings)
+        seeds = SeedKmerStringIterator(self.graph.nodes(), seed_kmer_strings)
 
         for seed, lexlo_seed in seeds:
             new_graph.add_node(seed, kmer=self.graph.node[lexlo_seed])
-            unseen_lexlo_kmer_strings.remove(lexlo_seed)
+            seeds.remove(lexlo_seed)
             for source, target in nx.dfs_edges(graph, lexlo_seed):
                 if source not in new_graph.node:
                     source = revcomp(source)
                 try:
-                    matched_target, was_revcomped = revcomp_kmer_string_to_match(target, source)
+                    matched_target, _ = revcomp_kmer_string_to_match(target, source)
                 except ValueError:
-                    matched_target, was_revcomped = revcomp_kmer_string_to_match(
+                    matched_target, _ = revcomp_kmer_string_to_match(
                         target, source, rc_is_after_reference_kmer=False
                     )
                 new_graph.add_node(matched_target, kmer=graph.node[target])
-                unseen_lexlo_kmer_strings.remove(lexlo(target))
+                seeds.remove(lexlo(target))
         self.graph = new_graph
         return self
+
+
+@attr.s(slots=True)
+class SeedKmerStringIterator(object):
+    all_lexlo_kmer_strings = attr.ib()
+    seed_kmer_strings = attr.ib(attr.Factory(list))
+    _unseen_lexlo_kmer_strings = attr.ib(attr.Factory(list))
+    _seen_lexlo_kmer_strings = attr.ib(attr.Factory(set))
+
+    def __attrs_post_init__(self):
+        self._unseen_lexlo_kmer_strings = {lexlo(k_string) for k_string in
+                                           self.all_lexlo_kmer_strings}
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        while self.seed_kmer_strings:
+            seed = self.seed_kmer_strings.pop()
+            lexlo_seed = lexlo(seed)
+            if lexlo_seed not in self._unseen_lexlo_kmer_strings:
+                continue
+            self._seen_lexlo_kmer_strings.add(lexlo_seed)
+            return seed, lexlo_seed
+        while self._unseen_lexlo_kmer_strings:
+            unseen = self._unseen_lexlo_kmer_strings.pop()
+            if unseen in self._seen_lexlo_kmer_strings:
+                continue
+            self._seen_lexlo_kmer_strings.add(unseen)
+            return unseen, unseen
+        raise StopIteration
+
+    def remove(self, lexlo_kmer_string):
+        assert lexlo_kmer_string == lexlo(lexlo_kmer_string)
+        self._seen_lexlo_kmer_strings.add(lexlo_kmer_string)
 
 
 def seed_kmer_string_generator(seed_kmer_strings, unseen_lexlo_kmer_strings):
@@ -98,9 +130,6 @@ def seed_kmer_string_generator(seed_kmer_strings, unseen_lexlo_kmer_strings):
         lexlo_seed = lexlo(seed)
         if lexlo_seed not in unseen_lexlo_kmer_strings:
             continue
-        yield seed, lexlo_seed
-    while unseen_lexlo_kmer_strings:
-        seed = lexlo_seed = unseen_lexlo_kmer_strings.pop()
         yield seed, lexlo_seed
 
 
