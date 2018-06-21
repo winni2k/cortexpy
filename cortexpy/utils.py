@@ -2,12 +2,15 @@ from datetime import datetime
 
 import attr
 from Bio.Seq import reverse_complement
+from functools import lru_cache
 
 
+@lru_cache()
 def revcomp(dna_string):
     return reverse_complement(dna_string)
 
 
+@lru_cache()
 def lexlo(kmer_string):
     """Returns the lexicographically lowest version of the kmer string"""
     alt_kmer_string = revcomp(kmer_string)
