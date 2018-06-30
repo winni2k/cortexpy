@@ -4,18 +4,20 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 import logging
 
-from cortexpy.constants import NodeEdgeDirection
-from cortexpy.graph.parser.kmer import revcomp_kmer_string_to_match
+from cortexpy.constants import EdgeTraversalOrientation
+from cortexpy.graph.parser.kmer import revcomp_target_to_match_ref
 from cortexpy.utils import lexlo, revcomp
-from .colored_de_bruijn import ColoredDeBruijnDiGraph, ColoredDeBruijnGraph
+from .cortex import CortexDiGraph, ConsistentCortexDiGraph
 
 logger = logging.getLogger(__name__)
 
 
 def make_multi_graph(graph):
-    if isinstance(graph, ColoredDeBruijnDiGraph):
-        return ColoredDeBruijnGraph(graph)
-    return nx.MultiGraph(graph)
+    if isinstance(graph, nx.Graph):
+        return nx.MultiGraph(graph)
+    if isinstance(graph, nx.DiGraph):
+        return nx.MultiDiGraph(graph)
+    return graph
 
 
 @attr.s(slots=True)
@@ -24,7 +26,7 @@ class Interactor(object):
     colors = attr.ib()
 
     def add_edge_to_graph_for_kmer_pair(self, kmer1, kmer2, kmer1_string, kmer2_string):
-        if isinstance(self.graph, ColoredDeBruijnDiGraph):
+        if isinstance(self.graph, CortexDiGraph):
             return self
         first_is_revcomp = bool(kmer1.kmer != kmer1_string)
         for color in self.colors:
@@ -42,11 +44,18 @@ class Interactor(object):
         graph = make_multi_graph(self.graph)
         num_tips = 0
         num_tips_to_prune = 0
-        for node, direction in edge_nodes_of(self.graph):
+        for node, direction_of_end in edge_nodes_of(self.graph):
             tip = find_tip_from(
                 n=n,
                 graph=self.graph,
-                next_node_generator=nx.dfs_preorder_nodes(graph, source=node)
+                start=node,
+                next_node_generator=node_generator_from_edges(
+                    nx.edge_dfs(
+                        graph,
+                        source=node,
+                        orientation=EdgeTraversalOrientation.other(direction_of_end).name
+                    )
+                )
             )
             num_tips += 1
             if tip:
@@ -62,25 +71,29 @@ class Interactor(object):
         Take a CDBG and make all nodes have kmer_strings that are consistent with each other.
         If a seed kmer string is provided, then start with that seed kmer.
         """
-        graph = ColoredDeBruijnGraph(self.graph)
-        new_graph = ColoredDeBruijnDiGraph(graph=self.graph.graph)
+        graph = CortexDiGraph(self.graph)
+        new_graph = ConsistentCortexDiGraph(graph=self.graph.graph)
 
         seeds = SeedKmerStringIterator(self.graph.nodes(), seed_kmer_strings)
 
         for seed, lexlo_seed in seeds:
             new_graph.add_node(seed, kmer=self.graph.node[lexlo_seed])
             seeds.remove(lexlo_seed)
-            for source, target in nx.dfs_edges(graph, lexlo_seed):
-                if source not in new_graph.node:
-                    source = revcomp(source)
-                try:
-                    matched_target, _ = revcomp_kmer_string_to_match(target, source)
-                except ValueError:
-                    matched_target, _ = revcomp_kmer_string_to_match(
-                        target, source, rc_is_after_reference_kmer=False
-                    )
-                new_graph.add_node(matched_target, kmer=graph.node[target])
-                seeds.remove(lexlo(target))
+            for source, sink, key, direction in nx.edge_dfs(graph, lexlo_seed, 'ignore'):
+                if direction == 'forward':
+                    rc_after_ref_kmer = True
+                    ref, target = source, sink
+                elif direction == 'reverse':
+                    ref, target = sink, source
+                    rc_after_ref_kmer = False
+                else:
+                    raise Exception("unknown direction: {}".format(direction))
+                if ref not in new_graph.node:
+                    ref = revcomp(ref)
+                    rc_after_ref_kmer = not rc_after_ref_kmer
+                matched_target, _ = revcomp_target_to_match_ref(target, ref, rc_after_ref_kmer)
+                new_graph.add_node(matched_target, kmer=graph.node[matched_target])
+                seeds.remove(lexlo(matched_target))
         self.graph = new_graph
         return self
 
@@ -129,9 +142,29 @@ def seed_kmer_string_generator(seed_kmer_strings, unseen_lexlo_kmer_strings):
         yield seed, lexlo_seed
 
 
-def find_tip_from(*, n, graph, next_node_generator):
+def node_generator_from_edges(edge_generator):
+    for edge in edge_generator:
+        if len(edge) == 2:
+            yield edge[1]
+        elif len(edge) == 3:
+            if edge[2] == EdgeTraversalOrientation.reverse.name:
+                yield edge[0]
+            else:
+                yield edge[1]
+        elif len(edge) == 4:
+            if edge[3] == EdgeTraversalOrientation.reverse.name:
+                yield edge[0]
+            elif edge[3] == EdgeTraversalOrientation.original.name:
+                yield edge[1]
+            else:
+                ValueError
+        else:
+            raise ValueError
+
+
+def find_tip_from(*, n, start, graph, next_node_generator):
     tip = set()
-    query = next(next_node_generator)
+    query = start
     for _ in range(n):
         if len(set(graph.in_edges(query))) > 1 or len(set(graph.out_edges(query))) > 1:
             return tip
@@ -181,11 +214,14 @@ def out_nodes_of(graph):
 
 
 def edge_nodes_of(graph):
+    """Find all edge nodes of a graph
+    second return value is direction of edge
+    """
     for node in graph.nodes():
         if graph.out_degree(node) == 0:
-            yield (node, NodeEdgeDirection.outgoing)
+            yield (node, EdgeTraversalOrientation.original)
         if graph.in_degree(node) == 0:
-            yield (node, NodeEdgeDirection.incoming)
+            yield (node, EdgeTraversalOrientation.reverse)
 
 
 @attr.s(slots=True)

@@ -2,11 +2,12 @@ import copy
 
 import attr
 import collections
+
+import networkx as nx
 from Bio import SeqIO
 
 from cortexpy import graph
-from cortexpy.graph import ColoredDeBruijnDiGraph
-from cortexpy.graph.colored_de_bruijn import build_cdb_graph_from_ra_parser
+from cortexpy.graph.cortex import build_empty_cortex_graph_from_ra_parser
 from cortexpy.graph.parser.kmer import EmptyKmerBuilder
 from cortexpy.utils import lexlo, IntervalLogger
 from .constants import EngineTraversalOrientation
@@ -23,12 +24,13 @@ def add_graph_to(graph, graph_to_add):
         assert g.is_multigraph()
         assert g.is_directed()
     graph.add_nodes_from(graph_to_add.nodes(data=True))
-    if not isinstance(graph_to_add, ColoredDeBruijnDiGraph):
+    if isinstance(graph_to_add, nx.Graph):
         graph.add_edges_from(graph_to_add.edges(keys=True))
 
 
 @attr.s(slots=True)
 class Engine(object):
+    """This engine creates subgraphs of Cortex graphs"""
     ra_parser = attr.ib()
     traversal_colors = attr.ib((0,))
     orientation = attr.ib(EngineTraversalOrientation.original)
@@ -42,7 +44,7 @@ class Engine(object):
     logger = attr.ib(init=False)
 
     def __attrs_post_init__(self):
-        self.graph = build_cdb_graph_from_ra_parser(self.ra_parser)
+        self.graph = build_empty_cortex_graph_from_ra_parser(self.ra_parser)
         self._add_graph_metadata()
         self.logger = IntervalLogger(logger, min_log_interval_seconds=self.logging_interval)
 

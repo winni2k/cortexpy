@@ -1,6 +1,6 @@
 import io
 
-from ..colored_de_bruijn import build_cdb_graph_from_header
+from ..cortex import build_cdb_graph_from_header
 from cortexpy.graph.parser.kmer import Kmer, KmerData, RawKmerConverter
 from cortexpy.graph.parser.constants import UINT64_T
 from cortexpy.graph.parser.header import from_stream

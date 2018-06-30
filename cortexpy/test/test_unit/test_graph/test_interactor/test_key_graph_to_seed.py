@@ -77,7 +77,7 @@ def test_keys_y_graph():
     b.with_kmer('GCC 0 a.......')
 
     expected_nodes1 = ['CGC', 'GCT', 'CTT', 'GGC']
-    expected_nodes2 = ['GCG', 'AGC', 'AAG', 'GCC']
+    expected_nodes2 = ['AAG', 'AGC', 'GCG', 'GCC']
     for expected_nodes in [expected_nodes1, expected_nodes2]:
         for seed in expected_nodes:
             cdb = b.build()
@@ -88,4 +88,3 @@ def test_keys_y_graph():
 
             # then
             expect.has_nodes(*expected_nodes)
-            expect.has_n_nodes(4)

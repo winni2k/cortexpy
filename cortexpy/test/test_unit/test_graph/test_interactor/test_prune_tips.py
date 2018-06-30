@@ -1,4 +1,5 @@
 import networkx as nx
+from hypothesis import given, strategies as s
 
 from cortexpy.graph import interactor
 from cortexpy.test.builder.graph.colored_de_bruijn import ColoredDeBruijnGraphBuilder
@@ -47,30 +48,57 @@ class TestColoredDeBruijnGraph(object):
         graph = b.build()
 
         # when
-        graph = interactor.Interactor(graph, colors=None).prune_tips_less_than(2).graph
+        graph = interactor.Interactor(graph, colors=None) \
+            .prune_tips_less_than(2) \
+            .graph
 
         # then
         assert 1 == len(graph)
         assert {'AAC'} == set(graph.nodes)
 
-    def test_prunes_one_tip_of_length_1(self):
+    def test_prunes_one_tip_of_length_1_in_y(self):
         # given
         b = ColoredDeBruijnGraphBuilder()
         b.with_colors(0, 1)
         kmers = ['AAA', 'AAC', 'ACC', 'CCC', 'ACG', 'CGC']
         for kmer in kmers:
             b.add_node(kmer)
-        b.add_edge(kmers[0], kmers[1], 0)
-        b.add_edge(kmers[0], kmers[1], 1)
-        b.add_edge(kmers[1], kmers[2], 0)
-        b.add_edge(kmers[2], kmers[3], 0)
-        b.add_edge(kmers[1], kmers[4], 1)
-        b.add_edge(kmers[4], kmers[5], 1)
+        b.add_edge('AAA', 'AAC', 0)
+        b.add_edge('AAA', 'AAC', 1)
+        b.add_edge('AAC', 'ACC', 0)
+        b.add_edge('ACC', 'CCC', 0)
+        b.add_edge('AAC', 'ACG', 1)
+        b.add_edge('ACG', 'CGC', 1)
         graph = b.build()
 
         # when
-        graph = interactor.Interactor(graph, colors=None).prune_tips_less_than(2).graph
+        graph = interactor.Interactor(graph, colors=None) \
+            .prune_tips_less_than(2) \
+            .graph
 
         # then
         assert set(kmers[1:]) == set(graph.nodes)
         assert 5 == len(graph)
+
+    @given(s.sampled_from([('AAC', 'ACT'), ('CAG', 'ACT')]))
+    def test_prunes_three_tips_of_length_1_reverse_kmer(self, seed_and_expected_kmer):
+        # given
+        seed, expected_kmer = seed_and_expected_kmer
+        b = ColoredDeBruijnGraphBuilder()
+        b.with_colors(0, 1)
+        kmers = ['AAC', 'ACT', 'AAG', 'CAG']
+        for kmer in kmers:
+            b.add_node(kmer)
+        b.add_edge(kmers[0], kmers[1], 0)
+        b.add_edge(kmers[0], kmers[1], 1)
+        b.add_edge(kmers[1], kmers[2], 0)
+        b.add_edge(kmers[1], kmers[3], 1)
+        graph = b.build()
+
+        # when
+        graph_interactor = interactor.Interactor(graph, colors=None)
+        graph = graph_interactor.prune_tips_less_than(2).graph
+
+        # then
+        assert 1 == len(graph)
+        assert {expected_kmer} == set(graph.nodes)

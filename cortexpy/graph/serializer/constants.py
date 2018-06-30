@@ -1,3 +1,3 @@
-from cortexpy.graph import ColoredDeBruijnDiGraph
+from cortexpy.graph import CortexDiGraph
 
-SERIALIZER_GRAPH = ColoredDeBruijnDiGraph
+SERIALIZER_GRAPH = CortexDiGraph

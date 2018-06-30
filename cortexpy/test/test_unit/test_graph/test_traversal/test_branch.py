@@ -177,13 +177,13 @@ class Test(object):
         expect.has_n_nodes(2)
         expect.has_edges('AAA AAT 0', 'AAA AAT 1')
 
-    def test_two_connected_kmers_with_other_edges_returns_graph_with_two_kmers(self):
+    def test_two_connected_kmers_with_other_edges_returns_graph_with_one_kmer(self):
         # given
         driver = BranchTestDriver()
         (driver
          .with_kmer_size(3)
-         .with_kmer('AAA', 0, 'ac.....T')
-         .with_kmer('AAT', 0, 'a....C.T')
+         .with_kmer('AAA 0 ac..A..T')
+         .with_kmer('AAT 0 a....C.T')
          .with_start_kmer_string('AAA'))
 
         # when
@@ -191,10 +191,10 @@ class Test(object):
 
         # then
         expect \
-            .has_neighbor_kmer_strings('AAT') \
+            .has_neighbor_kmer_strings('AAT', 'AAA') \
             .has_reverse_neighbor_kmer_strings('AAA', 'CAA') \
             .has_nodes('AAA') \
-            .has_n_edges(0)
+            .has_edges('AAA AAA 0')
 
     def test_raises_when_two_connected_kmers_with_missing_exiting_kmer(self):
         # given
@@ -260,10 +260,10 @@ class Test(object):
         expect = driver.run()
 
         # then
-        (expect
-         .has_last_kmer_string('TTT')
-         .has_nodes('CGA', 'GAT', 'ATT', 'TTT')
-         .has_n_edges(3))
+        expect \
+            .has_last_kmer_string('TTT') \
+            .has_nodes('CGA', 'GAT', 'ATT', 'TTT') \
+            .has_n_edges(3)
 
     @given(s.sampled_from(('AAA', 'AAT', 'ATA', 'TAA')), s.booleans(),
            s.integers(min_value=1, max_value=3))
@@ -352,14 +352,11 @@ class TestJunctions(object):
 
         # then
         expect.has_nodes(*expected_nodes)
-        (expect
-         .has_last_kmer_string('AAA')
-         .has_neighbor_kmer_strings(*expected_neighbor_kmer_strings)
-         .has_reverse_neighbor_kmer_strings(*expected_reverse_neighbor_kmer_strings)
-         .has_n_edges(len(expected_nodes) - 1))
-
-        if len(expected_nodes) == 2:
-            expect.has_edges(('CAA', 'AAA', 0))
+        expect \
+            .has_last_kmer_string('AAA') \
+            .has_neighbor_kmer_strings(*expected_neighbor_kmer_strings) \
+            .has_reverse_neighbor_kmer_strings(*expected_reverse_neighbor_kmer_strings) \
+            .has_edges('CAA AAA 0')
 
     def test_when_reverse_traverse_stops_at_junction_with_two_out_one_in(self):
         # given

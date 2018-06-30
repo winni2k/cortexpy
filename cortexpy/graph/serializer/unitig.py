@@ -7,7 +7,8 @@ import networkx as nx
 from networkx.readwrite import json_graph
 
 from cortexpy.constants import EdgeTraversalOrientation
-from cortexpy.graph.parser.kmer import revcomp_kmer_string_to_match
+from cortexpy.graph import Interactor, CortexDiGraph
+from cortexpy.graph.parser.kmer import revcomp_target_to_match_ref
 from cortexpy.graph.traversal.utils import OrientedGraphFuncs
 from cortexpy.utils import lexlo
 
@@ -31,8 +32,13 @@ class Serializer(object):
         return json.dumps(serializable)
 
     def _collapse_graph_to_unitigs(self):
+        self._make_kmer_graph_consistent()
         self._collapse_kmer_graph()
         self._make_unitig_graph_json_representable()
+
+    def _make_kmer_graph_consistent(self):
+        if isinstance(self.graph, CortexDiGraph):
+            self.graph = Interactor(self.graph, self.colors).make_graph_nodes_consistent().graph
 
     def _collapse_kmer_graph(self):
         collapser = UnitigCollapser(self.graph).collapse_kmer_unitigs()
@@ -146,6 +152,8 @@ class UnitigFinder(object):
 
         unitig_graph = UNITIG_GRAPH()
         visited_nodes = set()
+        if getattr(self.graph, 'is_consistent', False):
+            assert self.graph.is_consistent()
         for start_node in self.graph:
             if start_node in visited_nodes:
                 continue
@@ -197,7 +205,7 @@ class UnitigFinder(object):
     def set_unitig_cycle(self, unitig):
         unitig.is_cycle = False
         try:
-            flipped_string, is_flipped = revcomp_kmer_string_to_match(
+            flipped_string, is_flipped = revcomp_target_to_match_ref(
                 unitig.left_node,
                 unitig.right_node,
                 rc_is_after_reference_kmer=True

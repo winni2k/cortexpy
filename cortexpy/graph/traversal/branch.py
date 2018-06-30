@@ -1,6 +1,5 @@
 import attr
-from cortexpy import graph
-from cortexpy.graph.colored_de_bruijn import build_cdb_graph_from_ra_parser
+from cortexpy.graph.cortex import build_empty_cortex_graph_from_ra_parser, ConsistentCortexDiGraph
 from cortexpy.graph.serializer.constants import SERIALIZER_GRAPH
 from cortexpy.constants import EdgeTraversalOrientation
 from .constants import EngineTraversalOrientation
@@ -32,7 +31,8 @@ class Traverser(object):
         if parent_graph is None:
             parent_graph = set()
         self.parent_graph = parent_graph
-        self.graph = build_cdb_graph_from_ra_parser(self.ra_parser)
+        self.graph = ConsistentCortexDiGraph(
+            graph=build_empty_cortex_graph_from_ra_parser(self.ra_parser).graph)
         self.kmer_string = first_kmer_string = kmer_string
         self.orientation = orientation
         self.prev_kmer_string = None
@@ -75,7 +75,6 @@ class Traverser(object):
 
             try:
                 self._add_next_kmer_string_to_graph_and_get_next_kmer(traversal_edge_set)
-                self._add_edges()
             except KmerStringAlreadySeen:
                 return traversal_edge_set
 
@@ -95,13 +94,6 @@ class Traverser(object):
             self.kmer_string = prev_kmer_string
             raise
         self.prev_kmer_string = prev_kmer_string
-
-    def _add_edges(self):
-        first, second = (self.prev_kmer_string, self.prev_kmer), (self.kmer_string, self.kmer)
-        if self.orientation == EdgeTraversalOrientation.reverse:
-            first, second = second, first
-        graph_interactor = graph.Interactor(self.graph, first[1].colors)
-        graph_interactor.add_edge_to_graph_for_kmer_pair(first[1], second[1], first[0], second[0])
 
     def _get_kmer(self):
         if self.kmer_string in self.graph or self.kmer_string in self.parent_graph:

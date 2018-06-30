@@ -166,9 +166,9 @@ class Test(object):
         expect = driver.run()
 
         # then
-        (expect
-         .has_nodes('TTG', 'TTT', 'ATT', 'TAT', 'TTA', 'GTT', 'TGT')
-         .has_n_edges(8))
+        expect \
+            .has_nodes('TAA', 'ATA', 'AAT', 'ACA', 'AAC', 'AAA', 'CAA') \
+            .has_n_edges(8)
 
     def test_exploration_of_two_colors_returns_all_kmers(self):
         # given
@@ -284,29 +284,29 @@ class TestBothOrientation(object):
     def test_cycle_and_branch_are_traversed_once(self, start_kmer_string):
         # given
         driver = EngineTestDriver()
-        (driver
-         .with_kmer_size(3)
-         .with_kmer('CCA', 0, '....A...')
-         .with_kmer('CAA', 0, '.c..A...')
-         .with_kmer('AAA', 0, '.c.t...T')
-         .with_kmer('AAT', 0, 'a...A...')
-         .with_kmer('ATA', 0, 'a...A...')
-         .with_kmer('TAA', 0, 'a...A...')
-         .with_traversal_orientation('both')
-         .with_start_kmer_string(start_kmer_string))
+        driver \
+            .with_kmer_size(3) \
+            .with_kmer('CCA', 0, '....A...') \
+            .with_kmer('CAA', 0, '.c..A...') \
+            .with_kmer('AAA', 0, '.c.t...T') \
+            .with_kmer('AAT', 0, 'a...A...') \
+            .with_kmer('ATA', 0, 'a...A...') \
+            .with_kmer('TAA', 0, 'a...A...') \
+            .with_traversal_orientation('both') \
+            .with_start_kmer_string(start_kmer_string)
 
         # when
         expect = driver.run()
 
         # then
-        (expect
-         .has_nodes('CCA', 'CAA', 'AAA', 'AAT', 'ATA', 'TAA')
-         .has_edges(('CCA', 'CAA', 0),
-                    ('CAA', 'AAA', 0),
-                    ('AAA', 'AAT', 0),
-                    ('AAT', 'ATA', 0),
-                    ('ATA', 'TAA', 0),
-                    ('TAA', 'AAA', 0)))
+        expect \
+            .has_nodes('CCA', 'CAA', 'AAA', 'AAT', 'ATA', 'TAA') \
+            .has_edges('CAA CCA 0',
+                       'AAA CAA 0',
+                       'AAA AAT 0',
+                       'AAT ATA 0',
+                       'ATA TAA 0',
+                       'AAA TAA 0')
 
     @given(s.data())
     def test_star_with_two_colors(self, data):
@@ -336,10 +336,10 @@ class TestBothOrientation(object):
             expect.has_node(node).has_coverages(1, 0)
         (expect
          .has_n_nodes(len(kmers))
-         .has_edges('CAA AAA 0',
-                    'CAA AAA 1',
-                    'GAA AAA 0',
-                    'GAA AAA 1',
+         .has_edges('AAA CAA 0',
+                    'AAA CAA 1',
+                    'AAA GAA 0',
+                    'AAA GAA 1',
                     'AAA AAT 0',
                     'AAA AAC 0'))
 
@@ -371,8 +371,8 @@ class TestBothOrientation(object):
         expect.has_node('AAC').has_coverages('1 0')
         expect \
             .has_n_nodes(len(kmers)) \
-            .has_edges('CAA AAA 1',
-                       'GAA AAA 0',
+            .has_edges('AAA CAA 1',
+                       'AAA GAA 0',
                        'AAA AAC 0')
 
 
@@ -408,14 +408,14 @@ class TestTraverseFromEachKmerIn(object):
         expect = driver.run()
 
         # then
-        (expect
-         .has_nodes('CCA', 'CAA', 'AAA', 'AAT', 'ATA', 'TAA')
-         .has_edges(('CCA', 'CAA', 0),
-                    ('CAA', 'AAA', 0),
-                    ('AAA', 'AAT', 0),
-                    ('AAT', 'ATA', 0),
-                    ('ATA', 'TAA', 0),
-                    ('TAA', 'AAA', 0)))
+        expect \
+            .has_nodes('CCA', 'CAA', 'AAA', 'AAT', 'ATA', 'TAA') \
+            .has_edges('CAA CCA 0',
+                       'AAA CAA 0',
+                       'AAA AAT 0',
+                       'AAT ATA 0',
+                       'ATA TAA 0',
+                       'AAA TAA 0')
 
 
 class TestMaxNodes(object):
@@ -470,7 +470,7 @@ class TestEdgeAnnotation(object):
         expect.has_node('AAA').has_coverages(1, 1)
         expect.has_node('AAC').has_coverages(0, 0)
         expect.has_n_nodes(3)
-        expect.has_edges('AAA AAC 1', 'CAA AAA 1')
+        expect.has_edges('AAA AAC 1', 'AAA CAA 1')
 
     def test_for_revcomp_with_single_kmer_and_link_annotates_etra_links(self):
         driver = EngineTestDriver() \
@@ -490,7 +490,7 @@ class TestEdgeAnnotation(object):
         expect.has_node('TTT').has_coverages(1, 1)
         expect.has_node('GTT').has_coverages(0, 0)
         expect.has_n_nodes(3)
-        expect.has_edges('TTT TTC 1', 'GTT TTT 1')
+        expect.has_edges('AAA GAA 1', 'AAA AAC 1')
 
 
 class TestFixture(object):

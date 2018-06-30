@@ -55,7 +55,7 @@ class EmptyKmerBuilder(object):
         return kmer
 
 
-def revcomp_kmer_string_to_match(target, ref, rc_is_after_reference_kmer=True):
+def revcomp_target_to_match_ref(target, ref, rc_is_after_reference_kmer=True):
     target_revcomp = revcomp(target)
     if rc_is_after_reference_kmer:
         ref_core = ref[1:]
@@ -71,34 +71,45 @@ def revcomp_kmer_string_to_match(target, ref, rc_is_after_reference_kmer=True):
     elif ref_core == flip_revcomp_core:
         return target_revcomp, True
     else:
-        raise ValueError
+        raise ValueError(
+            "ref_core ({}) does not match"
+            " flip_core ({}) or flip_revcomp_core ({})".format(ref_core,
+                                                               flip_core,
+                                                               flip_revcomp_core))
 
 
-def find_neighbors(first, second):
+def find_neighbors(first, second, *, rc_is_after_reference_kmer, revcomp_second):
+    if revcomp_second:
+        revcomp_kmer, ref_kmer = second, first
+    else:
+        revcomp_kmer, ref_kmer = first, second
+    try:
+        revcomp_string, is_revcomp = revcomp_target_to_match_ref(
+            revcomp_kmer.kmer, ref_kmer.kmer,
+            rc_is_after_reference_kmer=rc_is_after_reference_kmer
+        )
+    except ValueError:
+        pass
+    else:
+        if rc_is_after_reference_kmer:
+            ref_letter = revcomp_string[-1]
+            flip_letter = ref_kmer.kmer[0].lower()
+        else:
+            ref_letter = revcomp_string[0].lower()
+            flip_letter = ref_kmer.kmer[-1]
+
+        if is_revcomp:
+            flip_letter = revcomp(flip_letter).swapcase()
+        yield ref_kmer, revcomp_kmer, ref_letter, flip_letter
+
+
+def find_all_neighbors(first, second):
+    """Return kmers and letters to get from one to the other"""
     for rc_is_after_reference_kmer in [True, False]:
         for revcomp_second in [True, False]:
-            if revcomp_second:
-                revcomp_kmer, ref_kmer = second, first
-            else:
-                revcomp_kmer, ref_kmer = first, second
-            try:
-                revcomp_string, is_revcomp = revcomp_kmer_string_to_match(
-                    revcomp_kmer.kmer, ref_kmer.kmer,
-                    rc_is_after_reference_kmer=rc_is_after_reference_kmer
-                )
-            except ValueError:
-                pass
-            else:
-                if rc_is_after_reference_kmer:
-                    ref_letter = revcomp_string[-1]
-                    flip_letter = ref_kmer.kmer[0].lower()
-                else:
-                    ref_letter = revcomp_string[0].lower()
-                    flip_letter = ref_kmer.kmer[-1]
-
-                if is_revcomp:
-                    flip_letter = revcomp(flip_letter).swapcase()
-                yield ref_kmer, revcomp_kmer, ref_letter, flip_letter
+            yield from find_neighbors(first, second,
+                                      rc_is_after_reference_kmer=rc_is_after_reference_kmer,
+                                      revcomp_second=revcomp_second)
 
 
 def connect_kmers(first, second, color, identical_kmer_check=True):
@@ -106,7 +117,7 @@ def connect_kmers(first, second, color, identical_kmer_check=True):
     if identical_kmer_check and first == second and first is not second:
         raise ValueError('Kmers are equal, but not the same object')
     are_neighbors = False
-    for ref_kmer, flip_kmer, ref_letter, flip_letter in find_neighbors(first, second):
+    for ref_kmer, flip_kmer, ref_letter, flip_letter in find_all_neighbors(first, second):
         are_neighbors = True
         ref_kmer.edges[color].add_edge(ref_letter)
         flip_kmer.edges[color].add_edge(flip_letter)
@@ -120,7 +131,7 @@ def connect_kmers(first, second, color, identical_kmer_check=True):
 def disconnect_kmers(first, second, colors):
     """Disconnect two kmers"""
     are_neighbors = False
-    for ref_kmer, flip_kmer, ref_letter, flip_letter in find_neighbors(first, second):
+    for ref_kmer, flip_kmer, ref_letter, flip_letter in find_all_neighbors(first, second):
         are_neighbors = True
         for color in colors:
             ref_kmer.edges[color].remove_edge(ref_letter)
@@ -271,6 +282,7 @@ class Kmer(object):
     _kmer = attr.ib(None)
     _coverage = attr.ib(None)
     _edges = attr.ib(None)
+    _revcomp = attr.ib(None)
     kmer_size = attr.ib(init=False)
     num_colors = attr.ib(init=False)
 
@@ -287,6 +299,12 @@ class Kmer(object):
         if self._kmer is None:
             self._kmer = self._kmer_data.kmer
         return self._kmer
+
+    @property
+    def revcomp(self):
+        if self._revcomp is None:
+            self._revcomp = revcomp(self.kmer)
+        return self._revcomp
 
     @kmer.setter
     def kmer(self, val):
@@ -342,47 +360,29 @@ class Kmer(object):
     def colors(self):
         return range(self.num_colors)
 
-    def find_letters_of_edge_to_kmer(self, other):
-        """returns: letter to follow from other to this,
-                    letter to follow from this to other"""
-        if self.kmer[1:] == other.kmer[:-1]:
-            other_kmer_letter = other.kmer[-1]
-            this_kmer_letter = self.kmer[0].lower()
-        else:
-            other_kmer_revcomp = revcomp(other.kmer)
-            if self.kmer[1:] == other_kmer_revcomp[:-1]:
-                other_kmer_letter = other_kmer_revcomp[-1]
-                this_kmer_letter = revcomp(self.kmer[0])
-            else:
-                raise ValueError('Kmers are not neighbors')
-        return other_kmer_letter, this_kmer_letter
-
-    def find_letters_of_edge_from_kmer(self, other):
-        if self.kmer[:-1] == other.kmer[1:]:
-            other_kmer_letter = other.kmer[0].lower()
-            this_kmer_letter = self.kmer[-1]
-        else:
-            other_kmer_revcomp = revcomp(other.kmer)
-            if self.kmer[:-1] == other_kmer_revcomp[1:]:
-                other_kmer_letter = other_kmer_revcomp[0].lower()
-                this_kmer_letter = revcomp(self.kmer[-1]).lower()
-            else:
-                raise ValueError('Kmers are not neighbors')
-        return other_kmer_letter, this_kmer_letter
-
     def has_outgoing_edge_to_kmer_in_color(self, other, color):
-        other_kmer_letter, this_kmer_letter = self.find_letters_of_edge_to_kmer(other)
-        edge_set = self.edges[color]
-        if edge_set.is_edge(other_kmer_letter) != other.edges[color].is_edge(this_kmer_letter):
+        try:
+            _, _, ref_letter, flip_letter = next(find_neighbors(self, other,
+                                                                revcomp_second=True,
+                                                                rc_is_after_reference_kmer=True))
+        except StopIteration:
             raise ValueError('Kmers ({}) and ({}) do not agree on connection'.format(self, other))
-        return edge_set.is_edge(other_kmer_letter)
+        edge_set = self.edges[color]
+        if edge_set.is_edge(ref_letter) != other.edges[color].is_edge(flip_letter):
+            raise ValueError('Kmers ({}) and ({}) do not agree on connection'.format(self, other))
+        return edge_set.is_edge(ref_letter)
 
     def has_incoming_edge_from_kmer_in_color(self, other, color):
-        other_kmer_letter, this_kmer_letter = self.find_letters_of_edge_from_kmer(other)
+        try:
+            _, _, ref_letter, flip_letter = next(find_neighbors(self, other,
+                                                                revcomp_second=True,
+                                                                rc_is_after_reference_kmer=False))
+        except StopIteration:
+            raise ValueError('Kmers ({}) and ({}) do not agree on connection'.format(self, other))
         edge_set = self.edges[color]
-        if edge_set.is_edge(other_kmer_letter) != other.edges[color].is_edge(this_kmer_letter):
+        if edge_set.is_edge(ref_letter) != other.edges[color].is_edge(flip_letter):
             raise ValueError('Kmers do not agree on connection')
-        return edge_set.is_edge(other_kmer_letter)
+        return edge_set.is_edge(ref_letter)
 
     def get_raw_kmer(self):
         return self._kmer_data.get_raw_kmer()

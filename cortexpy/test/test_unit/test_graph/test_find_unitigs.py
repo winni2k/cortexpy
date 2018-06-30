@@ -65,18 +65,19 @@ class Test(object):
         graph.add_edge('AAC', 'ACA')
         graph.add_edge('ACA', 'CAA')
         graph.add_edge('CAA', 'AAA')
+        driver.with_seeds('AAA')
 
         # when
         expect = driver.run()
 
         # then
-        (expect
-         .has_n_nodes(1)
-         .has_one_unitig()
-         .has_unitig_with_edges(('AAA', 'AAC'), ('AAC', 'ACA'), ('ACA', 'CAA'))
-         .with_left_node('AAA')
-         .with_right_node('CAA')
-         .is_cycle())
+        expect \
+            .has_n_nodes(1) \
+            .has_one_unitig() \
+            .has_unitig_with_edges(('AAA', 'AAC'), ('AAC', 'ACA'), ('ACA', 'CAA')) \
+            .with_left_node('AAA') \
+            .with_right_node('CAA') \
+            .is_cycle()
 
     def test_path_and_cycle_becomes_four_unitigs(self):
         # given

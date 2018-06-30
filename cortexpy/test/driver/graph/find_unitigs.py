@@ -9,6 +9,9 @@ class FindUnitigsTestDriver(object):
     test_coverage = attr.ib(True)
     finder = attr.ib(init=False)
 
+    def __getattr__(self, item):
+        return getattr(self.builder, item)
+
     @property
     def graph(self):
         return self.builder.graph

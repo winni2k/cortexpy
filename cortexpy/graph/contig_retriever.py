@@ -5,7 +5,7 @@ import networkx as nx
 
 from cortexpy.utils import lexlo
 from . import parser as parser
-from .parser.kmer import EmptyKmerBuilder, revcomp_kmer_string_to_match
+from .parser.kmer import EmptyKmerBuilder, revcomp_target_to_match_ref
 
 RETRIEVED_CONTIG_NAME = 'retrieved_contig'
 
@@ -71,7 +71,7 @@ class ContigRetriever(object):
             for is_incoming, neighbor_kmers in [(True, incoming_kmers), (False, outgoing_kmers)]:
                 for color in self.non_contig_colors:
                     for neighbor_kmer_string in neighbor_kmers[color]:
-                        neighbor_kmer_string, _ = revcomp_kmer_string_to_match(
+                        neighbor_kmer_string, _ = revcomp_target_to_match_ref(
                             neighbor_kmer_string,
                             kmer_string,
                             rc_is_after_reference_kmer=not is_incoming

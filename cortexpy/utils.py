@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import attr
+import networkx as nx
 from Bio.Seq import reverse_complement
 from functools import lru_cache
 
@@ -35,3 +36,16 @@ class IntervalLogger(object):
         if self._ok_to_log():
             self.last_log_time = datetime.now()
             return self.logger.info(*args, **kwargs)
+
+
+def my_edge_dfs(G, source=None, orientation=None):
+    """Returns tuple of fixed size if orientation is set"""
+    add_orientation = False
+    if orientation is None:
+        orientation = 'original'
+    elif orientation == 'original':
+        add_orientation = True
+    for edge in nx.edge_dfs(G, source=source, orientation=orientation):
+        if add_orientation:
+            edge = edge + (orientation,)
+        yield edge

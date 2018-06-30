@@ -11,7 +11,7 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-from cortexpy.graph import ColoredDeBruijnDiGraph
+from cortexpy.graph import CortexDiGraph
 from cortexpy.graph.parser import RandomAccess
 from cortexpy.test import builder, expectation
 from cortexpy.test import runner
@@ -292,7 +292,7 @@ class ViewTraversal(object):
 
 def load_de_bruijn_graph(path):
     with open(str(path), 'rb') as fh:
-        return ColoredDeBruijnDiGraph({k.kmer: k for k in RandomAccess(fh)})
+        return CortexDiGraph({k.kmer: k for k in RandomAccess(fh)})
 
 
 def load_graph_stream(path):

@@ -25,6 +25,7 @@ class KmerGraphsExpectation(object):
 @attr.s(slots=True)
 class KmerGraphExpectation(object):
     graph = attr.ib()
+    sort_edges = attr.ib(False)
 
     def __attrs_post_init__(self):
         # logger.info(nx.node_link_data(self.graph))
@@ -56,7 +57,6 @@ class KmerGraphExpectation(object):
     def has_nodes(self, *expected_nodes):
         expected_nodes = set(expected_nodes)
         assert expected_nodes == set(self.graph.nodes)
-        assert len(expected_nodes) == len(self.graph.nodes)
         return self
 
     def has_edges(self, *edges):
@@ -65,6 +65,8 @@ class KmerGraphExpectation(object):
             if isinstance(edge, str):
                 edge = edge.split(' ')
                 edge[2] = int(edge[2])
+            if self.sort_edges:
+                edge[0:2] = sorted(edge[0:2])
             expected_edges.append(tuple(edge))
 
         assert set(expected_edges) == set(self.graph.edges(keys=True))

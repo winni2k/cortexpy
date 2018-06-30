@@ -22,7 +22,7 @@ class TestTraverseFrom(object):
         )
 
         # when
-        expect = KmerGraphExpectation(traverser.traverse_from('ACA').graph)
+        expect = KmerGraphExpectation(traverser.traverse_from('ACA').graph, sort_edges=True)
 
         # then
         expect.has_node('AAA').has_coverages(2, 1)
@@ -46,7 +46,7 @@ class TestTraverseFrom(object):
             'AAA AAT 1',
             'AAT ATA 1',
             'ATA TAA 1',
-            'TAA AAG 1')
+            'AAG TAA 1')
 
 
 class TestTraverseFromEachKmerInIterable(object):
@@ -66,9 +66,8 @@ class TestTraverseFromEachKmerInIterable(object):
 
         # when
         expect = KmerGraphExpectation(
-            traverser.traverse_from_each_kmer_in_iterable(['AAA', 'GGG']).graph)
+            traverser.traverse_from_each_kmer_in_iterable(['AAA', 'GGG']).graph
+        )
 
         # then
-        expect.has_edges(
-            'AAA AAT 0',
-            'GGG GGC 0', )
+        expect.has_edges('AAA AAT 0', 'CCC GCC 0')
