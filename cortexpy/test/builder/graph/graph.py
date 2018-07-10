@@ -42,7 +42,7 @@ class Graph(object):
             edges = kmer_words[num_colors:]
         revcomp = str(Seq(kmer_string).reverse_complement())
         if revcomp < kmer_string:
-            raise Exception("kmer_string '{}' is not lexlow.  Please fix.".format(kmer_string))
+            raise Exception("kmer_string '{}' is not lexlo.  Please fix.".format(kmer_string))
         if (
             repeat_color_edges_n_times and isinstance(edges, str) and isinstance(color_coverage,
                                                                                  int)

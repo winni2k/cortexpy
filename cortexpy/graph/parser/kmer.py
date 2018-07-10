@@ -397,6 +397,12 @@ class Kmer(object):
         for edge_set in self.edges:
             edge_set.dump(buffer)
 
+    def __getitem__(self, item):
+        """Allow kmers to be used as node objects in networkx graphs"""
+        if item == 'kmer':
+            return self
+        raise KeyError
+
 
 @attr.s(slots=True, cmp=False)
 class KmerByStringComparator(object):

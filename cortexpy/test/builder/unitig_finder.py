@@ -7,7 +7,7 @@ from cortexpy.test.builder.graph import colored_de_bruijn
 
 @attr.s(slots=True)
 class UnitigFinderBuilder(object):
-    builder = attr.ib(attr.Factory(colored_de_bruijn.ColoredDeBruijnGraphBuilder))
+    builder = attr.ib(attr.Factory(colored_de_bruijn.CortexGraphBuilder))
     test_coverage = attr.ib(True)
     seed_kmers = attr.ib(None)
 

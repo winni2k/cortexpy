@@ -195,7 +195,7 @@ class UnitigFinder(object):
                     end_nodes[orientation] = target
                     unitig_graph.add_edge(*edge_info[:3])
         for node in unitig_graph:
-            unitig_graph.add_node(node, **self.graph.node[node])
+            unitig_graph.add_node(node, kmer=self.graph.node[node]['kmer'])
         ret_unitig = Unitig(unitig_graph,
                             end_nodes[EdgeTraversalOrientation.reverse],
                             end_nodes[EdgeTraversalOrientation.original])

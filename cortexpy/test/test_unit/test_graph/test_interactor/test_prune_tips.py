@@ -2,7 +2,7 @@ import networkx as nx
 from hypothesis import given, strategies as s
 
 from cortexpy.graph import interactor
-from cortexpy.test.builder.graph.colored_de_bruijn import ColoredDeBruijnGraphBuilder
+from cortexpy.test.builder.graph.colored_de_bruijn import CortexGraphBuilder
 
 
 class TestMultiDiGraph(object):
@@ -36,7 +36,7 @@ class TestMultiDiGraph(object):
 class TestColoredDeBruijnGraph(object):
     def test_prunes_three_tips_of_length_1(self):
         # given
-        b = ColoredDeBruijnGraphBuilder()
+        b = CortexGraphBuilder()
         b.with_colors(0, 1)
         kmers = ['AAA', 'AAC', 'ACC', 'ACG']
         for kmer in kmers:
@@ -58,7 +58,7 @@ class TestColoredDeBruijnGraph(object):
 
     def test_prunes_one_tip_of_length_1_in_y(self):
         # given
-        b = ColoredDeBruijnGraphBuilder()
+        b = CortexGraphBuilder()
         b.with_colors(0, 1)
         kmers = ['AAA', 'AAC', 'ACC', 'CCC', 'ACG', 'CGC']
         for kmer in kmers:
@@ -84,7 +84,7 @@ class TestColoredDeBruijnGraph(object):
     def test_prunes_three_tips_of_length_1_reverse_kmer(self, seed_and_expected_kmer):
         # given
         seed, expected_kmer = seed_and_expected_kmer
-        b = ColoredDeBruijnGraphBuilder()
+        b = CortexGraphBuilder()
         b.with_colors(0, 1)
         kmers = ['AAC', 'ACT', 'AAG', 'CAG']
         for kmer in kmers:

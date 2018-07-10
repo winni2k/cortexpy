@@ -63,7 +63,7 @@ class CollapseKmerUnitigsTestDriver(object):
 
     def run(self):
         kmer_graph = self.serializer_driver.run()
-        collapser = (unitig
-                     .UnitigCollapser(kmer_graph)
-                     .collapse_kmer_unitigs())
+        collapser = unitig \
+            .UnitigCollapser(kmer_graph) \
+            .collapse_kmer_unitigs()
         return CollapsedKmerUnitgGraphExpectation(collapser.unitig_graph)

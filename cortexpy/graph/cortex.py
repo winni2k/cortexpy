@@ -4,7 +4,6 @@ import copy
 
 import itertools
 import networkx as nx
-from delegation import SingleDelegated
 import attr
 
 from cortexpy.constants import EdgeTraversalOrientation
@@ -32,7 +31,7 @@ def build_cortex_graph(*, sample_names, kmer_size, num_colors, colors, kmer_gene
     """Colored de Bruijn graph constructor"""
     assert (kmer_generator is None) or (kmer_mapping is None)
     if kmer_generator is not None:
-        graph = CortexDiGraph({k.kmer: SubscriptableKmer(k) for k in kmer_generator})
+        graph = CortexDiGraph({k.kmer: k for k in kmer_generator})
     elif kmer_mapping is not None:
         graph = CortexDiGraph(kmer_mapping)
     else:
@@ -101,7 +100,7 @@ class CortexDiGraph(Collection):
         return self.succ[item]
 
     def add_node(self, kmer_string, *, kmer):
-        self._kmer_mapping[kmer_string] = SubscriptableKmer(kmer)
+        self._kmer_mapping[kmer_string] = kmer
 
     def add_nodes_from(self, node_iterable):
         for node in node_iterable:
@@ -321,7 +320,7 @@ class ConsistentCortexDiGraph(Collection):
         return NodeView(self._kmer_mapping)
 
     def add_node(self, kmer_string, *, kmer):
-        self._kmer_mapping[kmer_string] = SubscriptableKmer(kmer)
+        self._kmer_mapping[kmer_string] = kmer
 
     def remove_node(self, node):
         """This is identical to remove_node in CDBDiGraph"""
@@ -447,22 +446,6 @@ class ConsistentCortexDiGraph(Collection):
 
             bunch = bunch_iter(nbunch, self._adj)
         return bunch
-
-
-class SubscriptableKmer(SingleDelegated, Mapping):
-
-    def __getitem__(self, item):
-        assert item == 'kmer'
-        return self.delegate
-
-    def __str__(self):
-        return str(self.delegate)
-
-    def __iter__(self):
-        yield 'kmer'
-
-    def __len__(self):
-        return 1
 
 
 @attr.s(slots=True)
