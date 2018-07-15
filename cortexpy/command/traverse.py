@@ -58,14 +58,12 @@ def traverse(argv):
         if len(args.graphs) == 1:
             ra_parser = g_parser.RandomAccess(
                 stack.enter_context(open(args.graphs[0], 'rb')),
-                kmer_cache_size=args.cache_size,
-                kmer_cache_size_binary_search=args.binary_search_cache_size,
+                kmer_cache_size=args.cache_size
             )
         else:
             ra_parser = g_parser.RandomAccessCollection(
                 [g_parser.RandomAccess(stack.enter_context(open(graph_path, 'rb')),
-                                       kmer_cache_size=args.cache_size,
-                                       kmer_cache_size_binary_search=args.binary_search_cache_size)
+                                       kmer_cache_size=args.cache_size)
                  for graph_path in args.graphs])
         engine = traversal.Engine(
             ra_parser,

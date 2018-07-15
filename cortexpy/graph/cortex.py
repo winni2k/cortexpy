@@ -7,7 +7,7 @@ import networkx as nx
 import attr
 
 from cortexpy.constants import EdgeTraversalOrientation
-from .parser.kmer import connect_kmers, disconnect_kmers
+from .parser.kmer import find_all_neighbors
 from cortexpy.utils import lexlo
 
 
@@ -95,8 +95,42 @@ class CortexGraphMapping(Mapping):
             raise KeyError
         if lexlo_string in self._new_kmers:
             del self._new_kmers[lexlo_string]
-        else:
+        if lexlo_string in self.ra_parser:
             self._exclusion_set.add(lexlo_string)
+
+    def disconnect_kmers(self, first, second, colors):
+        """Disconnect two kmers"""
+        are_neighbors = False
+        for ref_kmer, flip_kmer, ref_letter, flip_letter in find_all_neighbors(first, second):
+            are_neighbors = True
+            if colors:
+                self[ref_kmer.kmer] = ref_kmer
+                self[flip_kmer.kmer] = flip_kmer
+            for color in colors:
+                ref_kmer.edges[color].remove_edge(ref_letter)
+                flip_kmer.edges[color].remove_edge(flip_letter)
+        if not are_neighbors:
+            raise ValueError(
+                'first kmer ({}) cannot be connected to second kmer ({})'.format(first.kmer,
+                                                                                 second.kmer)
+            )
+
+    def connect_kmers(self, first, second, color, identical_kmer_check=True):
+        """Connect two kmers"""
+        if identical_kmer_check and first == second and first is not second:
+            raise ValueError('Kmers are equal, but not the same object')
+        are_neighbors = False
+        for ref_kmer, flip_kmer, ref_letter, flip_letter in find_all_neighbors(first, second):
+            are_neighbors = True
+            self[ref_kmer.kmer] = ref_kmer
+            self[flip_kmer.kmer] = flip_kmer
+            ref_kmer.edges[color].add_edge(ref_letter)
+            flip_kmer.edges[color].add_edge(flip_letter)
+        if not are_neighbors:
+            raise ValueError(
+                'first kmer ({}) cannot be connected to second kmer ({})'.format(first.kmer,
+                                                                                 second.kmer)
+            )
 
 
 @attr.s(slots=True)
@@ -185,7 +219,7 @@ class CortexDiGraph(Collection):
         """Note: edges can only be added to existing nodes"""
         first_kmer = self.node[first]
         second_kmer = self.node[second]
-        connect_kmers(first_kmer, second_kmer, color=key)
+        self._kmer_mapping.connect_kmers(first_kmer, second_kmer, color=key)
 
     def add_edges_from(self, edge_iterable):
         for edge in edge_iterable:
@@ -220,10 +254,10 @@ class CortexDiGraph(Collection):
             return
         for succ in self.succ[node]:
             succ_kmer = self.node[succ]
-            disconnect_kmers(node_kmer, succ_kmer, node_kmer.colors)
+            self._kmer_mapping.disconnect_kmers(node_kmer, succ_kmer, node_kmer.colors)
         for pred in self.pred[node]:
             pred_kmer = self.node[pred]
-            disconnect_kmers(node_kmer, pred_kmer, node_kmer.colors)
+            self._kmer_mapping.disconnect_kmers(node_kmer, pred_kmer, node_kmer.colors)
         del self._kmer_mapping[node]
 
     def remove_nodes_from(self, nodes):
@@ -365,10 +399,10 @@ class ConsistentCortexDiGraph(Collection):
             return
         for succ in self.succ[node]:
             succ_kmer = self.node[succ]
-            disconnect_kmers(node_kmer, succ_kmer, node_kmer.colors)
+            self._kmer_mapping.disconnect_kmers(node_kmer, succ_kmer, node_kmer.colors)
         for pred in self.pred[node]:
             pred_kmer = self.node[pred]
-            disconnect_kmers(node_kmer, pred_kmer, node_kmer.colors)
+            self._kmer_mapping.disconnect_kmers(node_kmer, pred_kmer, node_kmer.colors)
         del self._kmer_mapping[node]
 
     def remove_nodes_from(self, nodes):
@@ -410,7 +444,7 @@ class ConsistentCortexDiGraph(Collection):
         """Note: edges can only be added to existing nodes"""
         first_kmer = self.node[first]
         second_kmer = self.node[second]
-        connect_kmers(first_kmer, second_kmer, color=key)
+        self._kmer_mapping.connect_kmers(first_kmer, second_kmer, color=key)
 
     def nbunch_iter(self, nbunch=None):
         """Return an iterator over nodes contained in nbunch that are

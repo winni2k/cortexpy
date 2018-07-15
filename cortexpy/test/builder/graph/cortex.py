@@ -85,10 +85,18 @@ class CortexBuilder(SingleDelegated):
         return load_ra_cortex_graph(self.delegate.build())
 
 
+@attr.s()
 class CortexGraphMappingBuilder(SingleDelegated):
+    delegate = attr.ib()
+    ra_parser_args = attr.ib(attr.Factory(dict))
 
     def build(self):
-        return load_ra_cortex_graph(self.delegate.build())._kmer_mapping
+        return load_ra_cortex_graph(self.delegate.build(),
+                                    ra_parser_args=self.ra_parser_args)._kmer_mapping
+
+    def with_kmer_cache_size(self, n):
+        self.ra_parser_args['kmer_cache_size'] = n
+        return self
 
 
 def get_cortex_builder():

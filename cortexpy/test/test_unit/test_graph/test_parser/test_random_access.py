@@ -55,7 +55,6 @@ class TestDunderGetitemDunder(object):
         # given
         kmer_size = 11
         expected_num_calls = 2 * num_kmers
-        cache_size = 0
         num_colors = 1
         b = builder.Graph() \
             .with_kmer_size(kmer_size) \
@@ -69,7 +68,9 @@ class TestDunderGetitemDunder(object):
             b.with_kmer(kmer_string)
         fh = b.build()
 
-        ra = RandomAccess(fh, kmer_cache_size=cache_size)
+        ra = RandomAccess(fh, kmer_cache_size=None)
+        for k_string in ra:
+            ra[k_string]
         with mock.patch.object(fh, 'read', wraps=fh.read) as mocked_seek:
             # when
             for seen_kmer in sorted(seen_kmers):
@@ -230,8 +231,7 @@ class TestKmerUintSequence(object):
         sequence = KmerUintSequence(graph_handle=graph_stream,
                                     body_start=len(header_stream.getvalue()),
                                     header=header,
-                                    n_records=len(expected_kmers),
-                                    kmer_cache_size=0)
+                                    n_records=len(expected_kmers))
         # then
         for idx, expected_kmer in enumerate(expected_kmers):
             # then

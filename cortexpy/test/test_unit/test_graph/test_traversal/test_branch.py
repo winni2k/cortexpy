@@ -59,7 +59,7 @@ class BranchTestDriver(object):
     traversal_orientation = attr.ib(EdgeTraversalOrientation.original)
     parent_graph = attr.ib(attr.Factory(set))
     expected_start_kmer_string = attr.ib(None)
-    mock_ra_parser = attr.ib(False)
+    warmup_ra_parser = attr.ib(False)
 
     def with_kmer(self, *args, **kwargs):
         self.graph_builder.with_kmer(*args, **kwargs)
@@ -93,8 +93,8 @@ class BranchTestDriver(object):
         self.traversal_orientation = EdgeTraversalOrientation.reverse
         return self
 
-    def with_mocked_ra_parser(self):
-        self.mock_ra_parser = True
+    def with_ra_parser_warmup(self):
+        self.warmup_ra_parser = True
         return self
 
     def run(self):
@@ -102,11 +102,14 @@ class BranchTestDriver(object):
             self.expected_start_kmer_string = self.start_kmer_string
         stream = self.graph_builder.build()
         ra_parser = cortexpy.graph.parser.RandomAccess(stream)
+        traverser = branch.Traverser(
+            ra_parser,
+            traversal_color=self.traversal_color,
+            other_stopping_colors=self.other_stopping_colors)
+        if self.warmup_ra_parser:
+            for k_string in ra_parser:
+                ra_parser[k_string]
         with mock.patch.object(stream, 'read', wraps=stream.read) as mocked_read:
-            traverser = branch.Traverser(
-                ra_parser,
-                traversal_color=self.traversal_color,
-                other_stopping_colors=self.other_stopping_colors)
             traversed_branch = traverser \
                 .traverse_from(self.start_kmer_string,
                                parent_graph=self.parent_graph,
@@ -270,14 +273,14 @@ class Test(object):
     def test_cycle_is_traversed_once(self, start_kmer_string, reverse_orientation, num_colors):
         # given
         d = BranchTestDriver()
-        (d
-         .with_kmer_size(3)
-         .with_kmer('AAA', 0, '...t...T', repeat_color_edges_n_times=num_colors)
-         .with_kmer('AAT', 0, 'a...A...', repeat_color_edges_n_times=num_colors)
-         .with_kmer('ATA', 0, 'a...A...', repeat_color_edges_n_times=num_colors)
-         .with_kmer('TAA', 0, 'a...A...', repeat_color_edges_n_times=num_colors)
-         .with_start_kmer_string(start_kmer_string)
-         .with_mocked_ra_parser())
+        d \
+            .with_kmer_size(3) \
+            .with_kmer('AAA', 0, '...t...T', repeat_color_edges_n_times=num_colors) \
+            .with_kmer('AAT', 0, 'a...A...', repeat_color_edges_n_times=num_colors) \
+            .with_kmer('ATA', 0, 'a...A...', repeat_color_edges_n_times=num_colors) \
+            .with_kmer('TAA', 0, 'a...A...', repeat_color_edges_n_times=num_colors) \
+            .with_start_kmer_string(start_kmer_string) \
+            .with_ra_parser_warmup()
 
         if reverse_orientation:
             d.with_reverse_traversal_orientation()
@@ -286,9 +289,9 @@ class Test(object):
         expect = d.run()
 
         # then
-        (expect
-         .has_nodes('AAA', 'AAT', 'ATA', 'TAA')
-         .has_n_edges(4 * num_colors))
+        expect \
+            .has_nodes('AAA', 'AAT', 'ATA', 'TAA') \
+            .has_n_edges(4 * num_colors)
         expect.called_stream_read_n_times(8)
 
     def test_one_seen_kmer_returns_empty_graph(self):

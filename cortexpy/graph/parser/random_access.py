@@ -22,12 +22,11 @@ class RandomAccess(Mapping):
     """Provide fast k-mer access to Cortex graph in log(n) time (n = number of kmers in graph)"""
     graph_handle = attr.ib()
     kmer_cache_size = attr.ib(None)
-    kmer_cache_size_binary_search = attr.ib(None)
     header = attr.ib(init=False)
     graph_sequence = attr.ib(init=False)
     graph_kmer_sequence = attr.ib(init=False)
     n_records = attr.ib(init=False)
-    _cached_get_kmer_data_for_string = attr.ib(init=False)
+    _cached_get_uints_index_for_string = attr.ib(init=False)
 
     def __attrs_post_init__(self):
         assert self.graph_handle.seekable()
@@ -44,36 +43,36 @@ class RandomAccess(Mapping):
         self.n_records = body_size // self.header.record_size
         if self.kmer_cache_size is None:
             self.kmer_cache_size = self.n_records
-        if self.kmer_cache_size_binary_search is None:
-            self.kmer_cache_size_binary_search = self.n_records
         self.graph_sequence = KmerRecordSequence(graph_handle=self.graph_handle,
                                                  body_start=body_start_stream_position,
                                                  header=self.header,
-                                                 n_records=self.n_records,
-                                                 kmer_cache_size=self.kmer_cache_size)
+                                                 n_records=self.n_records)
         self.graph_kmer_sequence = KmerUintSequence(
             graph_handle=self.graph_handle,
             body_start=body_start_stream_position,
             header=self.header,
-            n_records=self.n_records,
-            kmer_cache_size=self.kmer_cache_size_binary_search
+            n_records=self.n_records
         )
 
-        self._cached_get_kmer_data_for_string = lru_cache(maxsize=self.kmer_cache_size)(
-            self._get_kmer_data_for_string)
+        self._cached_get_uints_index_for_string = lru_cache(maxsize=self.kmer_cache_size)(
+            self._get_uints_and_index_for_string)
 
-    def _get_kmer_data_for_string(self, kmer_string):
+    def _get_uints_and_index_for_string(self, kmer_string):
         uints = self.graph_kmer_sequence.kmer_string_converter.to_uints(kmer_string)
         index = self.graph_kmer_sequence.index_uint_vector(uints)
+        return uints, index
+
+    def _get_kmer_data_for_string(self, lexlo_string):
+        uints, index = self._cached_get_uints_index_for_string(lexlo_string)
         if index < self.n_records:
             if KmerUintComparator(uints) == self.graph_kmer_sequence[index]:
                 kmer_data = self.graph_sequence[index]._kmer_data
-                kmer_data._kmer = kmer_string
+                kmer_data._kmer = lexlo_string
                 return kmer_data
-        raise KeyError('Could not retrieve kmer: ' + kmer_string)
+        raise KeyError('Could not retrieve kmer: ' + lexlo_string)
 
-    def __getitem__(self, kmer_string):
-        return Kmer(self._cached_get_kmer_data_for_string(kmer_string))
+    def __getitem__(self, lexlo_string):
+        return Kmer(self._get_kmer_data_for_string(lexlo_string))
 
     def __len__(self):
         return max(0, self.n_records)
@@ -121,27 +120,21 @@ class KmerRecordSequence(Sequence):
     header = attr.ib()
     body_start = attr.ib()
     n_records = attr.ib()
-    kmer_cache_size = attr.ib(0)
     record_size = attr.ib(init=False)
     num_colors = attr.ib(init=False)
     kmer_size = attr.ib(init=False)
     kmer_container_size = attr.ib(init=False)
-    _cached_get_kmer_data_for_item = attr.ib(init=False)
 
     def __attrs_post_init__(self):
         self.record_size = self.header.record_size
         self.kmer_size = self.header.kmer_size
         self.num_colors = self.header.num_colors
         self.kmer_container_size = self.header.kmer_container_size
-        self._cached_get_kmer_data_for_item = lru_cache(maxsize=self.kmer_cache_size)(
-            self._get_kmer_data_for_item)
 
     def __getitem__(self, item):
-        if not isinstance(item, int):
-            raise TypeError("Index must be of type int")
         if item >= self.n_records or item < 0:
             raise IndexError("Index ({}) is out of range".format(item))
-        kmer_data = self._cached_get_kmer_data_for_item(item)
+        kmer_data = self._get_kmer_data_for_item(item)
         return Kmer(kmer_data)
 
     def __len__(self):
@@ -163,28 +156,19 @@ class KmerUintSequence(Sequence):
     header = attr.ib()
     body_start = attr.ib()
     n_records = attr.ib()
-    kmer_cache_size = attr.ib(0)
     record_size = attr.ib(init=False)
     kmer_container_size = attr.ib(init=False)
-    _cached_get_kmer_data_for_item = attr.ib(init=False)
     kmer_string_converter = attr.ib(init=False)
 
     def __attrs_post_init__(self):
         self.record_size = self.header.record_size
         self.kmer_container_size = self.header.kmer_container_size
-        if self.kmer_cache_size == 0:
-            self._cached_get_kmer_data_for_item = self._get_kmer_data_for_item
-        else:
-            self._cached_get_kmer_data_for_item = lru_cache(maxsize=self.kmer_cache_size)(
-                self._get_kmer_data_for_item)
         self.kmer_string_converter = StringKmerConverter(self.header.kmer_size)
 
     def __getitem__(self, item):
-        # if not isinstance(item, int):
-        #     raise TypeError("Index must be of type int")
         if item >= self.n_records or item < 0:
             raise IndexError("Index ({}) is out of range".format(item))
-        kmer_uints = self._cached_get_kmer_data_for_item(item)
+        kmer_uints = self._get_kmer_data_for_item(item)
         return KmerUintComparator(kmer_uints=kmer_uints)
 
     def __len__(self):
@@ -203,8 +187,10 @@ class KmerUintSequence(Sequence):
         return bisect_left(self, KmerUintComparator(uints))
 
 
-def load_ra_cortex_graph(file_handle):
-    ra_parser = RandomAccess(file_handle)
+def load_ra_cortex_graph(file_handle, ra_parser_args=None):
+    if ra_parser_args is None:
+        ra_parser_args = {}
+    ra_parser = RandomAccess(file_handle, **ra_parser_args)
     return build_cortex_graph(sample_names=ra_parser.sample_names,
                               kmer_size=ra_parser.kmer_size,
                               num_colors=ra_parser.num_colors,
