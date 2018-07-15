@@ -38,7 +38,7 @@ class Interactor(object):
                 self.graph.add_edge(kmer1_string, kmer2_string, key=color)
         return self
 
-    def prune_tips_less_than(self, n):
+    def find_nodes_of_tips_less_than(self, n):
         nodes_to_prune = set()
         assert self.colors is None
         graph = make_multi_graph(self.graph)
@@ -62,6 +62,10 @@ class Interactor(object):
                 nodes_to_prune |= tip
                 num_tips_to_prune += 1
         logger.info('Found %s of %s tips shorter than %s.', num_tips_to_prune, num_tips, n)
+        return nodes_to_prune
+
+    def prune_tips_less_than(self, n):
+        nodes_to_prune = self.find_nodes_of_tips_less_than(n)
         logger.info('Pruning %s nodes', len(nodes_to_prune))
         self.graph.remove_nodes_from(nodes_to_prune)
         return self

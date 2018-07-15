@@ -1,5 +1,4 @@
 from cortexpy.graph import Interactor
-from cortexpy.graph.parser.random_access import load_ra_cortex_graph
 from cortexpy.graph.parser.streaming import load_cortex_graph
 from cortexpy.graph.serializer.kmer import dump_colored_de_bruijn_graph_to_cortex
 
@@ -30,7 +29,7 @@ def prune(argv):
     if args.graph == '-':
         graph = load_cortex_graph(sys.stdin.buffer)
     else:
-        graph = load_ra_cortex_graph(open(args.graph, 'rb'))
+        graph = load_cortex_graph(open(args.graph, 'rb'))
 
     logger.info('Removing tips shorter than {} k-mers'.format(args.remove_tips))
     graph = Interactor(graph, colors=None).prune_tips_less_than(args.remove_tips).graph
