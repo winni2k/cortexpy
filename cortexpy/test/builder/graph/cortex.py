@@ -2,8 +2,8 @@ import attr
 from delegation import SingleDelegated
 
 from cortexpy.graph import cortex
+from cortexpy.graph.parser.random_access import load_ra_cortex_graph
 from cortexpy.graph.parser.kmer import EmptyKmerBuilder
-from cortexpy.graph.parser.streaming import load_de_bruijn_graph
 from cortexpy.test.builder import Graph
 
 
@@ -79,11 +79,21 @@ class CortexGraphBuilder(object):
         return self.graph
 
 
-class CdbBuilder(SingleDelegated):
+class CortexBuilder(SingleDelegated):
 
     def build(self):
-        return load_de_bruijn_graph(self.delegate.build())
+        return load_ra_cortex_graph(self.delegate.build())
 
 
-def get_cdb_builder():
-    return CdbBuilder(Graph())
+class CortexGraphMappingBuilder(SingleDelegated):
+
+    def build(self):
+        return load_ra_cortex_graph(self.delegate.build())._kmer_mapping
+
+
+def get_cortex_builder():
+    return CortexBuilder(Graph())
+
+
+def get_cortex_graph_mapping_builder():
+    return CortexGraphMappingBuilder(Graph())

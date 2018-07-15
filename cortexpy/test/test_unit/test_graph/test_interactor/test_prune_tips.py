@@ -2,7 +2,7 @@ import networkx as nx
 from hypothesis import given, strategies as s
 
 from cortexpy.graph import interactor
-from cortexpy.test.builder.graph.colored_de_bruijn import CortexGraphBuilder
+from cortexpy.test.builder.graph.cortex import CortexGraphBuilder
 
 
 class TestMultiDiGraph(object):
@@ -96,8 +96,7 @@ class TestColoredDeBruijnGraph(object):
         graph = b.build()
 
         # when
-        graph_interactor = interactor.Interactor(graph, colors=None)
-        graph = graph_interactor.prune_tips_less_than(2).graph
+        graph = interactor.Interactor(graph, colors=None).prune_tips_less_than(2).graph
 
         # then
         assert 1 == len(graph)

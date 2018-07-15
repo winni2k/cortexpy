@@ -44,7 +44,7 @@ class Interactor(object):
         graph = make_multi_graph(self.graph)
         num_tips = 0
         num_tips_to_prune = 0
-        for node, direction_of_end in edge_nodes_of(self.graph):
+        for node, direction_of_end in list(edge_nodes_of(self.graph)):
             tip = find_tip_from(
                 n=n,
                 graph=self.graph,

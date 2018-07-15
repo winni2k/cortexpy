@@ -7,16 +7,17 @@ import attr
 import numpy as np
 
 import cortexpy.graph.parser.header
+from cortexpy.graph.cortex import build_cortex_graph, CortexGraphMapping
 from cortexpy.graph.parser.constants import UINT64_T
 from cortexpy.graph.parser.kmer import (
     Kmer, KmerData, KmerUintComparator,
     StringKmerConverter,
 )
-from cortexpy.graph.parser.streaming import kmer_generator_from_stream_and_header
+from .streaming import kmer_generator_from_stream_and_header
 from cortexpy.utils import lexlo
 
 
-@attr.s(slots=True)
+@attr.s(slots=True, repr=False)
 class RandomAccess(Mapping):
     """Provide fast k-mer access to Cortex graph in log(n) time (n = number of kmers in graph)"""
     graph_handle = attr.ib()
@@ -78,7 +79,18 @@ class RandomAccess(Mapping):
         return max(0, self.n_records)
 
     def __iter__(self):
-        """Iterate over kmers in graph in order stored in graph"""
+        """Iterate over kmer strings in graph in order stored in graph"""
+        self.graph_handle.seek(self.graph_sequence.body_start)
+        return (k.kmer for k in
+                kmer_generator_from_stream_and_header(self.graph_handle, self.header))
+
+    def items(self):
+        """Iterate over kmer strings and kmers in graph in order stored in graph"""
+        self.graph_handle.seek(self.graph_sequence.body_start)
+        return ((k.kmer, k) for k in
+                kmer_generator_from_stream_and_header(self.graph_handle, self.header))
+
+    def values(self):
         self.graph_handle.seek(self.graph_sequence.body_start)
         return kmer_generator_from_stream_and_header(self.graph_handle, self.header)
 
@@ -189,3 +201,12 @@ class KmerUintSequence(Sequence):
 
     def index_uint_vector(self, uints):
         return bisect_left(self, KmerUintComparator(uints))
+
+
+def load_ra_cortex_graph(file_handle):
+    ra_parser = RandomAccess(file_handle)
+    return build_cortex_graph(sample_names=ra_parser.sample_names,
+                              kmer_size=ra_parser.kmer_size,
+                              num_colors=ra_parser.num_colors,
+                              colors=ra_parser.colors,
+                              kmer_mapping=CortexGraphMapping(ra_parser))

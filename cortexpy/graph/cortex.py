@@ -7,11 +7,11 @@ import networkx as nx
 import attr
 
 from cortexpy.constants import EdgeTraversalOrientation
-from cortexpy.graph.parser.kmer import connect_kmers, disconnect_kmers
+from .parser.kmer import connect_kmers, disconnect_kmers
 from cortexpy.utils import lexlo
 
 
-def build_cdb_graph_from_header(header, **kwargs):
+def build_cortex_graph_from_header(header, **kwargs):
     return build_cortex_graph(sample_names=header.sample_names,
                               kmer_size=header.kmer_size,
                               num_colors=header.num_colors,
@@ -45,25 +45,58 @@ def build_cortex_graph(*, sample_names, kmer_size, num_colors, colors, kmer_gene
 
 @attr.s(slots=True)
 class CortexGraphMapping(Mapping):
-    lexlo_kmer_mapping = attr.ib(attr.Factory(dict))
+    """Create a dict-like kmer mapping from a RandomAccess parser (ra_parser)
+
+    The exclusion set tracks kmers deleted from the ra_parser.
+    The new_kmers track kmers that have been added to the mapping.
+    Kmers that exist in both new_kmers and ra_parser are considered overwritten. The kmers in
+    new_kmers have precedence.
+    """
+    ra_parser = attr.ib()
+    _exclusion_set = attr.ib(attr.Factory(set))
+    _new_kmers = attr.ib(attr.Factory(dict))
+    _n_duplicates = attr.ib(0)
+
+    def __attrs_post_init__(self):
+        if isinstance(self.ra_parser, type(self)):
+            self._exclusion_set = self.ra_parser._exclusion_set
+            self.ra_parser = self.ra_parser.ra_parser
 
     def __getitem__(self, key):
-        return self.lexlo_kmer_mapping[lexlo(key)]
+        lexlo_key = lexlo(key)
+        if lexlo_key in self._exclusion_set:
+            raise KeyError
+        if lexlo_key in self._new_kmers:
+            return self._new_kmers[lexlo_key]
+        return self.ra_parser[lexlo_key]
 
     def __setitem__(self, key, value):
-        self.lexlo_kmer_mapping[lexlo(key)] = value
+        lexlo_key = lexlo(key)
+        if lexlo_key in self._exclusion_set:
+            self._exclusion_set.discard(lexlo_key)
+        if lexlo_key in self.ra_parser and lexlo_key not in self._new_kmers:
+            self._n_duplicates += 1
+        self._new_kmers[lexlo_key] = value
 
     def __len__(self):
-        return len(self.lexlo_kmer_mapping)
+        return len(self.ra_parser) + len(self._new_kmers) - len(
+            self._exclusion_set) - self._n_duplicates
 
     def __iter__(self):
-        yield from self.lexlo_kmer_mapping
-
-    def __contains__(self, item):
-        return lexlo(item) in self.lexlo_kmer_mapping
+        for kmer_string in self.ra_parser:
+            if kmer_string not in self._exclusion_set:
+                yield kmer_string
+        for kmer_string in self._new_kmers:
+            yield kmer_string
 
     def __delitem__(self, item):
-        del self.lexlo_kmer_mapping[lexlo(item)]
+        lexlo_string = lexlo(item)
+        if lexlo_string in self._exclusion_set:
+            raise KeyError
+        if lexlo_string in self._new_kmers:
+            del self._new_kmers[lexlo_string]
+        else:
+            self._exclusion_set.add(lexlo_string)
 
 
 @attr.s(slots=True)
@@ -73,7 +106,9 @@ class CortexDiGraph(Collection):
     graph = attr.ib(attr.Factory(dict))
 
     def __attrs_post_init__(self):
-        if isinstance(self._kmer_mapping, CortexDiGraph):
+        # todo: implement .from_ra_parser class method as described in
+        # http://www.attrs.org/en/stable/init.html
+        if isinstance(self._kmer_mapping, type(self)):
             self.graph = self._kmer_mapping.graph
             self._kmer_mapping = self._kmer_mapping._kmer_mapping
         else:

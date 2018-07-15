@@ -41,13 +41,13 @@ def view_traversal(argv):
     from cortexpy.graph import interactor
     from cortexpy.graph import serializer
     from cortexpy.graph.serializer import unitig
-    from cortexpy.graph.parser.streaming import load_de_bruijn_graph
+    from cortexpy.graph.parser.streaming import load_cortex_graph
 
     if args.traversal == '-':
-        graph = load_de_bruijn_graph(sys.stdin.buffer)
+        graph = load_cortex_graph(sys.stdin.buffer)
     else:
         with open(args.traversal, 'rb') as fh:
-            graph = load_de_bruijn_graph(fh)
+            graph = load_cortex_graph(fh)
 
     if args.to_json:
         print(unitig.Serializer(graph).to_json())

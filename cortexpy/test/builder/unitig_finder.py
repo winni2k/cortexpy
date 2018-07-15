@@ -2,12 +2,12 @@ import attr
 
 from cortexpy.graph import Interactor
 from cortexpy.graph.serializer.unitig import UnitigFinder
-from cortexpy.test.builder.graph import colored_de_bruijn
+from cortexpy.test.builder.graph import cortex
 
 
 @attr.s(slots=True)
 class UnitigFinderBuilder(object):
-    builder = attr.ib(attr.Factory(colored_de_bruijn.CortexGraphBuilder))
+    builder = attr.ib(attr.Factory(cortex.CortexGraphBuilder))
     test_coverage = attr.ib(True)
     seed_kmers = attr.ib(None)
 

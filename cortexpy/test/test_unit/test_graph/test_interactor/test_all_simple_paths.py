@@ -1,9 +1,9 @@
 import networkx as nx
 
 from cortexpy.graph import interactor, Interactor
-from cortexpy.test.builder.graph.colored_de_bruijn import (
+from cortexpy.test.builder.graph.cortex import (
     CortexGraphBuilder,
-    get_cdb_builder,
+    get_cortex_builder,
 )
 
 
@@ -63,7 +63,7 @@ class TestDBG(object):
 
     def test_in_y_graph_finds_two_paths_of_revcomp(self):
         # given
-        b = get_cdb_builder()
+        b = get_cortex_builder()
         b.with_kmer('CGC 0 .......T')
         b.with_kmer('AGC 0 a....CG.')
         b.with_kmer('AAG 0 .....C..')

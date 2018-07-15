@@ -5,7 +5,6 @@ import Bio
 import attr
 import os
 
-import networkx as nx
 import sys
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -86,23 +85,19 @@ class Prune(object):
     def run(self):
         mccortex_graph = self.mccortex_builder.build(self.tmpdir)
 
-        cortexpy_graph = self.tmpdir / 'traversal.ctx'
         contig_fasta = self.tmpdir / 'initial_contigs.fa'
         with open(str(contig_fasta), 'w') as fh:
             SeqIO.write(self.records, fh, 'fasta')
         ctp_runner = runner.Cortexpy(SPAWN_PROCESS)
-        ctp_runner.traverse(graphs=[mccortex_graph], out=cortexpy_graph, contig=contig_fasta,
-                            contig_fasta=True)
-
-        pruned_graph = Path(str(cortexpy_graph)).with_suffix('.pruned.ctx')
-        completed_process = ctp_runner.prune(graph=cortexpy_graph, out=pruned_graph,
+        pruned_graph = Path(str(mccortex_graph)).with_suffix('.pruned.ctx')
+        completed_process = ctp_runner.prune(graph=mccortex_graph, out=pruned_graph,
                                              remove_tips=self.min_tip_length, verbose=True)
 
         assert completed_process.returncode == 0, completed_process
         print(completed_process.stdout)
         print(completed_process.stderr, file=sys.stderr)
 
-        return expectation.graph.KmerGraphExpectation(load_de_bruijn_graph(pruned_graph))
+        return expectation.graph.KmerGraphExpectation(load_cortex_graph(pruned_graph))
 
 
 @attr.s(slots=True)
@@ -217,7 +212,7 @@ class Traverse(object):
 
         assert completed_process.returncode == 0, completed_process
 
-        return expectation.graph.KmerGraphExpectation(load_de_bruijn_graph(self.traversal))
+        return expectation.graph.KmerGraphExpectation(load_cortex_graph(self.traversal))
 
 
 @attr.s(slots=True)
@@ -290,15 +285,5 @@ class ViewTraversal(object):
         return expectation.Fasta(ret.stdout)
 
 
-def load_de_bruijn_graph(path):
-    with open(str(path), 'rb') as fh:
-        return CortexDiGraph({k.kmer: k for k in RandomAccess(fh)})
-
-
-def load_graph_stream(path):
-    with open(str(path), 'rb') as fh:
-        while True:
-            try:
-                yield nx.read_gpickle(fh)
-            except EOFError:
-                break
+def load_cortex_graph(path):
+    return CortexDiGraph(RandomAccess(open(str(path), 'rb')))

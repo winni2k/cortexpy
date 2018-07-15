@@ -143,14 +143,14 @@ class TestDunderIterDunder(object):
         ra_parser = parser.RandomAccess(graph_builder.build())
 
         if test_serializer:
-            for real_kmer in ra_parser:
+            for real_kmer in ra_parser.values():
                 buffer = io.BytesIO()
                 real_kmer.dump(buffer)
                 assert real_kmer._kmer_data._data == buffer.getvalue()
 
             sample_names = ra_parser.sample_names
             buffer = io.BytesIO()
-            kmer_list = list(ra_parser)
+            kmer_list = list(ra_parser.values())
             random.shuffle(kmer_list)
             kmer_serializer \
                 .Kmers(kmer_list,
@@ -182,7 +182,7 @@ class TestDunderIterDunder(object):
         cg = parser.RandomAccess(graph_builder.build())
 
         # when
-        for kmer in cg:
+        for kmer in cg.values():
             assert expected_kmer.kmer == kmer.kmer
             assert np.all(expected_kmer.coverage == kmer.coverage)
             assert expected_kmer.edges == kmer.edges

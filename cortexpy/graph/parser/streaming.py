@@ -1,6 +1,6 @@
 import io
 
-from ..cortex import build_cdb_graph_from_header
+from ..cortex import build_cortex_graph_from_header
 from cortexpy.graph.parser.kmer import Kmer, KmerData, RawKmerConverter
 from cortexpy.graph.parser.constants import UINT64_T
 from cortexpy.graph.parser.header import from_stream
@@ -53,7 +53,7 @@ def kmer_list_generator_from_stream_and_header(stream, header):
         raw_kmer = stream.read(kmer_container_size)
 
 
-def load_de_bruijn_graph(stream):
+def load_cortex_graph(stream):
     header = from_stream(stream)
     kmer_generator = kmer_generator_from_stream_and_header(stream, header)
-    return build_cdb_graph_from_header(header, kmer_generator=kmer_generator)
+    return build_cortex_graph_from_header(header, kmer_generator=kmer_generator)

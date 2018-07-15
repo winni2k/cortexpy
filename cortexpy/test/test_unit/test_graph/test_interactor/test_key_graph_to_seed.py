@@ -1,7 +1,7 @@
 from hypothesis import given, strategies as strat
 
 from cortexpy.graph import Interactor
-from cortexpy.test.builder.graph.colored_de_bruijn import get_cdb_builder
+from cortexpy.test.builder.graph.cortex import get_cortex_builder
 from cortexpy.test.builder.graph.kmer import kmer_strings
 from cortexpy.test.expectation import KmerGraphExpectation
 from cortexpy.utils import lexlo
@@ -9,7 +9,7 @@ from cortexpy.utils import lexlo
 
 def test_revcomps_a_kmer():
     # given
-    b = get_cdb_builder()
+    b = get_cortex_builder()
     b.with_kmer('AAA 0 ........')
     cdb = b.build()
 
@@ -32,7 +32,7 @@ def test_revcomps_many_kmers(data, num_kmers, kmer_size):
         kmer_string = data.draw(kmer_strings(min_size=kmer_size, max_size=kmer_size))
         kmers[lexlo(kmer_string)] = kmer_string
 
-    b = get_cdb_builder()
+    b = get_cortex_builder()
     for kmer in kmers.keys():
         b.with_kmer('{} 0 ........'.format(kmer))
     cdb = b.build()
@@ -49,7 +49,7 @@ def test_revcomps_many_kmers(data, num_kmers, kmer_size):
 
 def test_revcomps_path():
     # given
-    b = get_cdb_builder()
+    b = get_cortex_builder()
     b.with_kmer('CGC 0 .......T')
     b.with_kmer('AGC 0 ......G.')
 
@@ -70,7 +70,7 @@ def test_revcomps_path():
 
 def test_keys_y_graph():
     # given
-    b = get_cdb_builder()
+    b = get_cortex_builder()
     b.with_kmer('CGC 0 .......T')
     b.with_kmer('AGC 0 a....CG.')
     b.with_kmer('AAG 0 .....C..')
