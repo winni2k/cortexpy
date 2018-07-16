@@ -1,4 +1,3 @@
-import numpy as np
 import pytest
 import math
 from Bio.Seq import reverse_complement
@@ -72,8 +71,8 @@ class TestBuildKmer(object):
     def test_raises_on_non_lexlo_kmer(self):
         # when
         rec = KmerRecord('AAA', [], [])
-        kmer = Kmer(KmerData(rec.to_bytestring(), kmer_size=3, num_colors=0))
-        with pytest.raises(AssertionError):
+        kmer = Kmer.from_kmer_data(KmerData(rec.to_bytestring(), kmer_size=3, num_colors=0))
+        with pytest.raises(AttributeError):
             kmer.kmer = reverse_complement(kmer.kmer)
 
 
@@ -90,7 +89,7 @@ class TestAddColor(object):
         # then
         assert kmer.num_colors == max(num_colors, increment_color + 1)
         assert len(kmer.coverage) == kmer.num_colors
-        assert np.issubdtype(kmer.coverage[increment_color], np.integer)
+        assert isinstance(kmer.coverage[increment_color], int)
         assert kmer.coverage[increment_color] == 1
         assert len(kmer.edges) == kmer.num_colors
         assert list(kmer.edges) == [cortexpy.edge_set.empty() for _ in range(kmer.num_colors)]
@@ -345,13 +344,14 @@ class TestStringKmerConverter(object):
     def test_converts_to_raw(self, data, kmer_size, num_colors):
         # given
         assume(kmer_size % 2 == 1)
-        kmer = Kmer(KmerData(data.draw(kmer_records(kmer_size, num_colors)).to_bytestring(),
-                             kmer_size=kmer_size,
-                             num_colors=num_colors))
+        kmer = Kmer.from_kmer_data(
+            KmerData(data.draw(kmer_records(kmer_size, num_colors)).to_bytestring(),
+                     kmer_size=kmer_size,
+                     num_colors=num_colors))
         converter = StringKmerConverter(kmer.kmer_size)
 
         # when
         raw_kmer = converter.to_raw(kmer.kmer)
 
         # then
-        assert kmer._kmer_data.get_raw_kmer() == raw_kmer
+        assert kmer.get_raw_kmer() == raw_kmer

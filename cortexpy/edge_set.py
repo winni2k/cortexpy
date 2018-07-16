@@ -26,16 +26,20 @@ class EdgeSet(object):
         return self.data[EDGE_SET_LETTER_LOOKUP[letter]] == 1
 
     def add_edge(self, letter):
-        self.data[EDGE_SET_LETTER_LOOKUP[letter]] = 1
+        data = list(self.data)
+        data[EDGE_SET_LETTER_LOOKUP[letter]] = 1
+        self.data = tuple(data)
 
     def remove_edge(self, letter):
-        self.data[EDGE_SET_LETTER_LOOKUP[letter]] = 0
+        data = list(self.data)
+        data[EDGE_SET_LETTER_LOOKUP[letter]] = 0
+        self.data = tuple(data)
 
     def __getitem__(self, item):
         return self.data[item]
 
     def __eq__(self, other):
-        return np.array_equal(self.data, other.data)
+        return all(s == o for s, o in zip(self.data, other.data))
 
     def __str__(self):
         return self.to_str(as_revcomp=False)

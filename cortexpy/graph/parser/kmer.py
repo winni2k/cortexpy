@@ -3,6 +3,7 @@ import struct
 import attr
 import numpy as np
 import math
+from itertools import repeat
 
 import cortexpy.edge_set
 from cortexpy.edge_set import EdgeSet
@@ -32,11 +33,10 @@ class EmptyKmerBuilder(object):
 
     def _build_from_lexlo(self, kmer_string, is_lexlo=False):
         """Build empty kmer from a lexicographically lowest string"""
-        return Kmer(EmptyKmer(kmer=kmer_string,
-                              coverage=np.zeros(self.num_colors,
-                                                dtype=np.uint8),
-                              kmer_size=len(kmer_string),
-                              num_colors=self.num_colors))
+        return Kmer.from_kmer_data(EmptyKmer(kmer=kmer_string,
+                                             coverage=tuple(repeat(0, self.num_colors)),
+                                             kmer_size=len(kmer_string),
+                                             num_colors=self.num_colors))
 
     def build(self, kmer_string):
         """Build empty kmer from a kmer string"""
@@ -228,14 +228,6 @@ class KmerData(object):
     _kmer = attr.ib(None, init=False)
     _coverage = attr.ib(None, init=False)
     _edges = attr.ib(None, init=False)
-    _kmer_vals_to_delete = attr.ib(init=False)
-
-    def __attrs_post_init__(self):
-        n_vals_left_over = self.kmer_size % 4
-        n_vals_to_remove = 4 - n_vals_left_over
-        if n_vals_to_remove > 0:
-            object.__setattr__(self, "_kmer_vals_to_delete",
-                               np.arange(0, n_vals_to_remove) + self.kmer_size - n_vals_left_over)
 
     def get_raw_kmer(self):
         return self._data[:self.kmer_container_size_in_uint64ts * UINT64_T]
@@ -244,7 +236,7 @@ class KmerData(object):
     def kmer(self):
         if self._kmer is None:
             kmer_letters = RawKmerConverter(self.kmer_size).to_letters(self.get_raw_kmer())
-            object.__setattr__(self, "_kmer", kmer_letters.astype('|S1').tostring().decode('utf-8'))
+            self._kmer = kmer_letters.astype('|S1').tostring().decode('utf-8')
         return self._kmer
 
     @property
@@ -253,9 +245,12 @@ class KmerData(object):
             start = self.kmer_container_size_in_uint64ts * UINT64_T
             coverage_raw = self._data[start:(start + self.num_colors * UINT32_T)]
             fmt_string = ''.join(['I' for _ in range(self.num_colors)])
-            object.__setattr__(self, "_coverage",
-                               np.array(unpack(fmt_string, coverage_raw), dtype=np.uint32))
+            self._coverage = unpack(fmt_string, coverage_raw)
         return self._coverage
+
+    @coverage.setter
+    def coverage(self, val):
+        self._coverage = val
 
     @property
     def edges(self):
@@ -266,10 +261,13 @@ class KmerData(object):
             edge_bytes = np.frombuffer(self._data[start:], dtype=np.uint8)
             edge_sets = np.unpackbits(edge_bytes)
             edge_sets = edge_sets.reshape(-1, 8)
-            edge_sets = map(EdgeSet, edge_sets)
-            edge_sets = list(edge_sets)
-            object.__setattr__(self, "_edges", edge_sets)
+            edge_sets = [EdgeSet(tuple(edge_set.tolist())) for edge_set in edge_sets]
+            self._edges = edge_sets
         return self._edges
+
+    @edges.setter
+    def edges(self, val):
+        self._edges = val
 
     @property
     def kmer_container_size_in_uint64ts(self):
@@ -279,26 +277,16 @@ class KmerData(object):
 @attr.s(slots=True, cmp=False)
 class Kmer(object):
     _kmer_data = attr.ib()
-    _kmer = attr.ib(None)
-    _coverage = attr.ib(None)
-    _edges = attr.ib(None)
     _revcomp = attr.ib(None)
-    kmer_size = attr.ib(init=False)
-    num_colors = attr.ib(init=False)
+    kmer_size = attr.ib(None, init=False)
+    num_colors = attr.ib(None, init=False)
 
-    def __attrs_post_init__(self):
-        self.kmer_size = self._kmer_data.kmer_size
-        self.num_colors = self._kmer_data.num_colors
-
-    @property
-    def kmer_container_size(self):
-        return self._kmer_data.kmer_container_size_in_uint64ts
-
-    @property
-    def kmer(self):
-        if self._kmer is None:
-            self._kmer = self._kmer_data.kmer
-        return self._kmer
+    @classmethod
+    def from_kmer_data(cls, kmer_data):
+        instance = cls(kmer_data)
+        instance.kmer_size = kmer_data.kmer_size
+        instance.num_colors = kmer_data.num_colors
+        return instance
 
     @property
     def revcomp(self):
@@ -306,38 +294,36 @@ class Kmer(object):
             self._revcomp = revcomp(self.kmer)
         return self._revcomp
 
-    @kmer.setter
-    def kmer(self, val):
-        assert lexlo(val) == val
-        self._kmer = val
+    @property
+    def kmer_container_size(self):
+        return self._kmer_data.kmer_container_size_in_uint64ts
+
+    @property
+    def kmer(self):
+        return self._kmer_data.kmer
 
     @property
     def coverage(self):
-        if self._coverage is None:
-            self._coverage = self._kmer_data.coverage
-        return self._coverage
+        return self._kmer_data.coverage
 
     @coverage.setter
     def coverage(self, val):
-        self._coverage = val
+        self._kmer_data.coverage = val
 
     @property
     def edges(self):
-        if self._edges is None:
-            self._edges = self._kmer_data.edges
-        return self._edges
+        return self._kmer_data.edges
 
     @edges.setter
     def edges(self, val):
-        return self._edges
+        self._kmer_data.edges = val
 
     def increment_color_coverage(self, color):
         """Increment the coverage of a color by one"""
         num_colors = max(self.num_colors, color + 1)
+        self.coverage = list(self.coverage)
         if num_colors > self.num_colors:
-            coverage_array = np.append(self.coverage, np.zeros(num_colors - self.num_colors,
-                                                               dtype=self.coverage.dtype))
-            self.coverage = coverage_array
+            self.coverage += list(repeat(0, num_colors - self.num_colors))
             for edge_idx in range(self.num_colors, num_colors):
                 assert len(self.edges) < edge_idx + 1
                 self.edges.append(cortexpy.edge_set.empty())

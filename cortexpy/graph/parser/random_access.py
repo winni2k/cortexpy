@@ -66,13 +66,13 @@ class RandomAccess(Mapping):
         uints, index = self._cached_get_uints_index_for_string(lexlo_string)
         if index < self.n_records:
             if KmerUintComparator(uints) == self.graph_kmer_sequence[index]:
-                kmer_data = self.graph_sequence[index]._kmer_data
+                kmer_data = self.graph_sequence[index]
                 kmer_data._kmer = lexlo_string
                 return kmer_data
         raise KeyError('Could not retrieve kmer: ' + lexlo_string)
 
     def __getitem__(self, lexlo_string):
-        return Kmer(self._get_kmer_data_for_string(lexlo_string))
+        return Kmer.from_kmer_data(self._get_kmer_data_for_string(lexlo_string))
 
     def __len__(self):
         return max(0, self.n_records)
@@ -134,8 +134,7 @@ class KmerRecordSequence(Sequence):
     def __getitem__(self, item):
         if item >= self.n_records or item < 0:
             raise IndexError("Index ({}) is out of range".format(item))
-        kmer_data = self._get_kmer_data_for_item(item)
-        return Kmer(kmer_data)
+        return self._get_kmer_data_for_item(item)
 
     def __len__(self):
         return max(0, self.n_records)

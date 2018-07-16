@@ -48,7 +48,8 @@ class TestDunderGetitemDunder(object):
             # then
             assert expected_kmer.kmer == kmer.kmer
             assert np.all(expected_kmer.coverage == kmer.coverage)
-            assert expected_kmer.edges == kmer.edges
+            for expected, actual in zip(expected_kmer.edges, kmer.edges):
+                assert expected == actual
 
     @given(s.integers(min_value=0, max_value=16))
     def test_cache_complexity(self, num_kmers):

@@ -64,12 +64,14 @@ class CortexGraphBuilder(object):
         if len(k_strings) == 1 and isinstance(k_strings[0], list):
             k_strings = k_strings[0]
         kmer = self.kmer_builder.build_or_get(k_strings[0])
+        kmer.coverage = list(kmer.coverage)
         for cov_color in range(kmer.num_colors):
             kmer.coverage[cov_color] = coverage
         self.graph.add_node(k_strings[0], kmer=kmer)
         if len(k_strings) > 1:
             for k_string1, k_string2 in zip(k_strings[:-1], k_strings[1:]):
                 kmer = self.kmer_builder.build_or_get(k_string2)
+                kmer.coverage = list(kmer.coverage)
                 for cov_color in range(kmer.num_colors):
                     kmer.coverage[cov_color] = coverage
                 self.graph.add_node(k_string2, kmer=kmer)

@@ -34,7 +34,7 @@ class RandomAccessCollection(Mapping):
             kmers.append(kmer)
         if all(key_errors):
             raise KeyError
-        return Kmer(KmerDataCollection(kmers))
+        return Kmer.from_kmer_data(KmerDataCollection(kmers))
 
     def __len__(self):
         return max(0, max((parser.n_records for parser in self.ra_parsers)))

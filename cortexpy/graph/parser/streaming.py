@@ -31,7 +31,7 @@ def kmer_generator_from_stream_and_header(stream, header):
 
     raw_record = stream.read(record_size)
     while raw_record != b'':
-        yield Kmer(
+        yield Kmer.from_kmer_data(
             KmerData(raw_record,
                      header.kmer_size,
                      header.num_colors)

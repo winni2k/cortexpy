@@ -1,7 +1,6 @@
 import random
 from unittest import mock
 
-import numpy as np
 from hypothesis import given, assume
 from hypothesis import strategies as s
 
@@ -43,7 +42,7 @@ class TestStreamKmerGenerator(object):
             # then
             if stream_func == kmer_generator_from_stream_and_header:
                 assert expected_kmer.kmer == val.kmer
-                assert np.all(expected_kmer.coverage == val.coverage)
+                assert expected_kmer.coverage == val.coverage
                 assert expected_kmer.edges == val.edges
             else:
                 assert expected_kmer.kmer == ''.join(val)
@@ -85,5 +84,5 @@ class TestStreamKmerGenerator(object):
         kmer = next(kmer_generator_from_stream_and_header(builder.build(), header))
 
         assert expected_kmer.kmer == kmer.kmer
-        assert np.all(expected_kmer.coverage == kmer.coverage)
+        assert list(expected_kmer.coverage) == list(kmer.coverage)
         assert expected_kmer.edges == kmer.edges
