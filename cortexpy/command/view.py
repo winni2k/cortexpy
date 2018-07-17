@@ -43,11 +43,13 @@ def view_traversal(argv):
     from cortexpy.graph.serializer import unitig
     from cortexpy.graph.parser.streaming import load_cortex_graph
 
+    logger.info(f'Loading graph: {args.traversal}')
     if args.traversal == '-':
         graph = load_cortex_graph(sys.stdin.buffer)
     else:
         with open(args.traversal, 'rb') as fh:
             graph = load_cortex_graph(fh)
+    logger.info(f'Loaded {len(graph)} kmers')
 
     if args.to_json:
         print(unitig.Serializer(graph).to_json())
@@ -56,12 +58,14 @@ def view_traversal(argv):
             seq_record_generator = serializer.KmerGraph(graph).to_seq_records()
         else:
             seed_kmer_strings = strings_to_kmer_strings(args.seed_strings, graph.graph['kmer_size'])
+            logger.info('Making graph consistent')
             consistent_graph = interactor.Interactor(graph,
                                                      colors=None).make_graph_nodes_consistent(
                 seed_kmer_strings).graph
             seq_record_generator = interactor.Contigs(consistent_graph,
                                                       args.color).all_simple_paths()
         seq_record_generator = annotated_seq_records(seq_record_generator, graph_idx="x")
+        logger.info('Writing seq records to STDOUT')
         SeqIO.write(seq_record_generator, sys.stdout, 'fasta')
 
 
