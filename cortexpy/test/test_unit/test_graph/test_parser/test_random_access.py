@@ -70,7 +70,7 @@ class TestDunderGetitemDunder(object):
         fh = b.build()
 
         ra = RandomAccess(fh, kmer_cache_size=None)
-        for k_string in ra:
+        for k_string in list(ra):
             ra[k_string]
         with mock.patch.object(fh, 'read', wraps=fh.read) as mocked_seek:
             # when

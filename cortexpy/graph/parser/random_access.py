@@ -13,7 +13,10 @@ from cortexpy.graph.parser.kmer import (
     Kmer, KmerData, KmerUintComparator,
     StringKmerConverter,
 )
-from .streaming import kmer_generator_from_stream_and_header
+from .streaming import (
+    kmer_generator_from_stream_and_header,
+    kmer_string_generator_from_stream_and_header,
+)
 from cortexpy.utils import lexlo
 
 
@@ -80,8 +83,7 @@ class RandomAccess(Mapping):
     def __iter__(self):
         """Iterate over kmer strings in graph in order stored in graph"""
         self.graph_handle.seek(self.graph_sequence.body_start)
-        return (k.kmer for k in
-                kmer_generator_from_stream_and_header(self.graph_handle, self.header))
+        return kmer_string_generator_from_stream_and_header(self.graph_handle, self.header)
 
     def items(self):
         """Iterate over kmer strings and kmers in graph in order stored in graph"""

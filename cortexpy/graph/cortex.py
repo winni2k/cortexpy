@@ -1,4 +1,4 @@
-from collections import Collection, Mapping
+from collections.abc import Collection, Mapping
 
 import copy
 

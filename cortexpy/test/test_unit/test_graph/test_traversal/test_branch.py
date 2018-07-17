@@ -107,7 +107,7 @@ class BranchTestDriver(object):
             traversal_color=self.traversal_color,
             other_stopping_colors=self.other_stopping_colors)
         if self.warmup_ra_parser:
-            for k_string in ra_parser:
+            for k_string in list(ra_parser):
                 ra_parser[k_string]
         with mock.patch.object(stream, 'read', wraps=stream.read) as mocked_read:
             traversed_branch = traverser \
