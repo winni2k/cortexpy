@@ -1,6 +1,6 @@
 import pytest
 import math
-from Bio.Seq import reverse_complement
+from Bio.Seq import reverse_complement, Seq
 from hypothesis import given, assume, settings, strategies as s
 
 import cortexpy.edge_set
@@ -340,8 +340,9 @@ class TestStringKmerConverter(object):
     @given(s.data(),
            s.integers(min_value=0, max_value=129),
            s.integers(min_value=0, max_value=7),
+           s.booleans()
            )
-    def test_converts_to_raw(self, data, kmer_size, num_colors):
+    def test_converts_to_raw(self, data, kmer_size, num_colors, from_bioseq):
         # given
         assume(kmer_size % 2 == 1)
         kmer = Kmer.from_kmer_data(
@@ -351,7 +352,10 @@ class TestStringKmerConverter(object):
         converter = StringKmerConverter(kmer.kmer_size)
 
         # when
-        raw_kmer = converter.to_raw(kmer.kmer)
+        if from_bioseq:
+            raw_kmer = converter.to_raw(Seq(kmer.kmer))
+        else:
+            raw_kmer = converter.to_raw(kmer.kmer)
 
         # then
         assert kmer.get_raw_kmer() == raw_kmer

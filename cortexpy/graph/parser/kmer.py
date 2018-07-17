@@ -204,7 +204,7 @@ class StringKmerConverter(object):
 
     def to_uints(self, kmer_string):
         """Converts kmer_string to big-endian uint64 array"""
-        assert isinstance(kmer_string, str)
+        kmer_string = str(kmer_string)
         encoded_kmer_string = kmer_string.encode()
         translated_kmer_string = encoded_kmer_string.translate(LETTER_TO_NUM)
         letter_vals = np.frombuffer(translated_kmer_string, dtype=np.uint8)
