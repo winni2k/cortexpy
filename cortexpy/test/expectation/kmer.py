@@ -2,7 +2,6 @@ import collections
 import pprint
 
 import attr
-import numpy as np
 
 from cortexpy.test.expectation.graph import KmerGraphExpectation
 
@@ -13,14 +12,9 @@ class CollapsedKmerNodeExpectation(object):
 
     def has_coverages(self, *coverages):
         print(self.kmer_node)
-        assert np.all(self.kmer_node['coverage'] == np.array(coverages, dtype=np.uint32))
+        for expected, actual in zip(coverages, self.kmer_node['coverage']):
+            assert expected == list(actual)
         return self
-
-    def is_missing(self):
-        raise NotImplementedError
-
-    def is_not_missing(self):
-        raise NotImplementedError
 
 
 @attr.s(slots=True)
@@ -38,6 +32,11 @@ class CollapsedKmerUnitgGraphExpectation(object):
             if self.repr_counts[data['repr']] == 1:
                 self.nodes_by_repr[data['repr']] = node
         self.graph_expectation = KmerGraphExpectation(self.graph)
+
+    def is_empty(self):
+        self.has_n_nodes(0)
+        self.has_n_edges(0)
+        return self
 
     def has_n_nodes(self, n):
         self.graph_expectation.has_n_nodes(n)

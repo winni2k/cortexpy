@@ -36,9 +36,10 @@ def view_traversal(argv):
     parser.add_argument('--color', type=int, help='Restrict view to single color')
     args = parser.parse_args(argv)
 
+    assert not args.kmers or not args.to_json
     from Bio import SeqIO
     import sys
-    from cortexpy.graph import interactor
+    from cortexpy.graph.interactor import Interactor, Contigs
     from cortexpy.graph import serializer
     from cortexpy.graph.serializer import unitig
     from cortexpy.graph.parser.streaming import load_cortex_graph
@@ -51,22 +52,33 @@ def view_traversal(argv):
             graph = load_cortex_graph(fh)
     logger.info(f'Loaded {len(graph)} kmers')
 
+    consistent_graph = None
+    if args.seed_strings:
+        seed_kmer_strings = strings_to_kmer_strings(args.seed_strings, graph.graph['kmer_size'])
+        logger.info(
+            f'Making graph consistent with {len(seed_kmer_strings)} kmers from --seed-strings')
+        consistent_graph = Interactor(graph, colors=None) \
+            .make_graph_nodes_consistent(seed_kmer_strings) \
+            .graph
+
     if args.to_json:
+        logger.info('Writing JSON representation of graph Unitigs to STDOUT')
+        if consistent_graph:
+            graph = consistent_graph
         print(unitig.Serializer(graph).to_json())
+        return
+
+    if args.kmers:
+        seq_record_generator = serializer.KmerGraph(graph).to_seq_records()
     else:
-        if args.kmers:
-            seq_record_generator = serializer.KmerGraph(graph).to_seq_records()
-        else:
-            seed_kmer_strings = strings_to_kmer_strings(args.seed_strings, graph.graph['kmer_size'])
-            logger.info('Making graph consistent')
-            consistent_graph = interactor.Interactor(graph,
-                                                     colors=None).make_graph_nodes_consistent(
-                seed_kmer_strings).graph
-            seq_record_generator = interactor.Contigs(consistent_graph,
-                                                      args.color).all_simple_paths()
-        seq_record_generator = annotated_seq_records(seq_record_generator, graph_idx="x")
-        logger.info('Writing seq records to STDOUT')
-        SeqIO.write(seq_record_generator, sys.stdout, 'fasta')
+        if not consistent_graph:
+            consistent_graph = Interactor(graph, colors=None) \
+                .make_graph_nodes_consistent() \
+                .graph
+        seq_record_generator = Contigs(consistent_graph, args.color).all_simple_paths()
+    seq_record_generator = annotated_seq_records(seq_record_generator, graph_idx="x")
+    logger.info('Writing seq records to STDOUT')
+    SeqIO.write(seq_record_generator, sys.stdout, 'fasta')
 
 
 def view_graph(argv):

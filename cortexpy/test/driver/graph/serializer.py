@@ -1,7 +1,6 @@
 import attr
 
-from cortexpy import graph as graph
-from cortexpy.graph import traversal, parser
+from cortexpy.graph import traversal, parser, ContigRetriever, Interactor
 from cortexpy.graph.serializer import unitig
 from cortexpy.test import builder as builder
 from cortexpy.test.expectation.kmer import CollapsedKmerUnitgGraphExpectation
@@ -25,10 +24,10 @@ class SerializerTestDriver(object):
         self.graph_builder.with_kmer(*args)
         return self
 
-    def traverse_with_start_kmer_and_color(self, start_kmer, color):
+    def traverse_with_start_kmer_and_colors(self, start_kmer, *colors):
         self.traverse = True
         self.traversal_start_kmer = start_kmer
-        self.traversal_colors = [color]
+        self.traversal_colors = colors
         return self
 
     def retrieve_contig(self, contig):
@@ -38,12 +37,15 @@ class SerializerTestDriver(object):
 
     def run(self):
         if self.retrieve:
-            self.retriever = graph.ContigRetriever(self.graph_builder.build())
+            self.retriever = ContigRetriever(self.graph_builder.build())
             return self.retriever.get_kmer_graph(self.contig_to_retrieve)
         elif self.traverse:
             traverser = traversal.Engine(parser.RandomAccess(self.graph_builder.build()),
                                          traversal_colors=self.traversal_colors)
-            return traverser.traverse_from(self.traversal_start_kmer).graph
+            graph = traverser.traverse_from(self.traversal_start_kmer).graph
+            return Interactor(graph, self.traversal_colors) \
+                .make_graph_nodes_consistent([self.traversal_start_kmer]) \
+                .graph
         else:
             raise Exception("Need to load a command")
 

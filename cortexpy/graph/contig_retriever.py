@@ -86,7 +86,6 @@ class ContigRetriever(object):
                         else:
                             kmer_graph.add_edge(kmer_string, neighbor_kmer_string, key=color)
 
-        # todo: remove this for loop and see if things still work
         for kmer_node in kmer_graph:
             kmer_graph.nodes[kmer_node]['repr'] = kmer_node
 
@@ -97,6 +96,7 @@ class ContigRetriever(object):
         sample_names = [n.decode() for n in self.graph_parser.sample_names]
         sample_names.append(RETRIEVED_CONTIG_NAME)
         kmer_graph.graph['sample_names'] = sample_names
+        kmer_graph.graph['is_kmer_graph'] = True
         return kmer_graph
 
 

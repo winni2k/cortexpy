@@ -102,7 +102,8 @@ class Cortexpy(object):
                                            stdout=stdout,
                                            stderr=stderr)
 
-    def view(self, *, cortexpy_graph, to_json=False, kmers=False, subgraphs=None):
+    def view(self, *, cortexpy_graph, to_json=False, kmers=False, subgraphs=None,
+             seed_strings=None):
         cmd = ['view', 'traversal', cortexpy_graph, ]
         if to_json:
             cmd.append('--to-json')
@@ -110,6 +111,9 @@ class Cortexpy(object):
             cmd.append('--kmers')
         if subgraphs:
             cmd += ['--subgraphs', subgraphs]
+        if seed_strings:
+            cmd.append('--seed-strings')
+            cmd += seed_strings
         return self.run(cmd)
 
     def traverse(self, *, graphs, out, contig, contig_fasta=False, colors=None, max_nodes=None,

@@ -47,6 +47,10 @@ class JsonGraph(object):
             self.node_id_by_repr[node['repr']].append(node_id)
             self.node_id_by_unitig[node['unitig']].append(node_id)
 
+    @classmethod
+    def from_string(cls, string):
+        return cls(json.loads(string))
+
     def is_directed(self):
         assert self.graph['directed']
         return self
@@ -64,6 +68,10 @@ class JsonGraph(object):
         assert len(node_ids) == 1
         node = self.graph['nodes'][node_ids[0]]
         return JsonNodeExpectation(node, self.n_colors)
+
+    def has_node_reprs(self, *reprs):
+        assert set(reprs) == set(self.node_id_by_repr.keys())
+        return self
 
     def has_node_repr(self, repr):
         node_ids = self.node_id_by_repr[repr]

@@ -1,34 +1,28 @@
-import io
-import json
+import pytest
 
-import networkx as nx
-
-import cortexpy.graph as graph
-import cortexpy.graph.serializer.unitig as serializer
-import cortexpy.test.builder as builder
 from cortexpy.test.driver.graph.serializer import CollapseKmerUnitigsTestDriver
 
 
-class TestCollapseKmerUnitigsCreatesSingleUnitig(object):
+class TestCreatesSingleUnitig(object):
     def test_with_missing_kmer(self):
         # given
-        driver = (CollapseKmerUnitigsTestDriver()
-                  .with_kmer_size(3)
-                  .retrieve_contig('GTT'))
+        driver = CollapseKmerUnitigsTestDriver() \
+            .with_kmer_size(3) \
+            .retrieve_contig('GTT')
 
         # when
         expect = driver.run()
 
         # then
         expect.has_n_nodes(1)
-        expect.has_one_node_with_repr('GTT').has_coverages(0, 1)
+        expect.has_one_node_with_repr('GTT').has_coverages([0, 1])
 
     def test_with_one_kmer(self):
         # given
-        driver = (CollapseKmerUnitigsTestDriver()
-                  .with_kmer_size(3)
-                  .with_kmer('AAC', 1)
-                  .retrieve_contig('GTT'))
+        driver = CollapseKmerUnitigsTestDriver() \
+            .with_kmer_size(3) \
+            .with_kmer('AAC', 1) \
+            .retrieve_contig('GTT')
 
         # when
         expect = driver.run()
@@ -38,25 +32,40 @@ class TestCollapseKmerUnitigsCreatesSingleUnitig(object):
         expect.has_one_node_with_repr('GTT').has_coverages([1, 1])
 
     def test_with_two_linked_kmers(self):
-        driver = (CollapseKmerUnitigsTestDriver()
-                  .with_kmer_size(3)
-                  .with_kmer('AAA', 0, '.....C..')
-                  .with_kmer('AAC', 0, 'a.......')
-                  .retrieve_contig('AAAC'))
+        driver = CollapseKmerUnitigsTestDriver() \
+            .with_kmer_size(3) \
+            .with_kmer('AAA 0 .....C..') \
+            .with_kmer('AAC 0 a.......') \
+            .retrieve_contig('AAAC')
 
         # when
         expect = driver.run()
 
         # then
         assert expect.has_kmers('AAAC')
+        expect.has_n_nodes(1).has_one_node_with_repr('AAAC').has_coverages([0, 1], [0, 1])
+
+    def test_with_two_linked_kmers_retrieving_revcomp(self):
+        driver = CollapseKmerUnitigsTestDriver() \
+            .with_kmer_size(3) \
+            .with_kmer('AAA 0 .....C..') \
+            .with_kmer('AAC 0 a.......') \
+            .retrieve_contig('GTTT')
+
+        # when
+        expect = driver.run()
+
+        # then
+        assert expect.has_kmers('GTTT')
+        expect.has_n_nodes(1).has_one_node_with_repr('GTTT').has_coverages([0, 1], [0, 1])
 
     def test_with_three_linked_kmers(self):
-        driver = (CollapseKmerUnitigsTestDriver()
-                  .with_kmer_size(3)
-                  .with_kmer('AAA', 0, '.....C..')
-                  .with_kmer('AAC', 0, 'a....C..')
-                  .with_kmer('ACC', 0, 'a.......')
-                  .retrieve_contig('AAACC'))
+        driver = CollapseKmerUnitigsTestDriver() \
+            .with_kmer_size(3) \
+            .with_kmer('AAA', 0, '.....C..') \
+            .with_kmer('AAC', 0, 'a....C..') \
+            .with_kmer('ACC', 0, 'a.......') \
+            .retrieve_contig('AAACC')
 
         # when
         expect = driver.run()
@@ -65,9 +74,7 @@ class TestCollapseKmerUnitigsCreatesSingleUnitig(object):
         expect.has_n_nodes(1)
         expect.has_one_node_with_repr('AAACC')
 
-
-class TestCollapseKmerUnitigs(object):
-    def test_with_two_unlinked_missing_kmers_creates_single_unitig(self):
+    def test_with_two_unlinked_missing_kmers(self):
         # given
         driver = (CollapseKmerUnitigsTestDriver()
                   .with_kmer_size(3)
@@ -83,6 +90,93 @@ class TestCollapseKmerUnitigs(object):
         expect.has_n_nodes(1)
         expect.has_n_edges(0)
 
+
+class TestTraverse(object):
+    def test_with_missing_kmer(self):
+        # given
+        driver = CollapseKmerUnitigsTestDriver() \
+            .with_kmer_size(3) \
+            .traverse_with_start_kmer_and_colors('GTT', 0)
+
+        # when/then
+        with pytest.raises(KeyError):
+            driver.run()
+
+    def test_with_one_kmer(self):
+        # given
+        driver = CollapseKmerUnitigsTestDriver() \
+            .with_kmer_size(3) \
+            .with_kmer('AAC', 1) \
+            .traverse_with_start_kmer_and_colors('GTT', 0)
+
+        # when
+        expect = driver.run()
+
+        # then
+        expect.has_n_nodes(1)
+        expect.has_one_node_with_repr('GTT').has_coverages([1])
+
+    def test_with_two_linked_kmers(self):
+        driver = CollapseKmerUnitigsTestDriver() \
+            .with_kmer_size(3) \
+            .with_kmer('AAA 0 .....C..') \
+            .with_kmer('AAC 0 a.......') \
+            .traverse_with_start_kmer_and_colors('AAA', 0)
+
+        # when
+        expect = driver.run()
+
+        # then
+        assert expect.has_kmers('AAAC')
+        expect.has_n_nodes(1).has_one_node_with_repr('AAAC').has_coverages([0], [0])
+
+    def test_with_two_linked_kmers_retrieving_revcomp(self):
+        driver = CollapseKmerUnitigsTestDriver() \
+            .with_kmer_size(3) \
+            .with_kmer('AAA 0 .....C..') \
+            .with_kmer('AAC 0 a.......') \
+            .traverse_with_start_kmer_and_colors('GTT', 0)
+
+        # when
+        expect = driver.run()
+
+        # then
+        assert expect.has_kmers('GTTT')
+        expect.has_n_nodes(1).has_one_node_with_repr('GTTT').has_coverages([0], [0])
+
+    def test_with_three_linked_kmers(self):
+        driver = CollapseKmerUnitigsTestDriver() \
+            .with_kmer_size(3) \
+            .with_kmer('AAA', 0, '.....C..') \
+            .with_kmer('AAC', 0, 'a....C..') \
+            .with_kmer('ACC', 0, 'a.......') \
+            .traverse_with_start_kmer_and_colors('AAA', 0)
+
+        # when
+        expect = driver.run()
+
+        # then
+        expect.has_n_nodes(1)
+        expect.has_one_node_with_repr('AAACC')
+
+    def test_with_two_unlinked_missing_kmers(self):
+        # given
+        driver = CollapseKmerUnitigsTestDriver() \
+            .with_kmer_size(3) \
+            .with_kmer('CAA') \
+            .with_kmer('AAC') \
+            .traverse_with_start_kmer_and_colors('CAA', 0)
+
+        # when
+        expect = driver.run()
+
+        # then
+        expect.has_one_node_with_repr('CAA').has_coverages([0], [0])
+        expect.has_n_nodes(1)
+        expect.has_n_edges(0)
+
+
+class TestCreatesMultipleUnitigs(object):
     def test_with_two_unlinked_kmers_creates_two_unitigs(self):
         # given
         driver = (CollapseKmerUnitigsTestDriver()
@@ -96,23 +190,9 @@ class TestCollapseKmerUnitigs(object):
 
         # then
         expect.has_n_nodes(2)
-        expect.has_one_node_with_repr('GTT').has_coverages(1, 1)
-        expect.has_one_node_with_repr('G').has_coverages(1, 1)
+        expect.has_one_node_with_repr('GTT').has_coverages([1, 1])
+        expect.has_one_node_with_repr('G').has_coverages([1, 1])
         expect.has_n_edges(1)
-
-    def test_two_linked_kmers_collapse_to_one_kmer(self):
-        # given
-        driver = (CollapseKmerUnitigsTestDriver()
-                  .with_kmer_size(3)
-                  .with_kmer('AAA', 1, '.....C..')
-                  .with_kmer('AAC', 1, 'a.......')
-                  .retrieve_contig('GTTT'))
-
-        # when
-        expect = driver.run()
-
-        # then
-        expect.has_n_nodes(1).has_one_node_with_repr('GTTT').has_coverages([1, 1], [1, 1])
 
     def test_with_two_node_path_and_three_node_cycle_results_in_two_unitigs(self):
         # given
@@ -135,7 +215,7 @@ class TestCollapseKmerUnitigs(object):
         expect.has_n_edges(3)
         expect.has_n_missing_edges(0)
 
-    def test_four_node_path_with_one_node_bubble_in_three_nodes(self):
+    def test_four_node_path_with_one_node_bubble_in_three_nodes_to_three_unitigs(self):
         # given
         driver = (CollapseKmerUnitigsTestDriver()
                   .with_kmer_size(3)
@@ -222,56 +302,8 @@ class TestCollapseKmerUnitigs(object):
 
         # then
         expect.has_one_node_with_repr('TT').has_coverages([1, 1], [1, 1])
-        expect.has_one_node_with_repr('CAAGT').has_coverages([[0, 1] for _ in range(3)])
+        expect.has_one_node_with_repr('CAAGT').has_coverages([0, 1], [0, 1], [0, 1])
         expect.has_one_node_with_repr('GGT').has_coverages([0, 0])
         expect.has_one_node_with_repr('AGG').has_coverages([0, 1])
         expect.has_n_nodes(4)
         expect.has_n_edges(3)
-
-
-class TestToJson(object):
-    def test_two_linked_kmers_are_jsonifiable(self):
-        # given
-        color_names = 'samp1', 'samp2'
-        graph_builder = (builder.Graph()
-                         .with_kmer_size(3)
-                         .with_num_colors(2)
-                         .with_color_names(*color_names)
-                         .with_kmer('AAA', [1, 1], ['.....C..', '.......T'])
-                         .with_kmer('AAC', [1, 0], ['a.......', '........']))
-        retriever = graph.ContigRetriever(graph_builder.build())
-        kmer_graph = retriever.get_kmer_graph('GTTT')
-
-        # when
-        kmer_json = serializer.Serializer(kmer_graph).to_json()
-
-        # then
-        kmer_data = json.loads(kmer_json)  # does not raise
-        assert kmer_data['graph']['colors'] == list(range(3))
-        assert kmer_data['graph']['sample_names'] == list(color_names) + ['retrieved_contig']
-
-
-class TestPickle(object):
-    def test_two_linked_kmers_pickle_ok(self):
-        # given
-        color_names = 'samp1', 'samp2'
-        graph_builder = builder.Graph() \
-            .with_kmer_size(3) \
-            .with_num_colors(2) \
-            .with_color_names(*color_names) \
-            .with_kmer('AAA', [1, 1], ['.....C..', '.......T']) \
-            .with_kmer('AAC', [1, 0], ['a.......', '........'])
-        retriever = graph.ContigRetriever(graph_builder.build())
-        kmer_graph = retriever.get_kmer_graph('GTTT')
-
-        # when
-        buffer = io.BytesIO()
-        nx.write_gpickle(kmer_graph, buffer)
-        buffer.seek(0)
-        unpickled_kmer_graph = nx.read_gpickle(buffer)
-
-        # then
-        assert len(unpickled_kmer_graph) == len(kmer_graph)
-        unpickle_node_data = unpickled_kmer_graph.nodes(data=True)
-        for node, data in kmer_graph.nodes(data=True):
-            assert unpickle_node_data[node] == data

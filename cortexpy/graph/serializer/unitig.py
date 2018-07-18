@@ -137,13 +137,18 @@ class UnitigFinder(object):
     colors = attr.ib(None)
     test_coverage = attr.ib(True)
 
+    @graph.validator
+    def check(self, attribute, value):
+        if getattr(value, 'is_consistent', False):
+            assert value.is_consistent()
+
     def __attrs_post_init__(self):
         if 'colors' in self.graph.graph:
             self.colors = self.graph.graph['colors']
 
     def find_unitigs(self):
-        """Finds unitigs of one or more nodes and replaces them by a subgraph containing the
-        unitig nodes.
+        """Finds unitigs of one or more nodes and adds a Unitig object to the edge between the
+        left and the right most node of the unitig.
 
         Unitigs are described in :py:func:`find_unitig_from`.
 
@@ -152,8 +157,6 @@ class UnitigFinder(object):
 
         unitig_graph = UNITIG_GRAPH()
         visited_nodes = set()
-        if getattr(self.graph, 'is_consistent', False):
-            assert self.graph.is_consistent()
         for start_node in self.graph:
             if start_node in visited_nodes:
                 continue
@@ -283,8 +286,9 @@ class UnitigCollapser(object):
         unitig_graph = self.unitig_finder.find_unitigs()
         out = UNITIG_GRAPH()
         out.graph = self.graph.graph
-        for _, _, unitig in unitig_graph.edges(data='unitig'):
+        for s, t, color, unitig in unitig_graph.edges(data='unitig', keys=True):
             if unitig is None:
+                out.add_edge(s, t, color)
                 continue
             unitig_repr, unitig_string = self._summarize_unitig(unitig)
             out.add_node(unitig, repr=unitig_repr, unitig=unitig_string, coverage=unitig.coverage)

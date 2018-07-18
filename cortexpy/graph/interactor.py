@@ -75,6 +75,8 @@ class Interactor(object):
         Take a CDBG and make all nodes have kmer_strings that are consistent with each other.
         If a seed kmer string is provided, then start with that seed kmer.
         """
+        if self.graph.is_consistent():
+            return self
         graph = CortexDiGraph(self.graph)
         new_graph = ConsistentCortexDiGraph(graph=self.graph.graph)
 

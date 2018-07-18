@@ -222,6 +222,7 @@ class ViewTraversal(object):
     traverse_driver = attr.ib(init=False)
     to_json = attr.ib(False)
     subgraphs = attr.ib(False)
+    seed_strings = attr.ib(None)
 
     def __attrs_post_init__(self):
         self.traverse_driver = Traverse(self.tmpdir)
@@ -254,6 +255,10 @@ class ViewTraversal(object):
         self.traverse_driver.with_initial_contigs(*contigs)
         return self
 
+    def with_seed_strings(self, *strings):
+        self.seed_strings = strings
+        return self
+
     def with_traversal_colors(self, *colors):
         self.traverse_driver.with_traversal_colors(*colors)
         return self
@@ -274,6 +279,7 @@ class ViewTraversal(object):
             cortexpy_graph=self.traverse_driver.traversal,
             to_json=self.to_json,
             subgraphs=out_prefix,
+            seed_strings=self.seed_strings
         )
         assert ret.returncode == 0, ret
         if self.to_json:
