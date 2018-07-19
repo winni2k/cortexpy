@@ -15,7 +15,7 @@ class TestCreatesSingleUnitig(object):
 
         # then
         expect.has_n_nodes(1)
-        expect.has_one_node_with_repr('GTT').has_coverages([0, 1])
+        expect.has_one_node_with_repr('GTT').has_coverages_by_kmer([0, 1])
 
     def test_with_one_kmer(self):
         # given
@@ -29,7 +29,7 @@ class TestCreatesSingleUnitig(object):
 
         # then
         expect.has_n_nodes(1)
-        expect.has_one_node_with_repr('GTT').has_coverages([1, 1])
+        expect.has_one_node_with_repr('GTT').has_coverages_by_kmer([1, 1])
 
     def test_with_two_linked_kmers(self):
         driver = CollapseKmerUnitigsTestDriver() \
@@ -43,7 +43,7 @@ class TestCreatesSingleUnitig(object):
 
         # then
         assert expect.has_kmers('AAAC')
-        expect.has_n_nodes(1).has_one_node_with_repr('AAAC').has_coverages([0, 1], [0, 1])
+        expect.has_n_nodes(1).has_one_node_with_repr('AAAC').has_coverages_by_kmer([0, 1], [0, 1])
 
     def test_with_two_linked_kmers_retrieving_revcomp(self):
         driver = CollapseKmerUnitigsTestDriver() \
@@ -57,7 +57,7 @@ class TestCreatesSingleUnitig(object):
 
         # then
         assert expect.has_kmers('GTTT')
-        expect.has_n_nodes(1).has_one_node_with_repr('GTTT').has_coverages([0, 1], [0, 1])
+        expect.has_n_nodes(1).has_one_node_with_repr('GTTT').has_coverages_by_kmer([0, 1], [0, 1])
 
     def test_with_three_linked_kmers(self):
         driver = CollapseKmerUnitigsTestDriver() \
@@ -86,7 +86,7 @@ class TestCreatesSingleUnitig(object):
         expect = driver.run()
 
         # then
-        expect.has_one_node_with_repr('GTTG').has_coverages([0, 1], [0, 1])
+        expect.has_one_node_with_repr('GTTG').has_coverages_by_kmer([0, 1], [0, 1])
         expect.has_n_nodes(1)
         expect.has_n_edges(0)
 
@@ -114,7 +114,7 @@ class TestTraverse(object):
 
         # then
         expect.has_n_nodes(1)
-        expect.has_one_node_with_repr('GTT').has_coverages([1])
+        expect.has_one_node_with_repr('GTT').has_coverages_by_kmer([1])
 
     def test_with_two_linked_kmers(self):
         driver = CollapseKmerUnitigsTestDriver() \
@@ -128,7 +128,7 @@ class TestTraverse(object):
 
         # then
         assert expect.has_kmers('AAAC')
-        expect.has_n_nodes(1).has_one_node_with_repr('AAAC').has_coverages([0], [0])
+        expect.has_n_nodes(1).has_one_node_with_repr('AAAC').has_coverages_by_kmer([0], [0])
 
     def test_with_two_linked_kmers_retrieving_revcomp(self):
         driver = CollapseKmerUnitigsTestDriver() \
@@ -142,7 +142,7 @@ class TestTraverse(object):
 
         # then
         assert expect.has_kmers('GTTT')
-        expect.has_n_nodes(1).has_one_node_with_repr('GTTT').has_coverages([0], [0])
+        expect.has_n_nodes(1).has_one_node_with_repr('GTTT').has_coverages_by_kmer([0], [0])
 
     def test_with_three_linked_kmers(self):
         driver = CollapseKmerUnitigsTestDriver() \
@@ -171,7 +171,7 @@ class TestTraverse(object):
         expect = driver.run()
 
         # then
-        expect.has_one_node_with_repr('CAA').has_coverages([0], [0])
+        expect.has_one_node_with_repr('CAA').has_coverages_by_kmer([0], [0])
         expect.has_n_nodes(1)
         expect.has_n_edges(0)
 
@@ -190,8 +190,8 @@ class TestCreatesMultipleUnitigs(object):
 
         # then
         expect.has_n_nodes(2)
-        expect.has_one_node_with_repr('GTT').has_coverages([1, 1])
-        expect.has_one_node_with_repr('G').has_coverages([1, 1])
+        expect.has_one_node_with_repr('GTT').has_coverages_by_kmer([1, 1])
+        expect.has_one_node_with_repr('G').has_coverages_by_kmer([1, 1])
         expect.has_n_edges(1)
 
     def test_with_two_node_path_and_three_node_cycle_results_in_two_unitigs(self):
@@ -210,8 +210,8 @@ class TestCreatesMultipleUnitigs(object):
 
         # then
         expect.has_kmers('AAAC', 'GAC')
-        expect.has_one_node_with_repr('AAAC').has_coverages([1, 1], [1, 1])
-        expect.has_one_node_with_repr('GAC').has_coverages([1, 1], [1, 1], [1, 1])
+        expect.has_one_node_with_repr('AAAC').has_coverages_by_kmer([1, 1], [1, 1])
+        expect.has_one_node_with_repr('GAC').has_coverages_by_kmer([1, 1], [1, 1], [1, 1])
         expect.has_n_edges(3)
         expect.has_n_missing_edges(0)
 
@@ -230,9 +230,9 @@ class TestCreatesMultipleUnitigs(object):
         expect = driver.run()
 
         # then
-        expect.has_one_node_with_repr('AACC').has_coverages([1, 1], [1, 1])
-        expect.has_one_node_with_repr('C').has_coverages([1, 1])
-        expect.has_one_node_with_repr('GA').has_coverages([1, 1])
+        expect.has_one_node_with_repr('AACC').has_coverages_by_kmer([1, 1], [1, 1])
+        expect.has_one_node_with_repr('C').has_coverages_by_kmer([1, 1])
+        expect.has_one_node_with_repr('GA').has_coverages_by_kmer([1, 1])
         expect.has_n_nodes(3)
 
     def test_two_kmers_one_kmer_apart_do_not_collapse(self):
@@ -249,9 +249,9 @@ class TestCreatesMultipleUnitigs(object):
         # then
         expect.has_n_nodes(3)
         expect.has_n_edges(2)
-        expect.has_one_node_with_repr('GGT').has_coverages([1, 1])
-        expect.has_one_node_with_repr('T').has_coverages([0, 1])
-        expect.has_one_node_with_repr('C').has_coverages([1, 1])
+        expect.has_one_node_with_repr('GGT').has_coverages_by_kmer([1, 1])
+        expect.has_one_node_with_repr('T').has_coverages_by_kmer([0, 1])
+        expect.has_one_node_with_repr('C').has_coverages_by_kmer([1, 1])
 
     def test_two_linked_kmers_with_incoming_edge_and_missing_kmer_returns_three_unitigs(self):
         # given
@@ -265,9 +265,9 @@ class TestCreatesMultipleUnitigs(object):
         expect = driver.run()
 
         # then
-        expect.has_one_node_with_repr('A').has_coverages([0, 1])
-        expect.has_one_node_with_repr('G').has_coverages([0, 0])
-        expect.has_one_node_with_repr('GTTT').has_coverages([1, 1], [1, 1])
+        expect.has_one_node_with_repr('A').has_coverages_by_kmer([0, 1])
+        expect.has_one_node_with_repr('G').has_coverages_by_kmer([0, 0])
+        expect.has_one_node_with_repr('GTTT').has_coverages_by_kmer([1, 1], [1, 1])
 
         expect.has_n_nodes(3)
         expect.has_n_edges(2)
@@ -284,26 +284,26 @@ class TestCreatesMultipleUnitigs(object):
         expect = driver.run()
 
         # then
-        expect.has_one_node_with_repr('GTTT').has_coverages([1, 1], [1, 1])
-        expect.has_one_node_with_repr('AA').has_coverages([0, 2], [0, 2])
+        expect.has_one_node_with_repr('GTTT').has_coverages_by_kmer([1, 1], [1, 1])
+        expect.has_one_node_with_repr('AA').has_coverages_by_kmer([0, 2], [0, 2])
         expect.has_n_nodes(2)
         expect.has_n_edges(1)
 
     def test_linked_kmers_with_outgoing_edge_surrounded_by_missing_kmers_returns_four_unitigs(self):
         # given
-        driver = (CollapseKmerUnitigsTestDriver()
-                  .with_kmer_size(3)
-                  .with_kmer('AAA', 1, '.....C..')
-                  .with_kmer('AAC', 1, 'a....C..')
-                  .retrieve_contig('CAAGTTTAGG'))
+        driver = CollapseKmerUnitigsTestDriver() \
+            .with_kmer_size(3) \
+            .with_kmer('AAA', 1, '.....C..') \
+            .with_kmer('AAC', 1, 'a....C..') \
+            .retrieve_contig('CAAGTTTAGG')
 
         # when
         expect = driver.run()
 
         # then
-        expect.has_one_node_with_repr('TT').has_coverages([1, 1], [1, 1])
-        expect.has_one_node_with_repr('CAAGT').has_coverages([0, 1], [0, 1], [0, 1])
-        expect.has_one_node_with_repr('GGT').has_coverages([0, 0])
-        expect.has_one_node_with_repr('AGG').has_coverages([0, 1])
+        expect.has_one_node_with_repr('TT').has_coverages_by_kmer([1, 1], [1, 1])
+        expect.has_one_node_with_repr('CAAGT').has_coverages_by_kmer([0, 1], [0, 1], [0, 1])
+        expect.has_one_node_with_repr('GGT').has_coverages_by_kmer([0, 0])
+        expect.has_one_node_with_repr('AGG').has_coverages_by_kmer([0, 1])
         expect.has_n_nodes(4)
         expect.has_n_edges(3)

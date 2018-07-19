@@ -61,9 +61,9 @@ class TestContig(object):
 
         expect.has_colors([0, 1])
         expect.has_n_nodes(3)
-        expect.has_node_repr('AAACC').has_coverages([2, 1], [2, 1], [3, 1])
-        expect.has_node_repr('C').has_coverages([2, 1])
-        expect.has_node_repr('GAA').has_coverages([3, 1], [2, 1], [2, 1])
+        expect.has_node_repr('AAACC').has_coverages_by_kmer([2, 1], [2, 1], [3, 1])
+        expect.has_node_repr('C').has_coverages_by_kmer([2, 1])
+        expect.has_node_repr('GAA').has_coverages_by_kmer([3, 1], [2, 1], [2, 1])
 
         for edge in [('AAACC', 'C', 0), ('AAACC', 'C', 1), ('C', 'GAA', 0), ('C', 'GAA', 1),
                      ('AAACC', 'GAA', 0)]:
@@ -97,10 +97,10 @@ class TestContig(object):
         expect = JsonGraph(json.loads(stdout))
 
         expect.has_n_nodes(4)
-        expect.has_node_repr('AAACC').has_coverages([1, 1], [1, 1], [2, 1])
-        expect.has_node_repr('C').has_coverages([1, 1])
-        expect.has_node_repr('GAA').has_coverages([2, 1], [1, 1], [1, 1])
-        expect.has_node_repr('G').has_coverages([0, 1])
+        expect.has_node_repr('AAACC').has_coverages_by_kmer([1, 1], [1, 1], [2, 1])
+        expect.has_node_repr('C').has_coverages_by_kmer([1, 1])
+        expect.has_node_repr('GAA').has_coverages_by_kmer([2, 1], [1, 1], [1, 1])
+        expect.has_node_repr('G').has_coverages_by_kmer([0, 1])
 
         for color in [0, 1]:
             for edge in [['AAACC', 'C'], ['C', 'GAA']]:
@@ -128,9 +128,9 @@ class TestTraversal(object):
 
             expect.has_n_nodes(3)
             expect.has_node_reprs('C', 'AAACC', 'GAA')
-            expect.has_node_repr('C').has_coverages([1])
-            expect.has_node_repr('AAACC').has_coverages([1], [1], [2])
-            expect.has_node_repr('GAA').has_coverages([2], [1], [1])
+            expect.has_node_repr('C').has_coverages_by_kmer([1])
+            expect.has_node_repr('AAACC').has_coverages_by_kmer([1], [1], [2])
+            expect.has_node_repr('GAA').has_coverages_by_kmer([2], [1], [1])
 
             for color in [0]:
                 for edge in [['AAACC', 'C'], ['C', 'GAA']]:
@@ -153,9 +153,9 @@ class TestTraversal(object):
         expect = d.run()
 
         expect.has_node_reprs('G', 'TTT', 'CTCGG')
-        expect.has_node_repr('G').has_coverages([1])
-        expect.has_node_repr('TTT').has_coverages([2], [1], [1])
-        expect.has_node_repr('CTCGG').has_coverages([1], [1], [2])
+        expect.has_node_repr('G').has_coverages_by_kmer([1])
+        expect.has_node_repr('TTT').has_coverages_by_kmer([2], [1], [1])
+        expect.has_node_repr('CTCGG').has_coverages_by_kmer([1], [1], [2])
 
         expect.has_n_edges(3)
         expect.has_repr_edge('G', 'TTT', 0)
@@ -177,10 +177,10 @@ class TestTraversal(object):
         # when
         expect = d.run()
 
-        expect.has_node_repr('C').has_coverages([1, 1])
-        expect.has_node_repr('AAACC').has_coverages([1, 1], [1, 1], [2, 1])
-        expect.has_node_repr('GAA').has_coverages([2, 1], [1, 1], [1, 1])
-        expect.has_node_repr('G').has_coverages([0, 0])
+        expect.has_node_repr('C').has_coverages_by_kmer([1, 1])
+        expect.has_node_repr('AAACC').has_coverages_by_kmer([1, 1], [1, 1], [2, 1])
+        expect.has_node_repr('GAA').has_coverages_by_kmer([2, 1], [1, 1], [1, 1])
+        expect.has_node_repr('G').has_coverages_by_kmer([0, 0])
         expect.has_n_nodes(4)
 
         for color in [0, 1]:

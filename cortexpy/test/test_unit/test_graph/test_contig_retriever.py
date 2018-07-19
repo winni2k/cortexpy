@@ -36,10 +36,10 @@ class TestGetKmerGraph(object):
         expect = KmerGraphExpectation(retriever.get_kmer_graph('AAA'))
 
         # then
-        (expect.has_n_nodes(1)
-         .has_n_edges(0)
-         .has_node('AAA')
-         .has_coverages(0, 1))
+        expect.has_n_nodes(1) \
+            .has_n_edges(0) \
+            .has_node('AAA') \
+            .has_coverages(0, 1)
 
     def test_with_one_kmer_returns_one_kmer(self):
         # given

@@ -334,14 +334,14 @@ class TestBothOrientation(object):
             expect.has_node(node).has_coverages(1, 1)
         for node in ['AAT', 'AAC']:
             expect.has_node(node).has_coverages(1, 0)
-        (expect
-         .has_n_nodes(len(kmers))
-         .has_edges('AAA CAA 0',
-                    'AAA CAA 1',
-                    'AAA GAA 0',
-                    'AAA GAA 1',
-                    'AAA AAT 0',
-                    'AAA AAC 0'))
+        expect \
+            .has_n_nodes(len(kmers)) \
+            .has_edges('AAA CAA 0',
+                       'AAA CAA 1',
+                       'AAA GAA 0',
+                       'AAA GAA 1',
+                       'AAA AAT 0',
+                       'AAA AAC 0')
 
     @given(s.data())
     def test_branch_with_two_colors(self, data):

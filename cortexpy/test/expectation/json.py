@@ -112,15 +112,13 @@ class JsonNodeExpectation(object):
     n_colors = attr.ib(None)
 
     def has_coverages_by_color(self, *coverages):
-        coverages = list(listify_elements(coverages))  # allow integers as input
-        return self.has_coverages(*[list(i) for i in zip(*coverages)])
-
-    def has_coverages(self, *coverages):
         coverages = list(listify_elements(coverages))
-        for coverage in coverages:
-            assert len(coverage) == self.n_colors
-        assert self.node['coverage'] == coverages
+        assert coverages == self.node['coverage']
         return self
+
+    def has_coverages_by_kmer(self, *coverages):
+        coverages = list(listify_elements(coverages))
+        return self.has_coverages_by_color(*[list(i) for i in zip(*coverages)])
 
 
 def expect_zero_return_code(completed_process):

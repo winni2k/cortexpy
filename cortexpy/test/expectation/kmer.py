@@ -10,7 +10,7 @@ from cortexpy.test.expectation.graph import KmerGraphExpectation
 class CollapsedKmerNodeExpectation(object):
     kmer_node = attr.ib()
 
-    def has_coverages(self, *coverages):
+    def has_coverages_by_kmer(self, *coverages):
         print(self.kmer_node)
         for expected, actual in zip(coverages, self.kmer_node['coverage']):
             assert expected == list(actual)

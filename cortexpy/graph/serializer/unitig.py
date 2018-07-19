@@ -68,6 +68,7 @@ class Serializer(object):
                     pass
                 finally:
                     coverage.append([int(i) for i in coverage_list])
+            coverage = [list(c) for c in zip(*coverage)]
             node_data['coverage'] = coverage
 
 
