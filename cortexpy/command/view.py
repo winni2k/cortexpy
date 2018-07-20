@@ -1,4 +1,5 @@
 import logging
+from contextlib import ExitStack
 
 logger = logging.getLogger('cortexpy.view')
 
@@ -25,7 +26,10 @@ def view(argv):
 
 def view_traversal(argv):
     import argparse
-    parser = argparse.ArgumentParser(prog='cortexpy view traversal')
+    from .shared import get_shared_argsparse
+    shared_parser = get_shared_argsparse()
+
+    parser = argparse.ArgumentParser(prog='cortexpy view traversal', parents=[shared_parser])
     parser.add_argument('traversal', help="cortexpy traversal in Python pickle format."
                                           " Read traversal from stdin traversal is '-'.")
     parser.add_argument('--to-json', action='store_true')
@@ -44,41 +48,47 @@ def view_traversal(argv):
     from cortexpy.graph.serializer import unitig
     from cortexpy.graph.parser.streaming import load_cortex_graph
 
-    logger.info(f'Loading graph: {args.traversal}')
-    if args.traversal == '-':
-        graph = load_cortex_graph(sys.stdin.buffer)
-    else:
-        with open(args.traversal, 'rb') as fh:
-            graph = load_cortex_graph(fh)
-    logger.info(f'Loaded {len(graph)} kmers')
+    with ExitStack() as stack:
+        if args.out == '-':
+            output = sys.stdout
+        else:
+            output = stack.enter_context(open(args.out, 'wt'))
 
-    consistent_graph = None
-    if args.seed_strings:
-        seed_kmer_strings = strings_to_kmer_strings(args.seed_strings, graph.graph['kmer_size'])
-        logger.info(
-            f'Making graph consistent with {len(seed_kmer_strings)} kmers from --seed-strings')
-        consistent_graph = Interactor(graph, colors=None) \
-            .make_graph_nodes_consistent(seed_kmer_strings) \
-            .graph
+        logger.info(f'Loading graph: {args.traversal}')
+        if args.traversal == '-':
+            graph = load_cortex_graph(sys.stdin.buffer)
+        else:
+            with open(args.traversal, 'rb') as fh:
+                graph = load_cortex_graph(fh)
+        logger.info(f'Loaded {len(graph)} kmers')
 
-    if args.to_json:
-        logger.info('Writing JSON representation of graph Unitigs to STDOUT')
-        if consistent_graph:
-            graph = consistent_graph
-        print(unitig.Serializer(graph).to_json())
-        return
-
-    if args.kmers:
-        seq_record_generator = serializer.KmerGraph(graph).to_seq_records()
-    else:
-        if not consistent_graph:
+        consistent_graph = None
+        if args.seed_strings:
+            seed_kmer_strings = strings_to_kmer_strings(args.seed_strings, graph.graph['kmer_size'])
+            logger.info(
+                f'Making graph consistent with {len(seed_kmer_strings)} kmers from --seed-strings')
             consistent_graph = Interactor(graph, colors=None) \
-                .make_graph_nodes_consistent() \
+                .make_graph_nodes_consistent(seed_kmer_strings) \
                 .graph
-        seq_record_generator = Contigs(consistent_graph, args.color).all_simple_paths()
-    seq_record_generator = annotated_seq_records(seq_record_generator, graph_idx="x")
-    logger.info('Writing seq records to STDOUT')
-    SeqIO.write(seq_record_generator, sys.stdout, 'fasta')
+
+        if args.to_json:
+            logger.info('Writing JSON representation of graph Unitigs to STDOUT')
+            if consistent_graph:
+                graph = consistent_graph
+            print(unitig.Serializer(graph).to_json())
+            return
+
+        if args.kmers:
+            seq_record_generator = serializer.KmerGraph(graph).to_seq_records()
+        else:
+            if not consistent_graph:
+                consistent_graph = Interactor(graph, colors=None) \
+                    .make_graph_nodes_consistent() \
+                    .graph
+            seq_record_generator = Contigs(consistent_graph, args.color).all_simple_paths()
+        seq_record_generator = annotated_seq_records(seq_record_generator, graph_idx="x")
+        logger.info('Writing seq records to STDOUT')
+        SeqIO.write(seq_record_generator, output, 'fasta')
 
 
 def view_graph(argv):

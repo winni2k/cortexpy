@@ -72,7 +72,7 @@ class TestIncomingOutgoingKmers(object):
     def test_incoming_strings_does_not_return_lexicographically_lowest_kmers(self):
         es = EdgeSet(np.zeros(8))
         es.add_edge('t')
-        assert ['TTA'] == es.get_incoming_kmer_strings('TAA')
+        assert ['TTA'] == list(es.get_incoming_kmer_strings('TAA'))
 
     def test_outgoing_returns_lexicographically_lowest_kmers(self):
         es = EdgeSet(np.zeros(8))
@@ -83,7 +83,7 @@ class TestIncomingOutgoingKmers(object):
     def test_outgoing_strings_does_not_return_lexicographically_lowest_kmer(self):
         es = EdgeSet(np.zeros(8))
         es.add_edge('G')
-        assert ['CGG'] == es.get_outgoing_kmer_strings('ACG')
+        assert ['CGG'] == list(es.get_outgoing_kmer_strings('ACG'))
 
     def test_raises_on_non_lexlo_kmer(self):
         es = EdgeSet(np.zeros(8))

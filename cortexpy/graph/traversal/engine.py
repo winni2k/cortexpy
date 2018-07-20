@@ -130,7 +130,7 @@ class Engine(object):
             for color in self.traversal_colors:
                 oriented_edge_set = start_kmer.edges[color].oriented(
                     EdgeTraversalOrientation.reverse)
-                kmer_strings = oriented_edge_set.neighbor_kmer_strings(start_string)
+                kmer_strings = list(oriented_edge_set.neighbor_kmer_strings(start_string))
                 if len(kmer_strings) == 1:
                     self.queuer.add_from(start_string=kmer_strings[0],
                                          orientation=EdgeTraversalOrientation.reverse,
@@ -138,8 +138,7 @@ class Engine(object):
                                          traversal_color=color)
         for color in self.traversal_colors[1:]:
             oriented_edge_set = start_kmer.edges[color].oriented(first_traversal_orientation)
-            kmer_strings = oriented_edge_set.neighbor_kmer_strings(start_string)
-            for kmer_string in kmer_strings:
+            for kmer_string in oriented_edge_set.neighbor_kmer_strings(start_string):
                 self.queuer.add_from(start_string=kmer_string,
                                      orientation=first_traversal_orientation,
                                      connecting_node=start_string,

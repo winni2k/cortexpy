@@ -192,8 +192,7 @@ class CortexDiGraph(Collection):
         kmer = self.node[node]
         is_lexlo = kmer.kmer == node
         for color in kmer.colors:
-            for out_node in kmer.edges[color].get_outgoing_kmer_strings(node,
-                                                                        is_lexlo=is_lexlo):
+            for out_node in kmer.edges[color].get_outgoing_kmer_strings(node, is_lexlo=is_lexlo):
                 if keys:
                     yield (node, out_node, color)
                 else:
@@ -420,11 +419,10 @@ class ConsistentCortexDiGraph(Collection):
         return len(list(self.in_edges(node)))
 
     def out_edges(self, node, keys=False, default=None, data=None):
-        kmer = self.node[node]
+        kmer = self._kmer_mapping[node]
         is_lexlo = kmer.kmer == node
         for color in kmer.colors:
-            for out_node in kmer.edges[color].get_outgoing_kmer_strings(node,
-                                                                        is_lexlo=is_lexlo):
+            for out_node in kmer.edges[color].get_outgoing_kmer_strings(node, is_lexlo=is_lexlo):
                 if keys:
                     yield (node, out_node, color)
                 else:

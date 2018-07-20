@@ -85,7 +85,7 @@ class Traverser(object):
         return oriented_edge_set.neighbor_kmer_strings(self.kmer_string)
 
     def _add_next_kmer_string_to_graph_and_get_next_kmer(self, oriented_edge_set):
-        next_kmer_string = oriented_edge_set.neighbor_kmer_strings(self.kmer_string)[0]
+        next_kmer_string = next(oriented_edge_set.neighbor_kmer_strings(self.kmer_string))
         prev_kmer_string = self.kmer_string
         try:
             self.kmer_string = next_kmer_string

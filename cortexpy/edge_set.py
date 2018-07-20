@@ -59,37 +59,32 @@ class EdgeSet(object):
         return sum(self.incoming)
 
     def _get_kmer_strings(self, sub_kmer_string, is_incoming, is_lexlo):
-        edges = self._get_edges_for_kmer_strings(is_incoming, is_lexlo)
-        kmers = []
-        for edge_idx, edge in enumerate(edges):
-            if edge:
-                if is_incoming:
-                    new_kmer_string = EDGE_IDX_TO_LETTER[edge_idx] + sub_kmer_string
-                else:
-                    new_kmer_string = sub_kmer_string + EDGE_IDX_TO_LETTER[edge_idx + 4]
-                kmers.append(new_kmer_string)
-        return kmers
-
-    def _get_edges_for_kmer_strings(self, is_incoming, is_lexlo):
         if is_incoming:
-            edge_funcs = [self.outgoing, self.incoming]
+            if is_lexlo:
+                edges = self.incoming
+            else:
+                edges = self.outgoing
+            for edge_idx, edge in enumerate(edges):
+                if edge:
+                    yield EDGE_IDX_TO_LETTER[edge_idx] + sub_kmer_string
         else:
-            edge_funcs = [self.incoming, self.outgoing]
-        if is_lexlo:
-            return edge_funcs[1]
-        return edge_funcs[0]
+            if is_lexlo:
+                edges = self.outgoing
+            else:
+                edges = self.incoming
+            for edge_idx, edge in enumerate(edges):
+                if edge:
+                    yield sub_kmer_string + EDGE_IDX_TO_LETTER[edge_idx + 4]
 
     def get_incoming_kmer_strings(self, kmer_string, is_lexlo=None):
         if is_lexlo is None:
             is_lexlo = bool(kmer_string == lexlo(kmer_string))
-        sub_kmer_string = kmer_string[:-1]
-        return self._get_kmer_strings(sub_kmer_string, True, is_lexlo)
+        return self._get_kmer_strings(kmer_string[:-1], True, is_lexlo)
 
     def get_outgoing_kmer_strings(self, kmer_string, is_lexlo=None):
         if is_lexlo is None:
             is_lexlo = bool(kmer_string == lexlo(kmer_string))
-        sub_kmer_string = kmer_string[1:]
-        return self._get_kmer_strings(sub_kmer_string, False, is_lexlo)
+        return self._get_kmer_strings(kmer_string[1:], False, is_lexlo)
 
     def get_incoming_kmers(self, kmer_string):
         lexlo_string = lexlo(kmer_string)

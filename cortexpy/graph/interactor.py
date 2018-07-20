@@ -1,3 +1,5 @@
+import collections
+
 import attr
 import networkx as nx
 from Bio.Seq import Seq
@@ -245,7 +247,35 @@ class Contigs(object):
             for target in out_nodes_of(graph):
                 if source == target:
                     continue
-                for path in nx.all_simple_paths(graph, source=source, target=target):
+                for path in _all_simple_paths_multigraph(graph, source, target,
+                                                         cutoff=len(graph) - 1):
                     yield SeqRecord(Seq(convert_kmer_path_to_contig(path)), id=str(idx),
                                     description='')
                     idx += 1
+
+
+def _all_simple_paths_multigraph(G, source, target, cutoff=None):
+    """This function was copied from Networkx before being edited by Warren Kretzschmar
+    todo: switch back to nx.all_simple_paths once Networkx 2.2 is released"""
+    if cutoff < 1:
+        return
+    visited = collections.OrderedDict.fromkeys([source])
+    stack = [(v for u, v in G.edges(source))]
+    while stack:
+        children = stack[-1]
+        child = next(children, None)
+        if child is None:
+            stack.pop()
+            visited.popitem()
+        elif len(visited) < cutoff:
+            if child == target:
+                yield list(visited) + [target]
+            elif child not in visited:
+                visited[child] = None
+                stack.append((v for u, v in G.edges(child)))
+        else:  # len(visited) == cutoff:
+            count = ([child] + list(children)).count(target)
+            for i in range(count):
+                yield list(visited) + [target]
+            stack.pop()
+            visited.popitem()
