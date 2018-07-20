@@ -88,9 +88,9 @@ class JsonGraph(object):
     def has_repr_edge(self, source_repr, target_repr, color):
         source_id_list = self.node_id_by_repr[source_repr]
         target_id_list = self.node_id_by_repr[target_repr]
-        assert 1 == len(source_id_list)
-        assert 1 == len(target_id_list)
-        print('source=(id={},repr={}), target=(id={},repr={})'.format(source_id_list[0], source_repr, target_id_list[0], target_repr))
+        assert len(source_id_list) == 1
+        assert len(target_id_list) == 1
+        print('source_repr={}, target_repr={}'.format(source_repr, target_repr))
         return self.has_edge(source_id_list[0], target_id_list[0], color)
 
     def has_edge(self, source, target, color):
@@ -101,7 +101,7 @@ class JsonGraph(object):
             if edge == (source, target, color):
                 num_matching_edges += 1
                 matching_edge = edge
-        assert (source, target, color) == matching_edge
+        assert matching_edge == (source, target, color)
         assert num_matching_edges == 1
         return self
 
