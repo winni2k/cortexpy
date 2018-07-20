@@ -5,7 +5,9 @@ import copy
 import itertools
 import networkx as nx
 import attr
-
+nx.OrderedDiGraph
+nx.MultiDiGraph
+nx.DiGraph
 from cortexpy.constants import EdgeTraversalOrientation
 from .parser.kmer import find_all_neighbors
 from cortexpy.utils import lexlo

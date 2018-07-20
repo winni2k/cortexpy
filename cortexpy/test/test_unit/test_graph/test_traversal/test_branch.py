@@ -148,11 +148,11 @@ class Test(object):
     def test_two_connected_kmers_returns_graph_with_two_kmers(self):
         # given
         driver = BranchTestDriver()
-        (driver
-         .with_kmer_size(3)
-         .with_kmer('AAA', 0, '.......T')
-         .with_kmer('AAT', 0, 'a.......')
-         .with_start_kmer_string('AAA'))
+        driver \
+            .with_kmer_size(3) \
+            .with_kmer('AAA', 0, '.......T') \
+            .with_kmer('AAT', 0, 'a.......') \
+            .with_start_kmer_string('AAA')
 
         # when
         expect = driver.run()

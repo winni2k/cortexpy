@@ -77,10 +77,10 @@ class Interactor(object):
         Take a CDBG and make all nodes have kmer_strings that are consistent with each other.
         If a seed kmer string is provided, then start with that seed kmer.
         """
-        if self.graph.is_consistent():
+        if isinstance(self.graph, nx.Graph) or self.graph.is_consistent():
             return self
         graph = CortexDiGraph(self.graph)
-        new_graph = ConsistentCortexDiGraph(graph=self.graph.graph)
+        new_graph = nx.MultiDiGraph(**self.graph.graph)
 
         seeds = SeedKmerStringIterator(self.graph.nodes(), seed_kmer_strings)
 
@@ -89,18 +89,23 @@ class Interactor(object):
             seeds.remove(lexlo_seed)
             for source, sink, key, direction in nx.edge_dfs(graph, lexlo_seed, 'ignore'):
                 if direction == 'forward':
-                    rc_after_ref_kmer = True
+                    revcomp_after_ref = True
                     ref, target = source, sink
                 elif direction == 'reverse':
+                    revcomp_after_ref = False
                     ref, target = sink, source
-                    rc_after_ref_kmer = False
                 else:
                     raise Exception("unknown direction: {}".format(direction))
                 if ref not in new_graph.node:
                     ref = revcomp(ref)
-                    rc_after_ref_kmer = not rc_after_ref_kmer
-                matched_target, _ = revcomp_target_to_match_ref(target, ref, rc_after_ref_kmer)
+                    revcomp_after_ref = not revcomp_after_ref
+                matched_target, _ = revcomp_target_to_match_ref(target, ref, revcomp_after_ref)
                 new_graph.add_node(matched_target, kmer=graph.node[matched_target])
+                if revcomp_after_ref:
+                    new_graph.add_edge(ref, matched_target, key=key)
+                else:
+                    new_graph.add_edge(matched_target, ref, key=key)
+
                 seeds.remove(lexlo(matched_target))
         self.graph = new_graph
         return self
