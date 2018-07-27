@@ -21,3 +21,8 @@ def configure_logging_from_args(args):
     logging.basicConfig(level=log_level)
     logger = logging.getLogger('cortexpy')
     logger.info('Log level is {}'.format(log_level_conversion_table[logger.getEffectiveLevel()]))
+
+
+def configure_logging_from_args_and_get_logger(args, logger_name):
+    configure_logging_from_args(args)
+    return logging.getLogger(logger_name)

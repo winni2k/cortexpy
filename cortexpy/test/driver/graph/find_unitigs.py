@@ -13,20 +13,8 @@ class FindUnitigsTestDriver(object):
         return getattr(self.builder, item)
 
     @property
-    def graph(self):
-        return self.builder.graph
-
-    @property
     def graph_builder(self):
         return self.builder.builder
-
-    def with_colors(self, *colors):
-        self.builder.with_colors(*colors)
-        return self
-
-    def without_test_coverage(self):
-        self.builder.without_test_coverage()
-        return self
 
     def build(self):
         self.finder = self.builder.build()

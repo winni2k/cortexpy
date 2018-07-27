@@ -9,7 +9,7 @@ import cortexpy.edge_set
 from cortexpy.edge_set import EdgeSet
 from cortexpy.graph.parser.constants import (
     NUM_TO_LETTER, UINT64_T, UINT32_T, LETTER_TO_NUM,
-    NUM_LETTERS_PER_UINT,
+    NUM_LETTERS_PER_UINT, NUM_TO_BITS,
 )
 from cortexpy.utils import revcomp, lexlo
 
@@ -23,7 +23,8 @@ def check_kmer_string(kmer_string):
 
 @attr.s(slots=True)
 class EmptyKmerBuilder(object):
-    num_colors = attr.ib(0)
+    num_colors = attr.ib(1)
+    default_coverage = attr.ib(1)
     _seen_kmers = attr.ib(attr.Factory(dict))
 
     @num_colors.validator  # noqa
@@ -31,10 +32,11 @@ class EmptyKmerBuilder(object):
         if value < 0:
             raise ValueError('value less than zero')
 
-    def _build_from_lexlo(self, kmer_string, is_lexlo=False):
+    def _build_from_lexlo(self, kmer_string):
         """Build empty kmer from a lexicographically lowest string"""
         return Kmer.from_kmer_data(EmptyKmer(kmer=kmer_string,
-                                             coverage=tuple(repeat(0, self.num_colors)),
+                                             coverage=tuple(
+                                                 repeat(self.default_coverage, self.num_colors)),
                                              kmer_size=len(kmer_string),
                                              num_colors=self.num_colors))
 
@@ -181,9 +183,6 @@ class RawKmerConverter(object):
         return NUM_TO_LETTER[kmer[(len(kmer) - self.kmer_size):]]
 
 
-NUM_TO_BITS = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
-
-
 def calc_kmer_container_size(kmer_size):
     return math.ceil(kmer_size / NUM_LETTERS_PER_UINT)
 
@@ -277,16 +276,18 @@ class KmerData(object):
 @attr.s(slots=True, cmp=False)
 class Kmer(object):
     _kmer_data = attr.ib()
+    num_colors = attr.ib()
+    kmer_size = attr.ib()
     _revcomp = attr.ib(None)
-    kmer_size = attr.ib(None, init=False)
-    num_colors = attr.ib(None, init=False)
+
+    @num_colors.validator
+    def check(self, attribute, value):
+        if value < 1:
+            raise ValueError("num_colors must be greater than 0")
 
     @classmethod
     def from_kmer_data(cls, kmer_data):
-        instance = cls(kmer_data)
-        instance.kmer_size = kmer_data.kmer_size
-        instance.num_colors = kmer_data.num_colors
-        return instance
+        return cls(kmer_data, kmer_size=kmer_data.kmer_size, num_colors=kmer_data.num_colors)
 
     @property
     def revcomp(self):
@@ -307,8 +308,12 @@ class Kmer(object):
         return self._kmer_data.coverage
 
     @coverage.setter
-    def coverage(self, val):
-        self._kmer_data.coverage = val
+    def coverage(self, value):
+        assert isinstance(value, tuple)
+        if len(value) != self.num_colors:
+            raise ValueError(f'coverage length ({value}) must match num_colors ({self.num_colors})')
+        assert any(c > 0 for c in value)
+        self._kmer_data.coverage = value
 
     @property
     def edges(self):
@@ -321,14 +326,15 @@ class Kmer(object):
     def increment_color_coverage(self, color):
         """Increment the coverage of a color by one"""
         num_colors = max(self.num_colors, color + 1)
-        self.coverage = list(self.coverage)
+        coverage = list(self.coverage)
         if num_colors > self.num_colors:
-            self.coverage += list(repeat(0, num_colors - self.num_colors))
+            coverage += list(repeat(0, num_colors - self.num_colors))
             for edge_idx in range(self.num_colors, num_colors):
                 assert len(self.edges) < edge_idx + 1
                 self.edges.append(cortexpy.edge_set.empty())
-        self.coverage[color] += 1
+        coverage[color] += 1
         self.num_colors = num_colors
+        self.coverage = tuple(coverage)
 
     def __eq__(self, other):
         return kmer_eq(self, other)

@@ -1,94 +1,46 @@
-import json
-
 import attr
 from itertools import chain
 import networkx as nx
 
-from networkx.readwrite import json_graph
-
 from cortexpy.constants import EdgeTraversalOrientation
-from cortexpy.graph import Interactor, CortexDiGraph
 from cortexpy.graph.parser.kmer import revcomp_target_to_match_ref
 from cortexpy.graph.traversal.utils import OrientedGraphFuncs
 from cortexpy.utils import lexlo
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 UNITIG_GRAPH = nx.MultiDiGraph
-
-
-@attr.s(slots=True)
-class Serializer(object):
-    """Converts kmer graphs to unitig graphs."""
-    graph = attr.ib()
-    collapse_unitigs = attr.ib(True)
-    unitig_graph = attr.ib(init=False)
-    colors = attr.ib(init=False)
-
-    def __attrs_post_init__(self):
-        self.colors = self.graph.graph['colors']
-
-    def to_json(self):
-        self._collapse_graph_to_unitigs()
-        serializable = json_graph.node_link_data(self.unitig_graph, attrs={'link': 'edges'})
-        return json.dumps(serializable)
-
-    def _collapse_graph_to_unitigs(self):
-        self._make_kmer_graph_consistent()
-        self._collapse_kmer_graph()
-        self._make_unitig_graph_json_representable()
-
-    def _make_kmer_graph_consistent(self):
-        if isinstance(self.graph, CortexDiGraph):
-            self.graph = Interactor(self.graph, self.colors).make_graph_nodes_consistent().graph
-
-    def _collapse_kmer_graph(self):
-        collapser = UnitigCollapser(self.graph).collapse_kmer_unitigs()
-        self.unitig_graph = collapser.unitig_graph
-
-    def _make_unitig_graph_json_representable(self):
-        """Makes the unitig graph json representable"""
-        self.unitig_graph = nx.convert_node_labels_to_integers(self.unitig_graph,
-                                                               label_attribute='node_key')
-        self.unitig_graph.graph['colors'] = self.colors
-        if 'sample_names' in self.unitig_graph.graph:
-            new_names = []
-            for name in self.unitig_graph.graph['sample_names']:
-                if isinstance(name, bytes):
-                    name = name.decode()
-                new_names.append(name)
-            self.unitig_graph.graph['sample_names'] = new_names
-
-        for _, node_data in self.unitig_graph.nodes.items():
-            del node_data['node_key']
-
-            coverage = []
-            for coverage_list in node_data['coverage']:
-                try:
-                    coverage_list = coverage_list.tolist()
-                except AttributeError:
-                    pass
-                finally:
-                    coverage.append([int(i) for i in coverage_list])
-            coverage = [list(c) for c in zip(*coverage)]
-            node_data['coverage'] = coverage
 
 
 @attr.s(slots=True, hash=True)
 class Unitig(object):
-    graph = attr.ib()
     left_node = attr.ib()
     right_node = attr.ib()
+    coverage = attr.ib()
+    contig = attr.ib()
+    repr = attr.ib()
+    graph = attr.ib()
     is_cycle = attr.ib(False)
-    coverage = attr.ib(init=False)
 
-    def __attrs_post_init__(self):
-        coverage = [tuple(self.graph.node[self.left_node]['kmer'].coverage)]
-        for _, target, _ in traverse_unitig_edges(
-            self.graph,
-            self.left_node,
-            orientation=EdgeTraversalOrientation.original
-        ):
-            coverage.append(tuple(self.graph.node[target]['kmer'].coverage))
-        self.coverage = tuple(coverage)
+    @classmethod
+    def from_search(cls, search):
+        left_node = search.end_nodes[EdgeTraversalOrientation.reverse]
+        right_node = search.end_nodes[EdgeTraversalOrientation.original]
+        coverage = [tuple(search.graph.node[left_node]['kmer'].coverage)]
+        suffices = [left_node[-1]]
+        for next_node in search.next_unitig_node_iter(EdgeTraversalOrientation.original,
+                                                      start_node=left_node):
+            coverage.append(tuple(search.graph.node[next_node]['kmer'].coverage))
+            suffices.append(next_node[-1])
+        contig = ''.join([left_node[:-1]] + suffices)
+        if search.graph.in_degree(left_node) == 0:
+            repr = contig
+        else:
+            repr = ''.join(suffices)
+        return cls(left_node=left_node, right_node=right_node,
+                   coverage=tuple(coverage), contig=contig, repr=repr, graph=search.unitig_graph)
 
     @property
     def unitig_edge_colors(self):
@@ -99,37 +51,71 @@ class Unitig(object):
         return list(self.graph.succ[an_edge[0]][an_edge[1]])
 
 
-def is_unitig_end_of_color(node, graph, orientation, *, color=0):
-    """Returns true if node is a unitig end in orientation direction"""
-    assert orientation in EdgeTraversalOrientation
-    original = OrientedGraphFuncs(graph, orientation, color=color)
-    reverse = OrientedGraphFuncs(graph, EdgeTraversalOrientation.other(orientation), color=color)
-    if original.degree(node) != 1:
-        return True
-    edges = list(original.edges(node))
-    next_node = original.other_edge_node(edges[0])
-    if reverse.degree(next_node) != 1:
-        return True
-    return False
+def non_missing_colors_of_kmer(kmer):
+    return {c[0] for c in filter(lambda c: c[1] > 0, enumerate(kmer.coverage))}
 
 
-def traverse_unitig_edges(graph, start_node, orientation=EdgeTraversalOrientation.original):
-    node = start_node
-    assert orientation in EdgeTraversalOrientation
-    if orientation == EdgeTraversalOrientation.original:
-        edges_func = graph.out_edges
-    else:
-        edges_func = graph.in_edges
-    while node:
-        edges = set(edges_func(node))
-        if len(edges) != 1:
-            break
-        edge = next(iter(edges))
-        yield edge[0], edge[1], None
-        if orientation == EdgeTraversalOrientation.original:
-            node = edge[1]
-        else:
-            node = edge[0]
+@attr.s(slots=True)
+class UnitigSearch(object):
+    """Builds a single unitig"""
+    graph = attr.ib()
+    start_node = attr.ib()
+    unitig_graph = attr.ib(attr.Factory(UNITIG_GRAPH))
+    unitig_colors = attr.ib(attr.Factory(set))
+    end_nodes = attr.ib(dict)
+
+    @classmethod
+    def from_node_and_graph(cls, start_node, graph):
+        kmer = graph.node[start_node]['kmer']
+        unitig_colors = non_missing_colors_of_kmer(kmer)
+        end_nodes = {EdgeTraversalOrientation.original: start_node,
+                     EdgeTraversalOrientation.reverse: start_node}
+        self = cls(graph, unitig_colors=unitig_colors, end_nodes=end_nodes, start_node=start_node)
+        self.unitig_graph.add_node(start_node)
+        return self
+
+    @unitig_colors.validator
+    def check(self, attribute, value):
+        assert len(value) > 0
+
+    def next_unitig_node_iter(self, orientation, start_node=None):
+        if start_node is None:
+            start_node = self.start_node
+        next_node = self.get_next_unitig_node(start_node, orientation)
+        while next_node is not None and next_node != start_node:
+            yield next_node
+            next_node = self.get_next_unitig_node(next_node, orientation)
+
+    def get_next_unitig_node(self, node, orientation):
+        next_node = self.find_next_node_in_unitig(node, orientation)
+        if next_node is None:
+            return None
+        if self.unitig_colors != non_missing_colors_of_kmer(self.graph.node[next_node]['kmer']):
+            return None
+        next_node_coming_back = self.find_next_node_in_unitig(
+            next_node, EdgeTraversalOrientation.other(orientation)
+        )
+        if next_node_coming_back is None:
+            return None
+        return next_node
+
+    def is_unitig_end(self, node, orientation):
+        """Returns true if the unitig ends on this node in the specified orientation"""
+        if self.get_next_unitig_node(node, orientation) is None:
+            return True
+        return False
+
+    def find_next_node_in_unitig(self, node, orientation):
+        """Try to get what appears from this node to be the next node in the unitig
+        in orientation direction. Return None otherwise.
+        """
+        funcs = OrientedGraphFuncs(self.graph, orientation)
+        edges = list(funcs.edges(node, keys=True))
+        if len(self.unitig_colors) != len(edges):
+            return None
+        if self.unitig_colors != {color for _, _, color in edges}:
+            return None
+        return funcs.other_edge_node(edges[0])
 
 
 @attr.s(slots=True)
@@ -143,9 +129,11 @@ class UnitigFinder(object):
         if getattr(value, 'is_consistent', False):
             assert value.is_consistent()
 
-    def __attrs_post_init__(self):
-        if 'colors' in self.graph.graph:
-            self.colors = self.graph.graph['colors']
+    @classmethod
+    def from_graph(cls, graph, **kwargs):
+        if 'colors' not in kwargs:
+            kwargs['colors'] = graph.graph['colors']
+        return cls(graph, **kwargs)
 
     def find_unitigs(self):
         """Finds unitigs of one or more nodes and adds a Unitig object to the edge between the
@@ -183,26 +171,23 @@ class UnitigFinder(object):
 
         In addition, the colors of the in-edges and out-edges must match.
         """
-        unitig_graph = UNITIG_GRAPH()
-        unitig_graph.add_node(start_node)
-        end_nodes = {EdgeTraversalOrientation.original: start_node,
-                     EdgeTraversalOrientation.reverse: start_node}
+        search = UnitigSearch.from_node_and_graph(start_node, self.graph)
         for orientation in EdgeTraversalOrientation:
-            if not self.is_unitig_end(start_node, orientation):
-                for edge_info in traverse_unitig_edges(self.graph, start_node,
-                                                       orientation=orientation):
-                    source, target, _ = edge_info[:3]
-                    if orientation == EdgeTraversalOrientation.reverse:
-                        source, target = target, source
-                    if target in unitig_graph or self.is_unitig_end(source, orientation):
-                        break
-                    end_nodes[orientation] = target
-                    unitig_graph.add_edge(*edge_info[:3])
-        for node in unitig_graph:
-            unitig_graph.add_node(node, kmer=self.graph.node[node]['kmer'])
-        ret_unitig = Unitig(unitig_graph,
-                            end_nodes[EdgeTraversalOrientation.reverse],
-                            end_nodes[EdgeTraversalOrientation.original])
+            previous_node = start_node
+            for next_node in search.next_unitig_node_iter(orientation):
+                if next_node in search.unitig_graph:
+                    break
+                search.end_nodes[orientation] = next_node
+                if orientation == EdgeTraversalOrientation.original:
+                    source, target = previous_node, next_node
+                else:
+                    target, source = previous_node, next_node
+                for color in search.unitig_colors:
+                    search.unitig_graph.add_edge(source, target, color)
+                previous_node = next_node
+        for node in search.unitig_graph:
+            search.unitig_graph.add_node(node, kmer=self.graph.node[node]['kmer'])
+        ret_unitig = Unitig.from_search(search)
         self.set_unitig_cycle(ret_unitig)
         return ret_unitig
 
@@ -228,33 +213,6 @@ class UnitigFinder(object):
                 return
         unitig.is_cycle = True
 
-    def is_unitig_end(self, node, orientation):
-        """Returns true if the unitig ends in any color
-
-        if test_coverage is True, then look at the coverage of nodes either side of a single link.
-        If both nodes have zero coverage for that color, then don't consider that color to
-        have ended the unitig.
-        """
-        ends = [is_unitig_end_of_color(node, self.graph, orientation, color=color)
-                for color in self.colors]
-        if not self.test_coverage:
-            return any(ends)
-        if all(ends):
-            return True
-        end_idx, _ = next(filter(lambda end_tup: not end_tup[1], enumerate(ends)))
-        original = OrientedGraphFuncs(self.graph, orientation, color=self.colors[end_idx])
-
-        edge = next(filter(lambda inputs: inputs[2] == self.colors[end_idx],
-                           ((u, v, c) for u, v, c in original.edges(node, keys=True))))
-        other_node = original.other_edge_node(edge)
-        for color_idx, color in enumerate(self.colors):
-            node_coverage = self.graph.node[node]['kmer'].coverage[color]
-            other_node_coverage = self.graph.node[other_node]['kmer'].coverage[color]
-            if ends[color_idx]:
-                if node_coverage == other_node_coverage == 0:
-                    ends[color_idx] = False
-        return any(ends)
-
 
 @attr.s(slots=True)
 class UnitigCollapser(object):
@@ -264,11 +222,10 @@ class UnitigCollapser(object):
     unitig_finder = attr.ib(init=False)
 
     def __attrs_post_init__(self):
-        self.unitig_finder = UnitigFinder(self.graph, colors=self.graph.graph['colors'],
-                                          test_coverage=self.test_coverage)
+        self.unitig_finder = UnitigFinder.from_graph(self.graph, test_coverage=self.test_coverage)
 
     @graph.validator
-    def is_a_multi_di_graph(self, attribute, value):  # noqa
+    def is_a_multi_di_graph(self, attribute, value):
         assert value.is_multigraph()
         assert value.is_directed()
 
@@ -284,6 +241,8 @@ class UnitigCollapser(object):
 
         :return graph:
         """
+
+        logger.info(f'Collapsing graph with {len(self.graph)} kmers')
         unitig_graph = self.unitig_finder.find_unitigs()
         out = UNITIG_GRAPH()
         out.graph = self.graph.graph
@@ -291,6 +250,7 @@ class UnitigCollapser(object):
             if unitig is None:
                 out.add_edge(s, t, color)
                 continue
+            # todo: use unitig for unitig_string
             unitig_repr, unitig_string = self._summarize_unitig(unitig)
             out.add_node(unitig, repr=unitig_repr, unitig=unitig_string, coverage=unitig.coverage)
             out.add_edge(unitig.left_node, unitig)
@@ -319,18 +279,9 @@ class UnitigCollapser(object):
                     out.add_edge(node, node, color)
 
         self.unitig_graph = out
+        logger.info(
+            f'Collapsing complete. Collapsed graph contains {len(self.unitig_graph)} unitigs')
         return self
 
     def _summarize_unitig(self, unitig):
-        left_node = unitig.left_node
-        kmer_suffices = [left_node[-1]]
-        seen_nodes = set()
-        for _, target, _ in nx.edge_dfs(unitig.graph, source=left_node):
-            assert target not in seen_nodes
-            seen_nodes.add(target)
-            kmer_suffices.append(target[-1])
-        unitig_repr = ''.join(kmer_suffices)
-        unitig_string = left_node[:-1] + unitig_repr
-        if self.graph.in_degree(left_node) == 0:
-            unitig_repr = unitig_string
-        return unitig_repr, unitig_string
+        return unitig.repr, unitig.contig

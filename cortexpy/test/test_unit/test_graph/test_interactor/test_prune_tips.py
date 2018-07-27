@@ -13,7 +13,7 @@ class TestMultiDiGraph(object):
         graph.add_path([0, 1, 3])
 
         # when
-        graph = interactor.Interactor(graph, colors=None).prune_tips_less_than(2).graph
+        graph = interactor.Interactor(graph).prune_tips_less_than(2).graph
 
         # then
         assert 1 == len(graph)
@@ -26,7 +26,7 @@ class TestMultiDiGraph(object):
         graph.add_path([0, 1, 4, 5])
 
         # when
-        graph = interactor.Interactor(graph, colors=None).prune_tips_less_than(2).graph
+        graph = interactor.Interactor(graph).prune_tips_less_than(2).graph
 
         # then
         assert set(range(1, 6)) == set(graph.nodes)
@@ -48,7 +48,7 @@ class TestColoredDeBruijnGraph(object):
         graph = b.build()
 
         # when
-        graph = interactor.Interactor(graph, colors=None) \
+        graph = interactor.Interactor(graph) \
             .prune_tips_less_than(2) \
             .graph
 
@@ -72,7 +72,7 @@ class TestColoredDeBruijnGraph(object):
         graph = b.build()
 
         # when
-        graph = interactor.Interactor(graph, colors=None) \
+        graph = interactor.Interactor(graph) \
             .prune_tips_less_than(2) \
             .graph
 
@@ -96,7 +96,7 @@ class TestColoredDeBruijnGraph(object):
         graph = b.build()
 
         # when
-        graph = interactor.Interactor(graph, colors=None).prune_tips_less_than(2).graph
+        graph = interactor.Interactor(graph).prune_tips_less_than(2).graph
 
         # then
         assert 1 == len(graph)

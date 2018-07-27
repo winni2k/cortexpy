@@ -27,7 +27,7 @@ class ContigRetriever(object):
         self.contig_color = self.num_colors - 1
         self.non_contig_colors = list(range(self.num_colors - 1))
         self.colors = self.non_contig_colors + [self.contig_color]
-        self.empty_kmer_builder = EmptyKmerBuilder(num_colors=self.num_colors)
+        self.empty_kmer_builder = EmptyKmerBuilder(num_colors=self.num_colors, default_coverage=0)
 
     def get_kmers(self, contig):
         kmer_size = self.graph_parser.kmer_size
@@ -86,7 +86,7 @@ class ContigRetriever(object):
                         else:
                             kmer_graph.add_edge(kmer_string, neighbor_kmer_string, key=color)
 
-        for kmer_node in kmer_graph:
+        for kmer_node in list(kmer_graph):
             kmer_graph.nodes[kmer_node]['repr'] = kmer_node
 
         return self._add_metadata_to_graph(kmer_graph)

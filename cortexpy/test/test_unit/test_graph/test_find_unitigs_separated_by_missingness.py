@@ -39,13 +39,13 @@ class TestWithMissingEdge(object):
 
     def test_two_pairs_of_nodes_separated_by_single_edge_results_in_two_unitigs(self):
         # given
-        driver = FindUnitigsTestDriver().without_test_coverage()
-        builder = driver.graph_builder
-        builder.with_colors(0, 1)
-        builder.add_path(['AAA', 'AAC'], color=0, coverage=1)
+        d = FindUnitigsTestDriver()
+        d.without_test_coverage()
+        d.with_colors(0, 1)
+        d.add_path(['AAA', 'AAC'], color=0, coverage=1)
 
         # when
-        expect = driver.run()
+        expect = d.run()
 
         # then
         expect.has_n_unitigs(2)

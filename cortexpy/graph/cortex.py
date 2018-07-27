@@ -1,7 +1,5 @@
 from collections.abc import Collection, Mapping
-
 import copy
-
 import itertools
 import networkx as nx
 import attr
@@ -184,6 +182,9 @@ class CortexDiGraph(Collection):
     def is_consistent(self):
         return False
 
+    def fresh_copy(self):
+        return CortexDiGraph()
+
     @property
     def edges(self):
         return EdgeView(self)
@@ -354,6 +355,9 @@ class ConsistentCortexDiGraph(Collection):
 
     def is_multigraph(self):
         return True
+
+    def fresh_copy(self):
+        return ConsistentCortexDiGraph()
 
     def __contains__(self, item):
         return item in self._kmer_mapping
@@ -557,17 +561,14 @@ class EdgeView(object):
     graph = attr.ib()
 
     def __call__(self, *args, data=False, keys=False, **kwargs):
-        node = None
-        if args:
-            node = args[0]
-        if not node:
+        if not args:
             if self.graph.is_consistent():
                 yield from self._edge_iter_consistent(data=data, keys=keys)
             else:
                 yield from self._edge_iter(data=data, keys=keys)
         else:
             if self.graph.is_directed():
-                yield from self.graph.out_edges(node, data=data, keys=keys)
+                yield from self.graph.out_edges(args[0], data=data, keys=keys)
             else:
                 yield from self._edge_iter(data=data, keys=keys)
 

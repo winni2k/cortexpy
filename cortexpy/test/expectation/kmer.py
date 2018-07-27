@@ -1,6 +1,5 @@
 import collections
 import pprint
-
 import attr
 
 from cortexpy.test.expectation.graph import KmerGraphExpectation
@@ -21,6 +20,7 @@ class CollapsedKmerNodeExpectation(object):
 class CollapsedKmerUnitgGraphExpectation(object):
     graph = attr.ib()
     repr_counts = attr.ib(attr.Factory(collections.Counter))
+    contig_counts = attr.ib(attr.Factory(collections.Counter))
     nodes_by_repr = attr.ib(attr.Factory(dict))
     graph_expectation = attr.ib(init=False)
 
@@ -28,6 +28,7 @@ class CollapsedKmerUnitgGraphExpectation(object):
         pprint.pprint([self.graph.node[n] for n in self.graph.nodes])
         for node, data in self.graph.nodes.data():
             self.repr_counts[data['repr']] += 1
+            self.contig_counts[data['unitig']] += 1
         for node, data in self.graph.nodes.data():
             if self.repr_counts[data['repr']] == 1:
                 self.nodes_by_repr[data['repr']] = node
@@ -49,9 +50,16 @@ class CollapsedKmerUnitgGraphExpectation(object):
         assert len(missing_nodes) == n
         return self
 
-    def has_kmers(self, *kmer_reprs):
-        assert set(self.repr_counts.keys()) == set(kmer_reprs)
+    def has_contigs(self, *contigs):
+        assert set(contigs) == set(self.contig_counts.keys())
         return self
+
+    def has_reprs(self, *kmer_reprs):
+        assert set(kmer_reprs) == set(self.repr_counts.keys())
+        return self
+
+    def has_kmers(self, *kmer_reprs):
+        raise NotImplementedError
 
     def has_n_kmers_with_repr(self, n, kmer_repr):
         assert kmer_repr in self.repr_counts

@@ -1,7 +1,7 @@
 import attr
 from delegation import SingleDelegated
 
-from cortexpy.graph import cortex
+from cortexpy.graph import cortex, Interactor
 from cortexpy.graph.parser.random_access import load_ra_cortex_graph
 from cortexpy.graph.parser.kmer import EmptyKmerBuilder
 from cortexpy.test.builder import Graph
@@ -10,19 +10,17 @@ from cortexpy.test.builder import Graph
 @attr.s(slots=True)
 class CortexGraphBuilder(object):
     graph = attr.ib(attr.Factory(cortex.CortexDiGraph))
-    colors = attr.ib(init=False)
+    colors = attr.ib(attr.Factory(set))
     kmer_builder = attr.ib(attr.Factory(EmptyKmerBuilder))
+    consistent_seeds = attr.ib(None)
 
     def __attrs_post_init__(self):
         self.with_colors(0)
 
-    def with_node_coverage(self, node, coverage):
-        if isinstance(coverage, int):
-            coverage = (coverage,)
-        else:
-            coverage = tuple(coverage)
-        assert len(self.colors) == len(coverage)
-        self.graph.node[node].coverage = coverage
+    def with_node_coverage(self, node, *coverage):
+        if node not in self.graph:
+            self.add_node(node)
+        self.graph.node[node].coverage = tuple(coverage)
         return self
 
     def with_node_kmer(self, node, kmer):
@@ -38,46 +36,62 @@ class CortexGraphBuilder(object):
         return self
 
     def with_colors(self, *colors):
-        assert len(self.graph) == 0
-        self.colors = set(colors)
-        self.kmer_builder.num_colors = len(self.colors)
+        for color in colors:
+            self.with_color(color)
         return self
 
     def with_color(self, color):
         self.colors.add(color)
         self.kmer_builder.num_colors = len(self.colors)
+        self.graph.graph['colors'] = sorted(list(self.colors))
+        return self
 
-    def add_edge(self, u, v, color=0, key=None):
-        if key is not None:
-            color = key
-        self.add_edge_with_color(u, v, color)
+    def make_consistent(self, *seeds):
+        self.consistent_seeds = seeds
+        return self
+
+    def add_edge(self, u, v, color=0, coverage=1):
+        self.add_edge_with_color_and_coverage(u, v, color, color_coverage=coverage)
+        return self
+
+    def add_edge_with_color_and_coverage(self, u, v, color, color_coverage):
+        for node in [u, v]:
+            if node in self.graph:
+                coverages = list(self.graph[node].kmer.coverage)
+            else:
+                coverages = [0 for _ in range(len(self.colors))]
+            coverages[color] = color_coverage
+            self.with_node_coverage(node, *coverages)
+        self.graph.add_edge(u, v, key=color)
+
+    def add_edge_with_coverage(self, u, v, color_coverage):
+        self.add_edge(u, v, 0, color_coverage)
         return self
 
     def add_edge_with_color(self, u, v, color):
-        assert color in self.colors
-        self.add_node(u)
-        self.add_node(v)
-        self.graph.add_edge(u, v, key=color)
+        self.add_edge(u, v, color, 1)
         return self
 
-    def add_path(self, *k_strings, color=0, coverage=0):
+    def add_path(self, *k_strings, color=0, coverage=1):
         if len(k_strings) == 1 and isinstance(k_strings[0], list):
             k_strings = k_strings[0]
         kmer = self.kmer_builder.build_or_get(k_strings[0])
-        kmer.coverage = list(kmer.coverage)
-        for cov_color in range(kmer.num_colors):
-            kmer.coverage[cov_color] = coverage
+
+        num_colors = len(self.colors)
         self.graph.add_node(k_strings[0], kmer=kmer)
+        self.with_node_coverage(kmer.kmer, *[coverage for _ in range(num_colors)])
         if len(k_strings) > 1:
             for k_string1, k_string2 in zip(k_strings[:-1], k_strings[1:]):
                 kmer = self.kmer_builder.build_or_get(k_string2)
-                kmer.coverage = list(kmer.coverage)
-                for cov_color in range(kmer.num_colors):
-                    kmer.coverage[cov_color] = coverage
                 self.graph.add_node(k_string2, kmer=kmer)
+                self.with_node_coverage(kmer.kmer, *[coverage for _ in range(num_colors)])
                 self.add_edge_with_color(k_string1, k_string2, color)
 
     def build(self):
+        if self.consistent_seeds:
+            self.graph = Interactor.from_graph(self.graph) \
+                .make_graph_nodes_consistent(self.consistent_seeds) \
+                .graph
         return self.graph
 
 

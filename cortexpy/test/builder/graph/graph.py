@@ -28,7 +28,7 @@ class Graph(object):
         self.header.kmer_size = self.kmer_size
         return self
 
-    def with_kmer(self, kmer_string, color_coverage=0, edges='........',
+    def with_kmer(self, kmer_string, color_coverage=1, edges='........',
                   repeat_color_edges_n_times=None):
         if ' ' in kmer_string:
             assert '  ' not in kmer_string
@@ -62,6 +62,7 @@ class Graph(object):
             KmerRecord(kmer_string, color_coverage, tuple([as_edge_set(e) for e in edges])))
 
     def with_kmer_record(self, record):
+        assert any(c > 0 for c in record.coverage)
         assert len(record.coverage) == self.header.num_colors
         assert len(record.edges) == len(record.coverage)
         self.body.with_kmer_record(record)

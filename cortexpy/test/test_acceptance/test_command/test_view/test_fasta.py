@@ -74,7 +74,7 @@ class TestContigs(object):
         # given
         records = [
             'AAACCC',
-            'AAAGCC',
+            'AAAGCCC',
         ]
         kmer_size = 3
         maker = builder.Mccortex().with_kmer_size(kmer_size)

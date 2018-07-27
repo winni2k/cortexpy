@@ -1,8 +1,25 @@
-from hypothesis import given, settings
+import attr
+from hypothesis import given, assume
 from hypothesis import strategies as s
 
-from cortexpy.constants import EdgeTraversalOrientation
+from cortexpy.graph.serializer.unitig import UnitigFinder
+from cortexpy.test.builder.graph.cortex import CortexGraphBuilder
 from cortexpy.test.driver.graph.find_unitigs import FindUnitigsTestDriver
+from cortexpy.test.expectation.unitig_graph import UnitigExpectation
+
+
+@attr.s(slots=True)
+class FindUnitigFromTestDriver(object):
+    start_node = attr.ib()
+    builder = attr.ib(attr.Factory(CortexGraphBuilder))
+
+    def __getattr__(self, item):
+        return getattr(self.builder, item)
+
+    def run(self):
+        self.builder.make_consistent(self.start_node)
+        finder = UnitigFinder.from_graph(self.builder.build())
+        return UnitigExpectation(finder.find_unitig_from(self.start_node))
 
 
 class Test(object):
@@ -17,19 +34,21 @@ class Test(object):
 
         expect.has_n_nodes(1)
         expect.has_unitig_with_edges(('AAA', 'AAC'), ('AAC', 'ACC')).is_not_cycle()
+        expect.has_unitig_with_contig('AAACC')
 
     def test_three_node_path_with_mixed_node_order_becomes_a_unitig(self):
         # given
         driver = FindUnitigsTestDriver()
         graph = driver.graph
-        graph.add_edge('AAA', 'AAG')
-        graph.add_edge('CAA', 'AAA')
+        graph.add_edge_with_coverage('AAA', 'AAG', 1)
+        graph.add_edge_with_coverage('CAA', 'AAA', 1)
 
         # when
         expect = driver.run()
 
         # then
         expect.has_unitig_with_edges(('AAA', 'AAG'), ('CAA', 'AAA')).is_not_cycle()
+        expect.has_unitig_with_contig('CAAAG')
 
     def test_three_node_cycle_becomes_unitig(self):
         # given
@@ -45,6 +64,7 @@ class Test(object):
         # then
         expect.has_n_unitigs(1)
         expect.has_unitig_with_edges(('ACG', 'CGA'), ('CGA', 'GAC')).is_cycle()
+        expect.has_unitig_with_contig('ACGAC')
 
     def test_two_node_path_becomes_unitig(self):
         # given
@@ -150,79 +170,55 @@ class Test(object):
         expect.has_unitig_with_one_node('CCC').is_not_cycle()
         expect.has_n_unitigs(4)
 
-
-class TestIsUnitigEnd(object):
-    def test_single_node_is_end_from_both_sides(self):
+    @given(s.data(),
+           s.integers(min_value=1, max_value=23),
+           s.sampled_from(('AAA', 'AAT', 'ATA', 'ATC')))
+    def test_y_graph_becomes_three_unitigs(self, data, num_colors, start_node):
         # given
-        driver = FindUnitigsTestDriver()
-        graph = driver.graph
-        graph.add_node('AAA')
-        driver.build()
+        colors = list(range(num_colors))
+        edge_colors = [data.draw(s.sampled_from(colors)) for _ in range(3)]
 
-        # when/then
-        for orientation in EdgeTraversalOrientation:
-            assert driver.finder.is_unitig_end('AAA', orientation)
-
-    @given(s.integers(min_value=1, max_value=3))
-    @settings(max_examples=3)
-    def test_each_end_of_path_is_end(self, num_edges):
-        # given
-        colors = list(range(num_edges))
-        driver = FindUnitigsTestDriver()
-        graph = driver.graph
-        graph.with_colors(*colors)
+        d = FindUnitigsTestDriver()
+        d.with_colors(*colors)
         for color in colors:
-            graph.add_edge('AAA', 'AAC', key=color)
-        finder = driver.build()
+            d.add_edge('AAA', 'AAT', color=color)
+        d.add_edge('AAT', 'ATA', color=edge_colors[1])
+        d.add_edge('AAT', 'ATC', color=edge_colors[1])
 
-        # when/then
-        assert finder.is_unitig_end('AAA', EdgeTraversalOrientation.reverse)
-        assert not finder.is_unitig_end('AAA', EdgeTraversalOrientation.original)
-        assert not finder.is_unitig_end('AAC', EdgeTraversalOrientation.reverse)
-        assert finder.is_unitig_end('AAC', EdgeTraversalOrientation.original)
+        # when
+        expect = d.run()
 
-    def test_two_edges_into_one_node(self):
+        expect.has_unitig_with_contig('AAAT')
+        expect.has_unitig_with_edges(('AAA', 'AAT'))
+        expect.has_unitig_with_contig('ATA')
+        expect.has_unitig_with_contig('ATC')
+        expect.has_n_nodes(3)
+
+
+class TestFindUnitigFrom(object):
+    @given(s.data(),
+           s.integers(min_value=1, max_value=3),
+           s.sampled_from(('AAA', 'AAT', 'ATA', 'ATC')))
+    def test_in_three_color_y_graph_always_finds_one_of_three_unitigs(self, data, num_colors,
+                                                                      start_node):
         # given
-        driver = FindUnitigsTestDriver()
-        graph = driver.graph
-        graph.add_edge('AAA', 'AAC')
-        graph.add_edge('GAA', 'AAC')
-        finder = driver.build()
+        colors = list(range(num_colors))
+        edge_colors = [data.draw(s.sampled_from(colors)) for _ in range(3)]
 
-        # when/then
-        for node in ['AAA', 'AAC', 'GAA']:
-            for orientation in EdgeTraversalOrientation:
-                assert finder.is_unitig_end(node, orientation)
+        contig_by_start_node = {'AAA': 'AAAT', 'AAT': 'AAAT', 'ATA': 'ATA', 'ATC': 'ATC'}
+        d = FindUnitigFromTestDriver(start_node)
+        d.with_colors(*colors)
+        for edge_color in edge_colors:
+            d.add_edge_with_color_and_coverage('AAA', 'AAT', edge_color, color_coverage=1)
+        d.add_edge_with_color_and_coverage('AAT', 'ATA', edge_colors[1], color_coverage=1)
+        d.add_edge_with_color_and_coverage('AAT', 'ATC', edge_colors[2], color_coverage=1)
 
-    def test_two_edges_out_of_one_node(self):
-        # given
-        driver = FindUnitigsTestDriver()
-        graph = driver.graph
-        graph.add_edge('AAA', 'AAC')
-        graph.add_edge('AAA', 'AAG')
-        finder = driver.build()
+        # when
+        expect = d.run()
 
-        # when/then
-        for node in ['AAA', 'AAC', 'AAG']:
-            for orientation in EdgeTraversalOrientation:
-                assert finder.is_unitig_end(node, orientation)
+        expect.has_contig(contig_by_start_node[start_node])
 
-    def test_middle_unconnected_node_in_two_color_graph(self):
-        # given
-        driver = FindUnitigsTestDriver().with_colors(0, 1)
-        graph = driver.graph
-        nodes = ['AAA', 'AAC', 'ACC']
-        graph.add_path(nodes, color=0, coverage=1)
-        finder = driver.build()
-
-        # when/then
-        for node in nodes:
-            for orientation in EdgeTraversalOrientation:
-                assert finder.is_unitig_end(node, orientation)
-
-
-class TestFindUnitigFromTwoColorGraph(object):
-    def test_three_node_path_becomes_a_unitig_and_attributes_are_copied_across(self):
+    def test_three_node_path_becomes_a_unitig_and_attributes_are_copied_across_two_colors(self):
         # given
         nodes = ['AAA', 'AAC', 'ACC']
         colors = [0, 1]
@@ -233,7 +229,7 @@ class TestFindUnitigFromTwoColorGraph(object):
         for color in colors:
             g_builder.add_path(nodes, color=color)
         for idx, node in enumerate(nodes):
-            g_builder.with_node_coverage(node, (idx + 1, 1))
+            g_builder.with_node_coverage(node, idx + 1, 1)
         finder = driver.builder.build()
 
         # when
@@ -250,30 +246,37 @@ class TestFindUnitigFromTwoColorGraph(object):
 
 
 class TestUnitigGraphCoverage(object):
-    @given(s.booleans(), s.booleans(),
-           s.lists(s.tuples(s.integers(min_value=0, max_value=1),
-                            s.integers(min_value=0, max_value=1)),
-                   min_size=2,
-                   max_size=2))
-    def test_two_node_path_with_missing_links_are_not_joined(self, link_color_0_exists,
-                                                             link_color_1_exists,
-                                                             kmer_coverages):
+    @given(s.data(), s.booleans(), s.booleans())
+    def test_two_node_path_with_missing_links_are_not_joined(self, data, link_color_0_exists,
+                                                             link_color_1_exists):
+        kmer_coverages = [[0, 0], [0, 0]]
+        if link_color_0_exists:
+            kmer_coverages[0][0] = kmer_coverages[1][0] = 1
+        else:
+            kmer_coverages[0][0] = int(data.draw(s.booleans()))
+            kmer_coverages[1][0] = int(data.draw(s.booleans()))
+        if link_color_1_exists:
+            kmer_coverages[0][1] = kmer_coverages[1][1] = 1
+        else:
+            kmer_coverages[0][1] = int(data.draw(s.booleans()))
+            kmer_coverages[1][1] = int(data.draw(s.booleans()))
+
+        kmer_coverages = [tuple(c) for c in kmer_coverages]
+        assume(all(c != (0, 0) for c in kmer_coverages))
+
         # given
         driver = FindUnitigsTestDriver()
         colors = [0, 1]
         driver.with_colors(*colors)
 
         nodes = ['AAA', 'AAC']
-        for node in nodes:
-            driver.graph.add_node(node)
-
+        for idx, node in enumerate(nodes):
+            driver.with_node_coverage(node, *kmer_coverages[idx])
         for color, link_exists in zip(colors, [link_color_0_exists, link_color_1_exists]):
             if link_exists:
-                driver.graph.add_edge(*nodes, key=color)
-        driver.build()
+                driver.add_edge_with_color_and_coverage(*nodes, color, 1)
 
-        driver.graph.with_node_coverage(nodes[0], kmer_coverages[0])
-        driver.graph.with_node_coverage(nodes[1], kmer_coverages[1])
+        driver.build()
 
         for idx, start_node in enumerate(nodes):
             # when
@@ -285,9 +288,9 @@ class TestUnitigGraphCoverage(object):
                 (link_color_1_exists and kmer_coverages[0][0] == kmer_coverages[1][0] == 0) or
                 (link_color_0_exists and kmer_coverages[0][1] == kmer_coverages[1][1] == 0)
             ):
-                assert 2 == len(unitig.coverage)
                 assert unitig.coverage[0] == kmer_coverages[0]
                 assert unitig.coverage[1] == kmer_coverages[1]
+                assert 2 == len(unitig.coverage)
             else:
                 assert len(unitig.coverage) == 1
                 assert unitig.coverage[0] == kmer_coverages[idx]

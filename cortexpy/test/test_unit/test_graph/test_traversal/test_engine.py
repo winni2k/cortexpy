@@ -27,9 +27,9 @@ class Test(object):
         driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
-         .with_kmer('AAA', 0, '.......T')
-         .with_kmer('AAT', 0, 'a....C..')
-         .with_kmer('ATC', 0, 'a.......')
+         .with_kmer('AAA 1 .......T')
+         .with_kmer('AAT 1 a....C..')
+         .with_kmer('ATC 1 a.......')
          .with_start_kmer_string('AAA'))
 
         # when
@@ -71,10 +71,10 @@ class Test(object):
         driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
-         .with_kmer('AAA', 0, '.......T')
-         .with_kmer('AAT', 0, 'a....CG.')
-         .with_kmer('ATC', 0, 'a.......')
-         .with_kmer('ATG', 0, 'a.......')
+         .with_kmer('AAA 1 .......T')
+         .with_kmer('AAT 1 a....CG.')
+         .with_kmer('ATC 1 a.......')
+         .with_kmer('ATG 1 a.......')
          .with_start_kmer_string('AAA'))
 
         # when
@@ -90,11 +90,11 @@ class Test(object):
         driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
-         .with_kmer('CAA', 0, '....A...')
-         .with_kmer('AAA', 0, '.c.t...T')
-         .with_kmer('AAT', 0, 'a...A...')
-         .with_kmer('ATA', 0, 'a...A...')
-         .with_kmer('TAA', 0, 'a...A...')
+         .with_kmer('CAA 1 ....A...')
+         .with_kmer('AAA 1 .c.t...T')
+         .with_kmer('AAT 1 a...A...')
+         .with_kmer('ATA 1 a...A...')
+         .with_kmer('TAA 1 a...A...')
          .with_start_kmer_string('CAA'))
 
         # when
@@ -110,12 +110,12 @@ class Test(object):
         driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
-         .with_kmer('CAA', 0, '....A...')
-         .with_kmer('AAA', 0, '.c.t.C.T')
-         .with_kmer('AAC', 0, 'a.......')
-         .with_kmer('AAT', 0, 'a...A...')
-         .with_kmer('ATA', 0, 'a...A...')
-         .with_kmer('TAA', 0, 'a...A...')
+         .with_kmer('CAA 1 ....A...')
+         .with_kmer('AAA 1 .c.t.C.T')
+         .with_kmer('AAC 1 a.......')
+         .with_kmer('AAT 1 a...A...')
+         .with_kmer('ATA 1 a...A...')
+         .with_kmer('TAA 1 a...A...')
          .with_start_kmer_string('CAA'))
 
         # when
@@ -131,13 +131,13 @@ class Test(object):
         driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
-         .with_kmer('CAA', 0, 'a...A...')
-         .with_kmer('AAA', 0, '.c.t.C.T')
-         .with_kmer('AAC', 0, 'a...A...')
-         .with_kmer('ACA', 0, 'a...A...')
-         .with_kmer('AAT', 0, 'a...A...')
-         .with_kmer('ATA', 0, 'a...A...')
-         .with_kmer('TAA', 0, 'a...A...')
+         .with_kmer('CAA 1 a...A...')
+         .with_kmer('AAA 1 .c.t.C.T')
+         .with_kmer('AAC 1 a...A...')
+         .with_kmer('ACA 1 a...A...')
+         .with_kmer('AAT 1 a...A...')
+         .with_kmer('ATA 1 a...A...')
+         .with_kmer('TAA 1 a...A...')
          .with_start_kmer_string('CAA'))
 
         # when
@@ -153,13 +153,13 @@ class Test(object):
         driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
-         .with_kmer('CAA', 0, 'a...A...')
-         .with_kmer('AAA', 0, '.c.t.C.T')
-         .with_kmer('AAC', 0, 'a...A...')
-         .with_kmer('ACA', 0, 'a...A...')
-         .with_kmer('AAT', 0, 'a...A...')
-         .with_kmer('ATA', 0, 'a...A...')
-         .with_kmer('TAA', 0, 'a...A...')
+         .with_kmer('CAA 1 a...A...')
+         .with_kmer('AAA 1 .c.t.C.T')
+         .with_kmer('AAC 1 a...A...')
+         .with_kmer('ACA 1 a...A...')
+         .with_kmer('AAT 1 a...A...')
+         .with_kmer('ATA 1 a...A...')
+         .with_kmer('TAA 1 a...A...')
          .with_start_kmer_string('TTG'))
 
         # when
@@ -221,9 +221,9 @@ class TestTraversalOrientationBoth(object):
         driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
-         .with_kmer('AAA', 0, '.......T')
-         .with_kmer('AAT', 0, 'a....C..')
-         .with_kmer('ATC', 0, 'a.......')
+         .with_kmer('AAA 1 .......T')
+         .with_kmer('AAT 1 a....C..')
+         .with_kmer('ATC 1 a.......')
          .with_start_kmer_string('ATC')
          .with_traversal_orientation('both'))
 
@@ -242,9 +242,9 @@ class TestReverseOrientation(object):
         driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
-         .with_kmer('AAA', 0, '.......T')
-         .with_kmer('AAT', 0, 'a....C..')
-         .with_kmer('ATC', 0, 'a.......')
+         .with_kmer('AAA 1 .......T')
+         .with_kmer('AAT 1 a....C..')
+         .with_kmer('ATC 1 a.......')
          .with_start_kmer_string('ATC')
          .with_traversal_orientation('reverse'))
 
@@ -262,11 +262,11 @@ class TestReverseOrientation(object):
         driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
-         .with_kmer('CAA', 0, '....A...')
-         .with_kmer('AAA', 0, '.c.t...T')
-         .with_kmer('AAT', 0, 'a...A...')
-         .with_kmer('ATA', 0, 'a...A...')
-         .with_kmer('TAA', 0, 'a...A...')
+         .with_kmer('CAA 1 ....A...')
+         .with_kmer('AAA 1 .c.t...T')
+         .with_kmer('AAT 1 a...A...')
+         .with_kmer('ATA 1 a...A...')
+         .with_kmer('TAA 1 a...A...')
          .with_traversal_orientation('reverse')
          .with_start_kmer_string(start_kmer_string))
 
@@ -286,12 +286,12 @@ class TestBothOrientation(object):
         driver = EngineTestDriver()
         driver \
             .with_kmer_size(3) \
-            .with_kmer('CCA', 0, '....A...') \
-            .with_kmer('CAA', 0, '.c..A...') \
-            .with_kmer('AAA', 0, '.c.t...T') \
-            .with_kmer('AAT', 0, 'a...A...') \
-            .with_kmer('ATA', 0, 'a...A...') \
-            .with_kmer('TAA', 0, 'a...A...') \
+            .with_kmer('CCA 1 ....A...') \
+            .with_kmer('CAA 1 .c..A...') \
+            .with_kmer('AAA 1 .c.t...T') \
+            .with_kmer('AAT 1 a...A...') \
+            .with_kmer('ATA 1 a...A...') \
+            .with_kmer('TAA 1 a...A...') \
             .with_traversal_orientation('both') \
             .with_start_kmer_string(start_kmer_string)
 
@@ -395,12 +395,12 @@ class TestTraverseFromEachKmerIn(object):
         driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
-         .with_kmer('CCA', 0, '....A...')
-         .with_kmer('CAA', 0, '.c..A...')
-         .with_kmer('AAA', 0, '.c.t...T')
-         .with_kmer('AAT', 0, 'a...A...')
-         .with_kmer('ATA', 0, 'a...A...')
-         .with_kmer('TAA', 0, 'a...A...')
+         .with_kmer('CCA 1 ....A...')
+         .with_kmer('CAA 1 .c..A...')
+         .with_kmer('AAA 1 .c.t...T')
+         .with_kmer('AAT 1 a...A...')
+         .with_kmer('ATA 1 a...A...')
+         .with_kmer('TAA 1 a...A...')
          .with_traversal_orientation('both')
          .with_start_string(start_string))
 
@@ -425,11 +425,11 @@ class TestMaxNodes(object):
         (driver
          .with_kmer_size(3)
          .with_max_nodes(2)
-         .with_kmer('AAA', 0, '.......T')
-         .with_kmer('AAT', 0, 'a....CG.')
-         .with_kmer('ATC', 0, 'a......T')
-         .with_kmer('ATG', 0, 'a.......')
-         .with_kmer('AGA', 0, '.......T')
+         .with_kmer('AAA 1 .......T')
+         .with_kmer('AAT 1 a....CG.')
+         .with_kmer('ATC 1 a......T')
+         .with_kmer('ATG 1 a.......')
+         .with_kmer('AGA 1 .......T')
          .with_start_kmer_string('AAA'))
 
         # when
@@ -466,9 +466,9 @@ class TestEdgeAnnotation(object):
         expect = KmerGraphExpectation(annotated_graph)
 
         # then
-        expect.has_node('CAA').has_coverages(0, 0)
+        expect.has_node('CAA').has_coverages(1, 1)
         expect.has_node('AAA').has_coverages(1, 1)
-        expect.has_node('AAC').has_coverages(0, 0)
+        expect.has_node('AAC').has_coverages(1, 1)
         expect.has_n_nodes(3)
         expect.has_edges('AAA AAC 1', 'AAA CAA 1')
 
@@ -486,9 +486,9 @@ class TestEdgeAnnotation(object):
         expect = KmerGraphExpectation(annotated_graph)
 
         # then
-        expect.has_node('TTC').has_coverages(0, 0)
+        expect.has_node('TTC').has_coverages(1, 1)
         expect.has_node('TTT').has_coverages(1, 1)
-        expect.has_node('GTT').has_coverages(0, 0)
+        expect.has_node('GTT').has_coverages(1, 1)
         expect.has_n_nodes(3)
         expect.has_edges('AAA GAA 1', 'AAA AAC 1')
 

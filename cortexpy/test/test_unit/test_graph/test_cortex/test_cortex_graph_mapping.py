@@ -9,7 +9,7 @@ class Test(object):
     def test_loads_kmer(self):
         # given
         b = get_cortex_graph_mapping_builder()
-        b.with_kmer('AAA 0 ........')
+        b.with_kmer('AAA 1 ........')
 
         # when
         cgm = b.build()
@@ -17,12 +17,12 @@ class Test(object):
         # then
         assert type(cgm) == CortexGraphMapping
         assert 'AAA' in cgm
-        assert [0] == list(cgm['AAA'].coverage)
+        assert (1,) == cgm['AAA'].coverage
 
     def test_deletes_kmer(self):
         # given
         b = get_cortex_graph_mapping_builder()
-        b.with_kmer('AAA 0 ........')
+        b.with_kmer('AAA 1 ........')
 
         # when
         cgm = b.build()
@@ -50,7 +50,7 @@ class Test(object):
         # given
         kmer_builder = EmptyKmerBuilder()
         b = get_cortex_graph_mapping_builder()
-        b.with_kmer('AAA 0 ........')
+        b.with_kmer('AAA 1 ........')
 
         # when
         cgm = b.build()
@@ -58,7 +58,7 @@ class Test(object):
 
         # then
         assert 1 == len(cgm)
-        assert [] == list(cgm['AAA'].coverage)
+        assert (1,) == cgm['AAA'].coverage
 
     @given(strategies.booleans())
     def test_disconnects_two_kmers(self, kmer_cache_off):
@@ -66,8 +66,8 @@ class Test(object):
         b = get_cortex_graph_mapping_builder()
         if kmer_cache_off:
             b.with_kmer_cache_size(0)
-        b.with_kmer('AAA 0 .....C..')
-        b.with_kmer('AAC 0 a.......')
+        b.with_kmer('AAA 1 .....C..')
+        b.with_kmer('AAC 1 a.......')
 
         # when
         cgm = b.build()
@@ -84,8 +84,8 @@ class Test(object):
         b = get_cortex_graph_mapping_builder()
         if kmer_cache_off:
             b.with_kmer_cache_size(0)
-        b.with_kmer('AAA 0 ........')
-        b.with_kmer('AAC 0 ........')
+        b.with_kmer('AAA 1 ........')
+        b.with_kmer('AAC 1 ........')
 
         # when
         cgm = b.build()

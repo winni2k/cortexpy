@@ -1,9 +1,3 @@
-import logging
-from contextlib import ExitStack
-
-logger = logging.getLogger('cortexpy.view')
-
-
 class ArgparseError(ValueError):
     """Is raised if the args object is misconfigured"""
     pass
@@ -40,12 +34,16 @@ def view_traversal(argv):
     parser.add_argument('--color', type=int, help='Restrict view to single color')
     args = parser.parse_args(argv)
 
+    from cortexpy.logging_config import configure_logging_from_args_and_get_logger
+    logger = configure_logging_from_args_and_get_logger(args, 'cortexpy.view')
+
     assert not args.kmers or not args.to_json
     from Bio import SeqIO
     import sys
+    from contextlib import ExitStack
     from cortexpy.graph.interactor import Interactor, Contigs
-    from cortexpy.graph import serializer
-    from cortexpy.graph.serializer import unitig
+    from cortexpy.graph.serializer.serializer import Serializer
+    from cortexpy.graph.serializer import KmerGraph
     from cortexpy.graph.parser.streaming import load_cortex_graph
 
     with ExitStack() as stack:
@@ -67,7 +65,7 @@ def view_traversal(argv):
             seed_kmer_strings = strings_to_kmer_strings(args.seed_strings, graph.graph['kmer_size'])
             logger.info(
                 f'Making graph consistent with {len(seed_kmer_strings)} kmers from --seed-strings')
-            consistent_graph = Interactor(graph, colors=None) \
+            consistent_graph = Interactor(graph) \
                 .make_graph_nodes_consistent(seed_kmer_strings) \
                 .graph
 
@@ -75,19 +73,20 @@ def view_traversal(argv):
             logger.info('Writing JSON representation of graph Unitigs to STDOUT')
             if consistent_graph:
                 graph = consistent_graph
-            print(unitig.Serializer(graph).to_json())
+            print(Serializer(graph).to_json())
             return
 
         if args.kmers:
-            seq_record_generator = serializer.KmerGraph(graph).to_seq_records()
+            seq_record_generator = KmerGraph(graph).to_seq_records()
         else:
             if not consistent_graph:
-                consistent_graph = Interactor(graph, colors=None) \
+                logger.info('Making graph consistent')
+                consistent_graph = Interactor.from_graph(graph) \
                     .make_graph_nodes_consistent() \
                     .graph
             seq_record_generator = Contigs(consistent_graph, args.color).all_simple_paths()
         seq_record_generator = annotated_seq_records(seq_record_generator, graph_idx="x")
-        logger.info('Writing seq records to STDOUT')
+        logger.info('Writing seq records to {args.out}')
         SeqIO.write(seq_record_generator, output, 'fasta')
 
 
@@ -109,11 +108,11 @@ def view_contig(argv):
     args = parser.parse_args(argv)
 
     from cortexpy.graph import ContigRetriever
-    from cortexpy.graph.serializer import unitig
+    from cortexpy.graph.serializer.serializer import Serializer
 
     contig_retriever = ContigRetriever(open(args.graph, 'rb'))
     if args.to_json:
-        serializer = unitig.Serializer(contig_retriever.get_kmer_graph(args.contig))
+        serializer = Serializer(contig_retriever.get_kmer_graph(args.contig))
         print(serializer.to_json())
     else:
         print_contig(contig_retriever, args.contig)

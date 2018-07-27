@@ -14,6 +14,9 @@ class UnitigFinderBuilder(object):
     def __attrs_post_init__(self):
         self.builder.with_colors(0)
 
+    def __getattr__(self, item):
+        return getattr(self.builder, item)
+
     @property
     def graph(self):
         return self.builder
@@ -33,9 +36,7 @@ class UnitigFinderBuilder(object):
         graph = self.builder.build()
         if self.seed_kmers is None:
             self.seed_kmers = [next(iter(graph))]
-        graph = Interactor(
-            graph,
-            colors=self.builder.colors
-        ).make_graph_nodes_consistent(self.seed_kmers).graph
-        return UnitigFinder(graph, colors=list(self.builder.colors),
-                            test_coverage=self.test_coverage)
+        graph = Interactor.from_graph(graph).make_graph_nodes_consistent(self.seed_kmers).graph
+        return UnitigFinder.from_graph(graph,
+                                       colors=list(self.builder.colors),
+                                       test_coverage=self.test_coverage)

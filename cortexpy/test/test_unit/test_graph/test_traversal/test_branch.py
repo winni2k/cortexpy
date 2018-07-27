@@ -150,8 +150,8 @@ class Test(object):
         driver = BranchTestDriver()
         (driver
          .with_kmer_size(3)
-         .with_kmer('AAA', 0, '.......T')
-         .with_kmer('AAT', 0, 'a.......')
+         .with_kmer('AAA 1 .......T')
+         .with_kmer('AAT 1 a.......')
          .with_start_kmer_string('AAA'))
 
         # when
@@ -185,8 +185,8 @@ class Test(object):
         driver = BranchTestDriver()
         (driver
          .with_kmer_size(3)
-         .with_kmer('AAA 0 ac..A..T')
-         .with_kmer('AAT 0 a....C.T')
+         .with_kmer('AAA 1 ac..A..T')
+         .with_kmer('AAT 1 a....C.T')
          .with_start_kmer_string('AAA'))
 
         # when
@@ -204,8 +204,8 @@ class Test(object):
         driver = BranchTestDriver()
         (driver
          .with_kmer_size(3)
-         .with_kmer('AAA', 0, '.......T')
-         .with_kmer('AAT', 0, 'a....C..')
+         .with_kmer('AAA 1 .......T')
+         .with_kmer('AAT 1 a....C..')
          .with_start_kmer_string('AAA'))
 
         # when/then
@@ -217,9 +217,9 @@ class Test(object):
         driver = BranchTestDriver()
         (driver
          .with_kmer_size(3)
-         .with_kmer('AAA', 0, '.......T')
-         .with_kmer('AAT', 0, 'a....C..')
-         .with_kmer('ATC', 0, 'a.......')
+         .with_kmer('AAA 1 .......T')
+         .with_kmer('AAT 1 a....C..')
+         .with_kmer('ATC 1 a.......')
          .with_start_kmer_string('AAA'))
 
         # when
@@ -235,9 +235,9 @@ class Test(object):
         driver = BranchTestDriver()
         (driver
          .with_kmer_size(3)
-         .with_kmer('AAA', 0, '.......T')
-         .with_kmer('AAT', 0, 'a....C..')
-         .with_kmer('ATC', 0, 'a.......')
+         .with_kmer('AAA 1 .......T')
+         .with_kmer('AAT 1 a....C..')
+         .with_kmer('ATC 1 a.......')
          .with_start_kmer_string('GAT'))
 
         # when
@@ -253,10 +253,10 @@ class Test(object):
         driver = BranchTestDriver()
         (driver
          .with_kmer_size(3)
-         .with_kmer('AAA', 0, '.......T')
-         .with_kmer('AAT', 0, 'a....C..')
-         .with_kmer('ATC', 0, 'a.....G.')
-         .with_kmer('CGA', 0, '.......T')
+         .with_kmer('AAA 1 .......T')
+         .with_kmer('AAT 1 a....C..')
+         .with_kmer('ATC 1 a.....G.')
+         .with_kmer('CGA 1 .......T')
          .with_start_kmer_string('CGA'))
 
         # when
@@ -275,10 +275,10 @@ class Test(object):
         d = BranchTestDriver()
         d \
             .with_kmer_size(3) \
-            .with_kmer('AAA', 0, '...t...T', repeat_color_edges_n_times=num_colors) \
-            .with_kmer('AAT', 0, 'a...A...', repeat_color_edges_n_times=num_colors) \
-            .with_kmer('ATA', 0, 'a...A...', repeat_color_edges_n_times=num_colors) \
-            .with_kmer('TAA', 0, 'a...A...', repeat_color_edges_n_times=num_colors) \
+            .with_kmer('AAA', 1, '...t...T', repeat_color_edges_n_times=num_colors) \
+            .with_kmer('AAT', 1, 'a...A...', repeat_color_edges_n_times=num_colors) \
+            .with_kmer('ATA', 1, 'a...A...', repeat_color_edges_n_times=num_colors) \
+            .with_kmer('TAA', 1, 'a...A...', repeat_color_edges_n_times=num_colors) \
             .with_start_kmer_string(start_kmer_string) \
             .with_ra_parser_warmup()
 
@@ -319,8 +319,8 @@ class TestReverseOrientation(object):
         driver = BranchTestDriver()
         (driver
          .with_kmer_size(3)
-         .with_kmer('AAA', 0, '.......T')
-         .with_kmer('AAT', 0, 'a.......')
+         .with_kmer('AAA 1 .......T')
+         .with_kmer('AAT 1 a.......')
          .with_start_kmer_string('AAT')
          .with_reverse_traversal_orientation())
 
@@ -341,10 +341,10 @@ class TestJunctions(object):
         driver = BranchTestDriver()
         (driver
          .with_kmer_size(3)
-         .with_kmer('CAA', 0, '....A...')
-         .with_kmer('TAA', 0, '....A...')
-         .with_kmer('AAA', 0, '.c.t...T')
-         .with_kmer('AAT', 0, 'a.......')
+         .with_kmer('CAA 1 ....A...')
+         .with_kmer('TAA 1 ....A...')
+         .with_kmer('AAA 1 .c.t...T')
+         .with_kmer('AAT 1 a.......')
          .with_start_kmer_string('CAA'))
         expected_nodes = ['AAA', 'CAA']
         expected_neighbor_kmer_strings = ['AAT']
@@ -366,10 +366,10 @@ class TestJunctions(object):
         driver = BranchTestDriver()
         (driver
          .with_kmer_size(3)
-         .with_kmer('TAA', 0, '....A...')
-         .with_kmer('AAA', 0, '...t.C.T')
-         .with_kmer('AAT', 0, 'a.......')
-         .with_kmer('AAC', 0, 'a.......')
+         .with_kmer('TAA 1 ....A...')
+         .with_kmer('AAA 1 ...t.C.T')
+         .with_kmer('AAT 1 a.......')
+         .with_kmer('AAC 1 a.......')
          .with_reverse_traversal_orientation()
          .with_start_kmer_string('AAC'))
         expected_nodes = ['AAA', 'AAC']
@@ -395,9 +395,9 @@ class TestJunctions(object):
         driver = BranchTestDriver()
         driver \
             .with_kmer_size(3) \
-            .with_kmer('CAA', 0, '....A...') \
-            .with_kmer('TAA', 0, '....A...') \
-            .with_kmer('AAA', 0, '.c.t....') \
+            .with_kmer('CAA 1 ....A...') \
+            .with_kmer('TAA 1 ....A...') \
+            .with_kmer('AAA 1 .c.t....') \
             .with_start_kmer_string('CAA')
         expected_reverse_neighbor_kmer_strings = ['TAA']
 

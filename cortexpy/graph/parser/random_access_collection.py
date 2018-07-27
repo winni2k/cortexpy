@@ -17,7 +17,8 @@ class RandomAccessCollection(Mapping):
 
     def __attrs_post_init__(self):
         assert all(ra.kmer_size == self.ra_parsers[0].kmer_size for ra in self.ra_parsers)
-        self.empty_kmer_builders = [EmptyKmerBuilder(num_colors=ra.num_colors) for ra in
+        self.empty_kmer_builders = [EmptyKmerBuilder(num_colors=ra.num_colors, default_coverage=0)
+                                    for ra in
                                     self.ra_parsers]
         self.num_colors = sum(ra.num_colors for ra in self.ra_parsers)
         self.colors = tuple(range(self.num_colors))

@@ -6,6 +6,10 @@ import numpy as np
 class UnitigExpectation(object):
     unitig_data = attr.ib()
 
+    def has_contig(self, contig):
+        assert contig == self.unitig_data.contig
+        return self
+
     def with_left_node(self, node):
         assert node == self.unitig_data.left_node
         return self
@@ -35,13 +39,14 @@ class UnitigExpectation(object):
 @attr.s(slots=True)
 class GraphWithUnitigExpectation(object):
     graph = attr.ib()
-    unitigs = attr.ib(init=False)
+    unitigs = attr.ib(attr.Factory(list))
+    by_contigs = attr.ib(attr.Factory(dict))
 
     def __attrs_post_init__(self):
-        self.unitigs = []
         for source, target, unitig in self.graph.edges(data='unitig'):
             if unitig:
                 self.unitigs.append((source, target, unitig))
+                self.by_contigs[unitig.contig] = unitig
 
     def has_n_nodes(self, n):
         try:
@@ -76,3 +81,7 @@ class GraphWithUnitigExpectation(object):
         unitigs_with_node = list(filter(lambda x: x[2].left_node == expected_node, self.unitigs))
         assert len(unitigs_with_node) == 1
         return UnitigExpectation(unitigs_with_node[0][2])
+
+    def has_unitig_with_contig(self, contig):
+        assert contig in self.by_contigs
+        return UnitigExpectation(self.by_contigs[contig])

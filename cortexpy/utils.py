@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import attr
-import networkx as nx
+from Bio import SeqIO
 from Bio.Seq import reverse_complement
 from functools import lru_cache
 
@@ -38,14 +38,14 @@ class IntervalLogger(object):
             return self.logger.info(*args, **kwargs)
 
 
-def my_edge_dfs(G, source=None, orientation=None):
-    """Returns tuple of fixed size if orientation is set"""
-    add_orientation = False
-    if orientation is None:
-        orientation = 'original'
-    elif orientation == 'original':
-        add_orientation = True
-    for edge in nx.edge_dfs(G, source=source, orientation=orientation):
-        if add_orientation:
-            edge = edge + (orientation,)
-        yield edge
+def kmerize_contig(contig, kmer_size):
+    """Return generator of kmers in contig"""
+    assert len(contig) >= kmer_size
+    for start in range(len(contig) - kmer_size + 1):
+        yield contig[start:(start + kmer_size)]
+
+
+def kmerize_fasta(fasta, kmer_size):
+    """Return generator to all kmers in fasta"""
+    for record in SeqIO.parse(fasta, 'fasta'):
+        yield from kmerize_contig(str(record.seq), kmer_size)

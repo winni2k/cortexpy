@@ -1,5 +1,4 @@
 import attr
-import numpy as np
 import logging
 
 logger = logging.getLogger(__name__)
@@ -83,8 +82,8 @@ class KmerNodeExpectation(object):
 
     def has_coverages(self, *coverages):
         if len(coverages) == 1 and isinstance(coverages[0], str):
-            coverages = [int(c) for c in coverages[0].split(' ')]
-        assert np.all(np.array(coverages) == self.kmer_node['kmer'].coverage)
+            coverages = tuple([int(c) for c in coverages[0].split(' ')])
+        assert (coverages) == self.kmer_node['kmer'].coverage
         return self
 
     def is_missing(self):

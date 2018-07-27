@@ -9,12 +9,12 @@ class Test(object):
     def test_single_kmer_revcomp_seed(self, seed):
         # given
         b = get_cortex_builder()
-        b.with_kmer('AAA 0 ......G.')
-        b.with_kmer('AAG 0 a.......')
+        b.with_kmer('AAA 1 ......G.')
+        b.with_kmer('AAG 1 a.......')
         cdb = b.build()
 
         # when
-        graph = Interactor(cdb, colors=None).make_graph_nodes_consistent([seed]).graph
+        graph = Interactor(cdb).make_graph_nodes_consistent([seed]).graph
 
         # then
         if seed == 'AAA':
@@ -27,14 +27,14 @@ class Test(object):
     def test_gets_correct_neighbors_of_kmer(self):
         # given
         b = get_cortex_builder()
-        b.with_kmer('AAC 0 .......T')
-        b.with_kmer('ACT 0 a.....G.')
-        b.with_kmer('CAG 0 .......T')
+        b.with_kmer('AAC 1 .......T')
+        b.with_kmer('ACT 1 a.....G.')
+        b.with_kmer('CAG 1 .......T')
         cdb = b.build()
         seed = 'AAC'
 
         # when
-        graph = Interactor(cdb, colors=None).make_graph_nodes_consistent([seed]).graph
+        graph = Interactor(cdb).make_graph_nodes_consistent([seed]).graph
 
         # then
         assert ['CTG'] == list(graph['ACT'])

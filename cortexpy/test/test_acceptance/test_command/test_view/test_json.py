@@ -168,8 +168,8 @@ class TestTraversal(object):
         d = command.ViewTraversal(tmpdir)
         d.with_json_output()
         d.with_kmer_size(3)
-        d.with_record(record1)
         d.with_record('ACCG')
+        d.with_record(record1)
         d.with_record(record1 + 'G', name='sample_1')
         d.with_initial_contigs('CCC')
         d.with_traversal_colors(0)
@@ -180,7 +180,7 @@ class TestTraversal(object):
         expect.has_node_repr('C').has_coverages_by_kmer([1, 1])
         expect.has_node_repr('AAACC').has_coverages_by_kmer([1, 1], [1, 1], [2, 1])
         expect.has_node_repr('GAA').has_coverages_by_kmer([2, 1], [1, 1], [1, 1])
-        expect.has_node_repr('G').has_coverages_by_kmer([0, 0])
+        expect.has_node_repr('G').has_coverages_by_kmer([1, 1])
         expect.has_n_nodes(4)
 
         for color in [0, 1]:

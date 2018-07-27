@@ -1,15 +1,12 @@
 import copy
-
 import attr
 import collections
-
 import networkx as nx
-from Bio import SeqIO
 
 from cortexpy import graph
 from cortexpy.graph.cortex import build_empty_cortex_graph_from_ra_parser
 from cortexpy.graph.parser.kmer import EmptyKmerBuilder
-from cortexpy.utils import lexlo, IntervalLogger
+from cortexpy.utils import lexlo, IntervalLogger, kmerize_contig, kmerize_fasta
 from .constants import EngineTraversalOrientation
 from . import branch
 from cortexpy.constants import EdgeTraversalOrientation
@@ -49,25 +46,21 @@ class Engine(object):
         self.logger = IntervalLogger(logger, min_log_interval_seconds=self.logging_interval)
 
     def traverse_from_each_kmer_in_fasta(self, fasta):
-        for record in SeqIO.parse(fasta, 'fasta'):
-            self._traverse_from_each_kmer_in(str(record.seq))
+        kmer_generator = kmerize_fasta(fasta, self.ra_parser.kmer_size)
+        self._traverse_from_each_kmer_in(kmer_generator)
         self._post_process_graph()
         return self
 
     def traverse_from_each_kmer_in(self, contig):
-        self._traverse_from_each_kmer_in(contig)
+        self._traverse_from_each_kmer_in(kmerize_contig(contig, self.ra_parser.kmer_size))
         self._post_process_graph()
         return self
 
-    def _traverse_from_each_kmer_in(self, contig):
-        kmer_size = self.ra_parser.kmer_size
-        assert len(contig) >= kmer_size
-        for start in range(len(contig) - kmer_size + 1):
-            start_kmer = contig[start:(start + kmer_size)]
+    def _traverse_from_each_kmer_in(self, kmer_generator):
+        for start_kmer in kmer_generator:
             try:
                 add_graph_to(self.graph, self._traverse_from(start_kmer).graph)
                 self.log_graph_size()
-
             except KeyError:
                 pass
             if self.max_nodes and len(self.graph) > self.max_nodes:
@@ -199,8 +192,9 @@ class Engine(object):
             kmer1_string, kmer2_string = kmer2_string, kmer1_string
         kmer1 = self.ra_parser.get_kmer_for_string(kmer1_string)
         kmer2 = self.ra_parser.get_kmer_for_string(kmer2_string)
-        interactor = graph.Interactor(self.graph, kmer1.colors)
-        interactor.add_edge_to_graph_for_kmer_pair(kmer1, kmer2, kmer1_string, kmer2_string)
+        interactor = graph.Interactor.from_graph(self.graph)
+        interactor.add_edge_to_graph_for_kmer_pair(kmer1, kmer2, kmer1_string, kmer2_string,
+                                                   kmer1.colors)
 
     def log_graph_size(self):
         if len(self.graph) > self.last_graph_size:
@@ -211,7 +205,7 @@ class Engine(object):
 def annotate_kmer_graph_edges(graph):
     """Adds nodes to graph for kmer_strings that only exist as edges in a node's kmer."""
     colors = graph.graph['colors']
-    kmer_builder = EmptyKmerBuilder(num_colors=len(colors))
+    kmer_builder = EmptyKmerBuilder(num_colors=len(colors), default_coverage=1)
     for kmer_string, kmer in list(graph.nodes(data='kmer')):
         is_lexlo = bool(kmer_string == lexlo(kmer_string))
         for color in colors:

@@ -1,14 +1,3 @@
-def validate(args):
-    from schema import Schema, Use, Optional, Or
-
-    schema = Schema({
-        Optional('--color'): Or(None, Use(int)),
-        Optional('--max-nodes'): Use(int),
-        str: object,
-    })
-    return schema.validate(args)
-
-
 def assemble(argv):
     import argparse
     parser = argparse.ArgumentParser(prog='cortexpy assemble', description="""
@@ -25,7 +14,8 @@ def assemble(argv):
 
     import sys
     from Bio import SeqIO
-    from cortexpy.graph import traversal, parser, interactor
+    from cortexpy.graph import traversal, parser, Interactor, Contigs
+    from cortexpy.utils import kmerize_fasta
 
     random_access = parser.RandomAccess(open(args.graph, 'rb'))
     if args.color is None:
@@ -39,7 +29,10 @@ def assemble(argv):
         max_nodes=args.max_nodes,
     )
     traverser.traverse_from_each_kmer_in_fasta(args.start_sequences_fasta)
+    kmers = kmerize_fasta(args.start_sequences_fasta, traverser.ra_parser.kmer_size)
+    interactor = Interactor.from_graph(traverser.graph).make_graph_nodes_consistent(
+        seed_kmer_strings=kmers)
 
-    seq_record_generator = interactor.Contigs(traverser.graph).all_simple_paths()
+    seq_record_generator = Contigs(interactor.graph).all_simple_paths()
 
     SeqIO.write(seq_record_generator, sys.stdout, 'fasta')

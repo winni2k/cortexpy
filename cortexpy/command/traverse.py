@@ -41,10 +41,8 @@ def traverse(argv):
                         help='Number of kmers to cache for binary search')
     args = parser.parse_args(argv)
 
-    from cortexpy.logging_config import configure_logging_from_args
-    configure_logging_from_args(args)
-    import logging
-    logger = logging.getLogger('cortexpy.traverse')
+    from cortexpy.logging_config import configure_logging_from_args_and_get_logger
+    logger = configure_logging_from_args_and_get_logger(args, 'cortexpy.traverse')
 
     import sys
     from contextlib import ExitStack

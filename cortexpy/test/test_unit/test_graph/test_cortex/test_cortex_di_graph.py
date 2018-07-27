@@ -8,8 +8,8 @@ class Test(object):
     def test_with_2_nodes_has_len_2(self):
         # given
         b = get_cortex_builder()
-        b.with_kmer('AAA 0 .....C..')
-        b.with_kmer('AAC 0 a.......')
+        b.with_kmer('AAA 1 .....C..')
+        b.with_kmer('AAC 1 a.......')
 
         # when
         cdb = b.build()
@@ -24,8 +24,8 @@ class TestNodes(object):
     def test_nodes_returns_two_nodes(self):
         # given
         b = get_cortex_builder()
-        b.with_kmer('AAA 0 .....C..')
-        b.with_kmer('AAC 0 a.......')
+        b.with_kmer('AAA 1 .....C..')
+        b.with_kmer('AAC 1 a.......')
 
         # when
         cortex_graph = b.build()
@@ -37,8 +37,8 @@ class TestNodes(object):
     def test_remove_node(self, remove_first):
         # given
         b = get_cortex_builder()
-        b.with_kmer('AAA 0 .....C..')
-        b.with_kmer('AAC 0 a.......')
+        b.with_kmer('AAA 1 .....C..')
+        b.with_kmer('AAC 1 a.......')
 
         cdb = b.build()
 
@@ -58,9 +58,9 @@ class TestNodes(object):
     def test_remove_nodes(self, removal_nodes):
         # given
         b = get_cortex_builder()
-        b.with_kmer('AAA 0 .....C..')
-        b.with_kmer('AAC 0 a....C..')
-        b.with_kmer('ACC 0 a.......')
+        b.with_kmer('AAA 1 .....C..')
+        b.with_kmer('AAC 1 a....C..')
+        b.with_kmer('ACC 1 a.......')
         nodes = {'AAC', 'AAA', 'ACC'}
 
         cdb = b.build()
@@ -76,8 +76,8 @@ class TestEdges(object):
     def test_neighbors_of_three_colors_returns_colors_0_and_2(self):
         # given
         b = get_cortex_builder()
-        b.with_kmer('AAA 0 0 0 .....C.. ........ .....C..')
-        b.with_kmer('AAC 0 0 0 a....... ........ a.......')
+        b.with_kmer('AAA 1 1 1 .....C.. ........ .....C..')
+        b.with_kmer('AAC 1 1 1 a....... ........ a.......')
 
         # when
         cdb = b.build()
@@ -96,8 +96,8 @@ class TestInOutEdges(object):
     def test_single_kmer(self):
         # given
         b = get_cortex_builder()
-        b.with_kmer('AAA 0 ......G.')
-        b.with_kmer('AAG 0 a.......')
+        b.with_kmer('AAA 1 ......G.')
+        b.with_kmer('AAG 1 a.......')
         cdb = b.build()
         seed = 'AAA'
 
@@ -108,8 +108,8 @@ class TestInOutEdges(object):
     def test_single_kmer_revcomp(self):
         # given
         b = get_cortex_builder()
-        b.with_kmer('AAA 0 ......G.')
-        b.with_kmer('AAG 0 a.......')
+        b.with_kmer('AAA 1 ......G.')
+        b.with_kmer('AAG 1 a.......')
         cdb = b.build()
         seed = 'TTT'
 

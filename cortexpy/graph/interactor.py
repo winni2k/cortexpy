@@ -9,6 +9,7 @@ import logging
 from cortexpy.constants import EdgeTraversalOrientation
 from cortexpy.graph.parser.kmer import revcomp_target_to_match_ref
 from cortexpy.utils import lexlo, revcomp
+from .serializer.unitig import UnitigCollapser
 from .cortex import CortexDiGraph, ConsistentCortexDiGraph
 
 logger = logging.getLogger(__name__)
@@ -25,13 +26,17 @@ def make_multi_graph(graph):
 @attr.s(slots=True)
 class Interactor(object):
     graph = attr.ib()
-    colors = attr.ib()
 
-    def add_edge_to_graph_for_kmer_pair(self, kmer1, kmer2, kmer1_string, kmer2_string):
+    @classmethod
+    def from_graph(cls, graph):
+        return cls(graph=graph)
+
+    def add_edge_to_graph_for_kmer_pair(self, kmer1, kmer2, kmer1_string, kmer2_string,
+                                        colors_to_add):
         if isinstance(self.graph, CortexDiGraph):
             return self
         first_is_revcomp = bool(kmer1.kmer != kmer1_string)
-        for color in self.colors:
+        for color in colors_to_add:
             if first_is_revcomp:
                 add_edge = kmer1.has_incoming_edge_from_kmer_in_color(kmer2, color)
             else:
@@ -42,7 +47,6 @@ class Interactor(object):
 
     def find_nodes_of_tips_less_than(self, n):
         nodes_to_prune = set()
-        assert self.colors is None
         graph = make_multi_graph(self.graph)
         num_tips = 0
         num_tips_to_prune = 0
@@ -74,9 +78,11 @@ class Interactor(object):
 
     def make_graph_nodes_consistent(self, seed_kmer_strings=None):
         """
-        Take a CDBG and make all nodes have kmer_strings that are consistent with each other.
-        If a seed kmer string is provided, then start with that seed kmer.
+        Take a Cortex graph and make all nodes have kmer_strings that are consistent with each
+        other. If a seed kmer string is provided, then start with that seed kmer.
         """
+        if seed_kmer_strings is None:
+            seed_kmer_strings = []
         if self.graph.is_consistent():
             return self
         graph = CortexDiGraph(self.graph)
@@ -114,6 +120,7 @@ class SeedKmerStringIterator(object):
     _seen_lexlo_kmer_strings = attr.ib(attr.Factory(set))
 
     def __attrs_post_init__(self):
+        self.seed_kmer_strings = list(self.seed_kmer_strings)
         self._unseen_lexlo_kmer_strings = {lexlo(k_string) for k_string in
                                            self.all_lexlo_kmer_strings}
 
@@ -139,15 +146,6 @@ class SeedKmerStringIterator(object):
     def remove(self, lexlo_kmer_string):
         assert lexlo_kmer_string == lexlo(lexlo_kmer_string)
         self._seen_lexlo_kmer_strings.add(lexlo_kmer_string)
-
-
-def seed_kmer_string_generator(seed_kmer_strings, unseen_lexlo_kmer_strings):
-    while seed_kmer_strings:
-        seed = seed_kmer_strings.pop()
-        lexlo_seed = lexlo(seed)
-        if lexlo_seed not in unseen_lexlo_kmer_strings:
-            continue
-        yield seed, lexlo_seed
 
 
 def node_generator_from_edges(edge_generator):
@@ -185,28 +183,25 @@ def find_tip_from(*, n, start, graph, next_node_generator):
     return None
 
 
-def make_copy_of_color(graph, color, include_self_refs=False):
+def make_copy_of_color_for_kmer_graph(graph, color, include_self_refs=False):
     """Makes a copy of graph, but only copies over links with key=color.
     Only copies over nodes that are linked by a link with key=color.
     """
-    out_graph = graph.fresh_copy()
+    out_graph = nx.MultiDiGraph(colors=[color])
     for u, v, key, data in graph.edges(keys=True, data=True):
         if key == color:
             if u == v and not include_self_refs:
                 continue
             out_graph.add_edge(u, v, key=key, **data)
     for node in list(out_graph):
-        out_graph.add_node(node, **graph.node[node])
+        out_graph.add_node(node, kmer=graph.node[node])
     return out_graph
 
 
-def convert_kmer_path_to_contig(path):
+def convert_unitig_path_to_contig(path, graph):
     if len(path) == 0:
         return ''
-    contig = [path[0]]
-    for kmer in path[1:]:
-        contig.append(kmer[-1])
-    return ''.join(contig)
+    return ''.join([graph.node[u]['repr'] for u in path])
 
 
 def in_nodes_of(graph):
@@ -238,20 +233,65 @@ class Contigs(object):
     color = attr.ib(None)
 
     def all_simple_paths(self):
+        if not isinstance(self.graph, nx.Graph):
+            assert self.graph.is_consistent()
         if self.color is not None:
-            graph = make_copy_of_color(self.graph, self.color, include_self_refs=False)
+            graph = make_copy_of_color_for_kmer_graph(self.graph, self.color,
+                                                      include_self_refs=False)
         else:
             graph = self.graph
+        unitig_graph = UnitigCollapser(graph) \
+            .collapse_kmer_unitigs() \
+            .unitig_graph
+        unitig_graph = nx.DiGraph(unitig_graph)
+        unitig_graph = nx.convert_node_labels_to_integers(unitig_graph)
         idx = 0
-        for source in in_nodes_of(graph):
-            for target in out_nodes_of(graph):
+        in_nodes = list(in_nodes_of(unitig_graph))
+        logger.info(f"Found {len(in_nodes)} incoming tip nodes")
+        out_nodes = list(out_nodes_of(unitig_graph))
+        logger.info(f"Found {len(out_nodes)} outgoing tip nodes")
+        for sidx, source in enumerate(in_nodes):
+            for tidx, target in enumerate(out_nodes):
                 if source == target:
-                    continue
-                for path in _all_simple_paths_multigraph(graph, source, target,
-                                                         cutoff=len(graph) - 1):
-                    yield SeqRecord(Seq(convert_kmer_path_to_contig(path)), id=str(idx),
+                    yield SeqRecord(Seq(unitig_graph.node[source]['unitig']), id=str(idx),
                                     description='')
                     idx += 1
+                    continue
+                for pidx, path in enumerate(
+                    _all_simple_paths_graph(unitig_graph, source, target,
+                                            cutoff=len(graph) - 1)
+                ):
+                    if pidx % 100000 == 0:
+                        logger.info('Incoming node %s; outgoing node %s; Path number %s', sidx,
+                                    tidx, pidx)
+                    yield SeqRecord(Seq(convert_unitig_path_to_contig(path, unitig_graph)),
+                                    id=str(idx),
+                                    description='')
+                    idx += 1
+
+
+def _all_simple_paths_graph(G, source, target, cutoff):
+    """This function was copied from Networkx before being edited by Warren Kretzschmar
+    todo: switch back to nx.all_simple_paths once Networkx 2.2 is released"""
+    visited = collections.OrderedDict.fromkeys([source])
+    stack = [iter(G[source])]
+    while stack:
+        children = stack[-1]
+        child = next(children, None)
+        if child is None:
+            stack.pop()
+            visited.popitem()
+        elif len(visited) < cutoff:
+            if child == target:
+                yield list(visited) + [target]
+            elif child not in visited:
+                visited[child] = None
+                stack.append(iter(G[child]))
+        else:  # len(visited) == cutoff:
+            if child == target or target in children:
+                yield list(visited) + [target]
+            stack.pop()
+            visited.popitem()
 
 
 def _all_simple_paths_multigraph(G, source, target, cutoff=None):

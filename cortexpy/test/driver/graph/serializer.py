@@ -43,7 +43,7 @@ class SerializerTestDriver(object):
             traverser = traversal.Engine(parser.RandomAccess(self.graph_builder.build()),
                                          traversal_colors=self.traversal_colors)
             graph = traverser.traverse_from(self.traversal_start_kmer).graph
-            return Interactor(graph, self.traversal_colors) \
+            return Interactor(graph) \
                 .make_graph_nodes_consistent([self.traversal_start_kmer]) \
                 .graph
         else:

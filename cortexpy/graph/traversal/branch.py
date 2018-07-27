@@ -1,8 +1,12 @@
 import attr
-from cortexpy.graph.cortex import build_empty_cortex_graph_from_ra_parser, ConsistentCortexDiGraph
-from cortexpy.graph.serializer.constants import SERIALIZER_GRAPH
+from cortexpy.graph.cortex import (
+    build_empty_cortex_graph_from_ra_parser, ConsistentCortexDiGraph,
+    CortexDiGraph,
+)
 from cortexpy.constants import EdgeTraversalOrientation
 from .constants import EngineTraversalOrientation
+
+SERIALIZER_GRAPH = CortexDiGraph
 
 
 class KmerStringAlreadySeen(Exception):

@@ -31,7 +31,7 @@ class GraphCollection(object):
             colors_so_far += n_colors
         return self
 
-    def with_kmer_for_graph(self, graph_idx, kmer_string, color_coverage=0, edges='........'):
+    def with_kmer_for_graph(self, graph_idx, kmer_string, color_coverage=1, edges='........'):
         self.graph_builders[graph_idx].with_kmer(kmer_string, color_coverage=color_coverage,
                                                  edges=edges)
         return self
@@ -71,7 +71,7 @@ class TestDunderGetitemDunder(object):
 
             # then
             assert expected_kmer.kmer == kmer.kmer
-            assert np.all(expected_kmer.coverage == kmer.coverage)
+            assert expected_kmer.coverage == kmer.coverage
             assert expected_kmer.edges == kmer.edges
 
     def test_raises_on_missing_kmer(self):
@@ -100,7 +100,7 @@ class TestDunderGetitemDunder(object):
 
         # then
         assert 'AAA' == kmer1.kmer
-        assert np.all((1, 0, 0) == kmer1.coverage)
+        assert (1, 0, 0) == tuple(kmer1.coverage)
         assert ('....A...', '........', '........') == tuple(str(e) for e in kmer1.edges)
 
         # then

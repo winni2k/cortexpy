@@ -7,7 +7,7 @@ from cortexpy.constants import EdgeTraversalOrientation
 class OrientedGraphFuncs(object):
     graph = attr.ib()
     orientation = attr.ib()
-    color = attr.ib(0)
+    color = attr.ib(None)
     edges = attr.ib(init=False)
     other_edge_node = attr.ib(init=False)
 

@@ -10,12 +10,12 @@ from cortexpy.utils import lexlo
 def test_revcomps_a_kmer():
     # given
     b = get_cortex_builder()
-    b.with_kmer('AAA 0 ........')
+    b.with_kmer('AAA 1 ........')
     cdb = b.build()
 
     # when
     expect = KmerGraphExpectation(
-        Interactor(cdb, colors=None).make_graph_nodes_consistent({'TTT'}).graph)
+        Interactor(cdb).make_graph_nodes_consistent({'TTT'}).graph)
 
     # then
     expect.has_node('TTT')
@@ -34,12 +34,12 @@ def test_revcomps_many_kmers(data, num_kmers, kmer_size):
 
     b = get_cortex_builder()
     for kmer in kmers.keys():
-        b.with_kmer('{} 0 ........'.format(kmer))
+        b.with_kmer('{} 1 ........'.format(kmer))
     cdb = b.build()
 
     # when
     expect = KmerGraphExpectation(
-        Interactor(cdb, colors=None).make_graph_nodes_consistent(set(kmers.values())).graph)
+        Interactor(cdb).make_graph_nodes_consistent(set(kmers.values())).graph)
 
     # then
     for kmer_string in kmers.values():
@@ -50,8 +50,8 @@ def test_revcomps_many_kmers(data, num_kmers, kmer_size):
 def test_revcomps_path():
     # given
     b = get_cortex_builder()
-    b.with_kmer('CGC 0 .......T')
-    b.with_kmer('AGC 0 ......G.')
+    b.with_kmer('CGC 1 .......T')
+    b.with_kmer('AGC 1 ......G.')
 
     cdb = b.build()
 
@@ -61,7 +61,7 @@ def test_revcomps_path():
                                  ('GCG', ['AGC', 'GCG'])]:
         # when
         expect = KmerGraphExpectation(
-            Interactor(cdb, colors=None).make_graph_nodes_consistent([seed]).graph)
+            Interactor(cdb).make_graph_nodes_consistent([seed]).graph)
 
         # then
         expect.has_nodes(*expected_nodes)
@@ -71,10 +71,10 @@ def test_revcomps_path():
 def test_keys_y_graph():
     # given
     b = get_cortex_builder()
-    b.with_kmer('CGC 0 .......T')
-    b.with_kmer('AGC 0 a....CG.')
-    b.with_kmer('AAG 0 .....C..')
-    b.with_kmer('GCC 0 a.......')
+    b.with_kmer('CGC 1 .......T')
+    b.with_kmer('AGC 1 a....CG.')
+    b.with_kmer('AAG 1 .....C..')
+    b.with_kmer('GCC 1 a.......')
 
     expected_nodes1 = ['CGC', 'GCT', 'CTT', 'GGC']
     expected_nodes2 = ['AAG', 'AGC', 'GCG', 'GCC']
@@ -84,7 +84,7 @@ def test_keys_y_graph():
 
             # when
             expect = KmerGraphExpectation(
-                Interactor(cdb, colors=None).make_graph_nodes_consistent([seed]).graph)
+                Interactor(cdb).make_graph_nodes_consistent([seed]).graph)
 
             # then
             expect.has_nodes(*expected_nodes)

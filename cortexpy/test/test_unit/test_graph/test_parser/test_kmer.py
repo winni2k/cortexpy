@@ -3,7 +3,7 @@ import math
 from Bio.Seq import reverse_complement, Seq
 from hypothesis import given, assume, settings, strategies as s
 
-import cortexpy.edge_set
+from cortexpy import edge_set
 from cortexpy.graph.parser.kmer import (
     EmptyKmerBuilder, connect_kmers, StringKmerConverter, Kmer,
     KmerData,
@@ -70,14 +70,14 @@ class TestBuildKmer(object):
 
     def test_raises_on_non_lexlo_kmer(self):
         # when
-        rec = KmerRecord('AAA', [], [])
-        kmer = Kmer.from_kmer_data(KmerData(rec.to_bytestring(), kmer_size=3, num_colors=0))
+        rec = KmerRecord('AAA', [1], [edge_set.empty()])
+        kmer = Kmer.from_kmer_data(KmerData(rec.to_bytestring(), kmer_size=3, num_colors=1))
         with pytest.raises(AttributeError):
             kmer.kmer = reverse_complement(kmer.kmer)
 
 
 class TestAddColor(object):
-    @given(s.data(), s.integers(min_value=0, max_value=7), s.integers(min_value=0, max_value=10))
+    @given(s.data(), s.integers(min_value=1, max_value=7), s.integers(min_value=0, max_value=10))
     @settings(max_examples=10)
     def test_increases_color_count(self, data, num_colors, increment_color):
         # given
@@ -90,9 +90,12 @@ class TestAddColor(object):
         assert kmer.num_colors == max(num_colors, increment_color + 1)
         assert len(kmer.coverage) == kmer.num_colors
         assert isinstance(kmer.coverage[increment_color], int)
-        assert kmer.coverage[increment_color] == 1
         assert len(kmer.edges) == kmer.num_colors
-        assert list(kmer.edges) == [cortexpy.edge_set.empty() for _ in range(kmer.num_colors)]
+        assert list(kmer.edges) == [edge_set.empty() for _ in range(kmer.num_colors)]
+        if increment_color >= num_colors:
+            assert 1 == kmer.coverage[increment_color]
+        else:
+            assert 2 == kmer.coverage[increment_color]
 
 
 class TestConnectKmers(object):
@@ -164,7 +167,7 @@ class TestConnectKmers(object):
         assert kmer1.edges[0].is_edge('T')
         assert kmer2.edges[0].is_edge('T')
 
-    @given(s.data(), s.text('ACGT', min_size=1, max_size=1), s.integers(min_value=0, max_value=7),
+    @given(s.data(), s.text('ACGT', min_size=1, max_size=1), s.integers(min_value=1, max_value=7),
            s.booleans(), s.booleans())
     def test_works_on_edit_distance_one_forward_in_any_order(self, data, letter, num_colors,
                                                              add_letter_to_end,
@@ -339,7 +342,7 @@ class TestStringKmerConverter(object):
 
     @given(s.data(),
            s.integers(min_value=0, max_value=129),
-           s.integers(min_value=0, max_value=7),
+           s.integers(min_value=1, max_value=3),
            s.booleans()
            )
     def test_converts_to_raw(self, data, kmer_size, num_colors, from_bioseq):

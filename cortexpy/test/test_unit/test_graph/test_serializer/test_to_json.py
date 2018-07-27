@@ -1,8 +1,8 @@
 import json
 
+import cortexpy.graph.serializer.serializer
 from cortexpy.graph import Interactor, ContigRetriever
 from cortexpy.graph.parser.streaming import load_cortex_graph
-from cortexpy.graph.serializer import unitig as serializer
 from cortexpy.test import builder as builder, expectation
 
 
@@ -21,7 +21,7 @@ class TestFromKmerGraph(object):
         graph = retriever.get_kmer_graph('GTTT')
 
         # when
-        kmer_json = serializer.Serializer(graph).to_json()
+        kmer_json = cortexpy.graph.serializer.serializer.Serializer(graph).to_json()
         expect = expectation.JsonGraph.from_string(kmer_json)
 
         # then
@@ -46,10 +46,10 @@ class TestFromCortexGraph(object):
             .with_kmer('AAC 1 0 a....... ........')
 
         graph = load_cortex_graph(graph_builder.build())
-        graph = Interactor(graph, colors) \
+        graph = Interactor(graph) \
             .make_graph_nodes_consistent(seed_kmer_strings=['GTT']) \
             .graph
-        kmer_json = serializer.Serializer(graph).to_json()
+        kmer_json = cortexpy.graph.serializer.serializer.Serializer(graph).to_json()
 
         # when
         expect = expectation.JsonGraph.from_string(kmer_json)
