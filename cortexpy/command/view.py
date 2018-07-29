@@ -52,7 +52,7 @@ def view_traversal(argv):
         else:
             output = stack.enter_context(open(args.out, 'wt'))
 
-        logger.info(f'Loading graph: {args.traversal}')
+        logger.info(f'Loading graph: %s', args.traversal)
         if args.traversal == '-':
             graph = load_cortex_graph(sys.stdin.buffer)
         else:
@@ -86,7 +86,7 @@ def view_traversal(argv):
                     .graph
             seq_record_generator = Contigs(consistent_graph, args.color).all_simple_paths()
         seq_record_generator = annotated_seq_records(seq_record_generator, graph_idx="x")
-        logger.info('Writing seq records to {args.out}')
+        logger.info('Writing seq records to %s', args.out)
         SeqIO.write(seq_record_generator, output, 'fasta')
 
 

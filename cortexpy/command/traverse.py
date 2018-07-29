@@ -1,6 +1,3 @@
-from cortexpy.graph.serializer.kmer import dump_colored_de_bruijn_graph_to_cortex
-
-
 def traverse(argv):
     import argparse
     from cortexpy.graph import traversal
@@ -10,7 +7,7 @@ def traverse(argv):
         'cortexpy traverse', parents=[shared_parser],
         description="""
         Traverse a cortex graph starting from each k-mer in an initial_contig and return the
-        subgraph as a Python pickle object."""
+        subgraph as a Cortex graph."""
     )
     parser.add_argument('--graphs', nargs='+',
                         required=True,
@@ -45,6 +42,7 @@ def traverse(argv):
     logger = configure_logging_from_args_and_get_logger(args, 'cortexpy.traverse')
 
     import sys
+    from cortexpy.graph.serializer.kmer import dump_colored_de_bruijn_graph_to_cortex
     from contextlib import ExitStack
     with ExitStack() as stack:
         if args.out == '-':

@@ -12,6 +12,7 @@ from cortexpy.graph.parser.constants import (
     NUM_LETTERS_PER_UINT, NUM_TO_BITS,
 )
 from cortexpy.utils import revcomp, lexlo
+from .kmer_ext import raw_kmer_to_letters
 
 
 def check_kmer_string(kmer_string):
@@ -175,12 +176,15 @@ class EmptyKmer(object):
 class RawKmerConverter(object):
     kmer_size = attr.ib()
 
-    def to_letters(self, raw_kmer):
+    def _to_letters(self, raw_kmer):
         kmer_as_uint64ts = np.frombuffer(raw_kmer, dtype='<u8')
         big_endian_kmer = kmer_as_uint64ts.astype('>u8')
         kmer_as_bits = np.unpackbits(np.frombuffer(big_endian_kmer.tobytes(), dtype=np.uint8))
         kmer = (kmer_as_bits.reshape(-1, 2) * np.array([2, 1])).sum(1)
         return NUM_TO_LETTER[kmer[(len(kmer) - self.kmer_size):]]
+
+    def to_letters(self, raw_kmer):
+        return np.array(raw_kmer_to_letters(self.kmer_size, raw_kmer))
 
 
 def calc_kmer_container_size(kmer_size):
