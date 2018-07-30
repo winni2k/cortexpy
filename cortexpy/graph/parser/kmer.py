@@ -1,4 +1,3 @@
-from struct import unpack
 import struct
 import attr
 import numpy as np
@@ -12,7 +11,7 @@ from cortexpy.graph.parser.constants import (
     NUM_LETTERS_PER_UINT, NUM_TO_BITS,
 )
 from cortexpy.utils import revcomp, lexlo
-from .kmer_ext import raw_kmer_to_string
+from .kmer_ext import raw_kmer_to_string, raw_edges_to_list, raw_to_coverage
 
 
 def check_kmer_string(kmer_string):
@@ -237,10 +236,9 @@ class KmerData(object):
     @property
     def coverage(self):
         if self._coverage is None:
-            start = self.kmer_container_size_in_uint64ts * UINT64_T
-            coverage_raw = self._data[start:(start + self.num_colors * UINT32_T)]
-            fmt_string = ''.join(['I' for _ in range(self.num_colors)])
-            self._coverage = unpack(fmt_string, coverage_raw)
+            self._coverage = raw_to_coverage(self._data,
+                                             self.kmer_container_size_in_uint64ts * UINT64_T,
+                                             self.num_colors)
         return self._coverage
 
     @coverage.setter
@@ -253,11 +251,8 @@ class KmerData(object):
             start = (
                 self.kmer_container_size_in_uint64ts * UINT64_T + self.num_colors * UINT32_T
             )
-            edge_bytes = np.frombuffer(self._data[start:], dtype=np.uint8)
-            edge_sets = np.unpackbits(edge_bytes)
-            edge_sets = edge_sets.reshape(-1, 8)
-            edge_sets = [EdgeSet(tuple(edge_set.tolist())) for edge_set in edge_sets]
-            self._edges = edge_sets
+            tuples = raw_edges_to_list(self._data[start:])
+            self._edges = [EdgeSet(t) for t in tuples]
         return self._edges
 
     @edges.setter
