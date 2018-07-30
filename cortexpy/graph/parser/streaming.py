@@ -22,13 +22,21 @@ def kmer_string_generator_from_stream(stream):
 
 
 def kmer_string_generator_from_stream_and_header(stream, header):
-    return (l.astype('|S1').tostring().decode('utf-8') for l in
-            kmer_list_generator_from_stream_and_header(stream, header))
+    record_size = header.kmer_container_size * UINT64_T + 5 * header.num_colors
+    kmer_container_size = header.kmer_container_size * UINT64_T
+    assert record_size >= kmer_container_size
+    kmer_converter = RawKmerConverter(header.kmer_size)
+
+    advance = record_size - kmer_container_size
+    raw_kmer = stream.read(kmer_container_size)
+    while raw_kmer != b'':
+        yield kmer_converter.to_string(raw_kmer)
+        stream.seek(advance, io.SEEK_CUR)
+        raw_kmer = stream.read(kmer_container_size)
 
 
 def kmer_generator_from_stream_and_header(stream, header):
     record_size = header.kmer_container_size * UINT64_T + 5 * header.num_colors
-
     raw_record = stream.read(record_size)
     while raw_record != b'':
         yield Kmer.from_kmer_data(
@@ -40,17 +48,7 @@ def kmer_generator_from_stream_and_header(stream, header):
 
 
 def kmer_list_generator_from_stream_and_header(stream, header):
-    record_size = header.kmer_container_size * UINT64_T + 5 * header.num_colors
-    kmer_container_size = header.kmer_container_size * UINT64_T
-    assert record_size >= kmer_container_size
-    kmer_converter = RawKmerConverter(header.kmer_size)
-
-    advance = record_size - kmer_container_size
-    raw_kmer = stream.read(kmer_container_size)
-    while raw_kmer != b'':
-        yield kmer_converter.to_letters(raw_kmer)
-        stream.seek(advance, io.SEEK_CUR)
-        raw_kmer = stream.read(kmer_container_size)
+    return (list(ks) for ks in kmer_string_generator_from_stream_and_header(stream, header))
 
 
 def load_cortex_graph(stream):
