@@ -4,7 +4,7 @@ import pytest
 from hypothesis import assume, given
 from hypothesis import strategies as s
 
-import cortexpy.graph.parser as parser
+import cortexpy.graph.parser.header as header
 from cortexpy.test.builder.graph.header import Header, ColorInformationBlock
 
 MAX_UINT = 2 ** (struct.calcsize('I') * 8) - 1
@@ -32,7 +32,7 @@ class TestHeaderParser(object):
         fh = Header().with_magic_word(magic_word).build()
 
         with pytest.raises(ValueError) as excinfo:
-            parser.header.from_stream(fh)
+            header.Header.from_stream(fh)
 
         assert 'Saw initial magic word' in str(excinfo.value)
 
@@ -43,7 +43,7 @@ class TestHeaderParser(object):
         fh = Header().with_version(version).build()
 
         with pytest.raises(ValueError) as excinfo:
-            parser.header.from_stream(fh)
+            header.Header.from_stream(fh)
 
         assert "'version' must be in [6]" in str(excinfo.value)
 
@@ -51,7 +51,7 @@ class TestHeaderParser(object):
         fh = Header().with_kmer_size(0).build()
 
         with pytest.raises(ValueError) as excinfo:
-            parser.header.from_stream(fh)
+            header.Header.from_stream(fh)
 
         assert "'kmer_size' has to be greater than 0" in str(excinfo.value)
 
@@ -59,7 +59,7 @@ class TestHeaderParser(object):
         fh = Header().with_kmer_size(3).with_kmer_container_size(0).build()
 
         with pytest.raises(ValueError) as excinfo:
-            parser.header.from_stream(fh)
+            header.Header.from_stream(fh)
 
         assert "'kmer_container_size' has to be greater than 0" in str(excinfo.value)
 
@@ -71,7 +71,7 @@ class TestHeaderParser(object):
               .build())
 
         with pytest.raises(ValueError) as excinfo:
-            parser.header.from_stream(fh)
+            header.Header.from_stream(fh)
 
         assert "'num_colors' has to be greater than 0" in str(excinfo.value)
 
@@ -83,7 +83,7 @@ class TestHeaderParser(object):
               .build())
 
         with pytest.raises(ValueError) as excinfo:
-            parser.header.from_stream(fh)
+            header.Header.from_stream(fh)
 
         assert 'Concluding magic word' in str(excinfo.value)
 
@@ -123,7 +123,7 @@ class TestHeaderParser(object):
         fh = cgb.build()
 
         # then
-        cgh = parser.header.from_stream(fh)
+        cgh = header.Header.from_stream(fh)
 
         assert cgh.version == 6
         assert cgh.kmer_size == kmer_size

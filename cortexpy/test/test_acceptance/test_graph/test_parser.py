@@ -1,6 +1,8 @@
 from itertools import repeat
-import cortexpy.graph.parser as parser
 import cortexpy.test.builder as builder
+from cortexpy.graph.parser.header import Header
+from cortexpy.graph.parser.random_access import RandomAccess
+from cortexpy.graph.parser.streaming import kmer_generator_from_stream
 from cortexpy.test.builder.graph.body import KmerRecord, as_edge_set
 import logging
 
@@ -30,7 +32,7 @@ class TestHeaderFromStream(object):
                                       'sample_names': (sample_name.encode(),)}
 
         # when
-        header = parser.header.from_stream(open(output_graph, 'rb'))
+        header = Header.from_stream(open(output_graph, 'rb'))
 
         # then
         for key, value in expected_header_attributes.items():
@@ -53,7 +55,7 @@ class TestKmerGeneratorFromStream(object):
         # when
         output_graph = mc_builder.build(tmpdir)
 
-        kmer_generator = parser.kmer_generator_from_stream(open(output_graph, 'rb'))
+        kmer_generator = kmer_generator_from_stream(open(output_graph, 'rb'))
 
         # then
         actual_kmers = list(kmer_generator)
@@ -79,7 +81,7 @@ class TestKmerGeneratorFromStream(object):
         # when
         output_graph = mc_builder.build(tmpdir)
 
-        kmer_generator = parser.kmer_generator_from_stream(open(output_graph, 'rb'))
+        kmer_generator = kmer_generator_from_stream(open(output_graph, 'rb'))
 
         # then
         actual_kmers = list(kmer_generator)
@@ -105,7 +107,7 @@ class TestKmerGeneratorFromStream(object):
         # when
         output_graph = mc_builder.build(tmpdir)
 
-        kmer_generator = parser.kmer_generator_from_stream(open(output_graph, 'rb'))
+        kmer_generator = kmer_generator_from_stream(open(output_graph, 'rb'))
 
         # then
         actual_kmers = list(kmer_generator)
@@ -127,7 +129,7 @@ class TestRandomAccess(object):
                         .build(tmpdir))
 
         expected = KmerRecord('AAC', (1,), [as_edge_set('A.....G.')])
-        cg = parser.RandomAccess(open(output_graph, 'rb'))
+        cg = RandomAccess(open(output_graph, 'rb'))
 
         # when
         actual = cg['AAC']

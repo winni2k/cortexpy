@@ -11,7 +11,7 @@ def prune(argv):
     from cortexpy.logging_config import configure_logging_from_args_and_get_logger
     logger = configure_logging_from_args_and_get_logger(args, 'cortexpy.prune')
 
-    from cortexpy.graph import Interactor
+    from cortexpy.graph.interactor import Interactor
     from cortexpy.graph.parser.streaming import load_cortex_graph
     from cortexpy.graph.serializer.kmer import dump_colored_de_bruijn_graph_to_cortex
 

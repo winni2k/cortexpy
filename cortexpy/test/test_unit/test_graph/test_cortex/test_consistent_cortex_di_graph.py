@@ -1,6 +1,6 @@
 from hypothesis import given, strategies as s
 
-from cortexpy.graph import Interactor
+from cortexpy.graph.interactor import Interactor
 from cortexpy.test.builder.graph.cortex import get_cortex_builder
 
 

@@ -36,6 +36,19 @@ class Header(object):
     _error_rates = attr.ib(None)
     color_info_blocks = attr.ib(attr.Factory(list))
 
+    @classmethod
+    def from_stream(cls, stream):
+        header = (HeaderFromStreamBuilder(stream)
+                  .extract_initial_magic_word()
+                  .fill_first_four_params()
+                  .extract_mean_read_lengths()
+                  .extract_total_sequences()
+                  .extract_sample_names_from_stream()
+                  .extract_error_rates()
+                  .extract_color_info_blocks()
+                  .extract_concluding_magic_word())
+        return header
+
     @property
     def record_size(self):
         return UINT64_T * self.kmer_container_size + (UINT32_T + UINT8_T) * self.num_colors
@@ -178,16 +191,3 @@ class HeaderFromStreamBuilder(object):
             cleaned_graph_name = self.stream.read(color_info_block[6])
             self.header.color_info_blocks.append((color_info_block, cleaned_graph_name))
         return self
-
-
-def from_stream(stream):
-    header = (HeaderFromStreamBuilder(stream)
-              .extract_initial_magic_word()
-              .fill_first_four_params()
-              .extract_mean_read_lengths()
-              .extract_total_sequences()
-              .extract_sample_names_from_stream()
-              .extract_error_rates()
-              .extract_color_info_blocks()
-              .extract_concluding_magic_word())
-    return header

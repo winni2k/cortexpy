@@ -1,3 +1,6 @@
+import cortexpy.constants
+
+
 def traverse(argv):
     import argparse
     from cortexpy.graph import traversal
@@ -15,9 +18,9 @@ def traverse(argv):
                              "  Multiple graphs can be specified and are joined on-the-fly.")
     parser.add_argument('initial_contig', help="Initial contig from which to start traversal")
     parser.add_argument('--orientation',
-                        type=traversal.constants.EngineTraversalOrientation,
-                        choices=[o.name for o in traversal.constants.EngineTraversalOrientation],
-                        default=traversal.constants.EngineTraversalOrientation.both,
+                        type=cortexpy.constants.EngineTraversalOrientation,
+                        choices=[o.name for o in cortexpy.constants.EngineTraversalOrientation],
+                        default=cortexpy.constants.EngineTraversalOrientation.both,
                         help='Traversal orientation')
     parser.add_argument('-c', '--colors',
                         nargs='+',
@@ -43,6 +46,9 @@ def traverse(argv):
 
     import sys
     from cortexpy.graph.serializer.kmer import dump_colored_de_bruijn_graph_to_cortex
+    from cortexpy.graph.parser.random_access_collection import RandomAccessCollection
+    from cortexpy.constants import EngineTraversalOrientation
+    from cortexpy.graph.traversal.engine import Engine
     from contextlib import ExitStack
     with ExitStack() as stack:
         if args.out == '-':
@@ -50,20 +56,20 @@ def traverse(argv):
         else:
             output = stack.enter_context(open(args.out, 'wb'))
 
-        from cortexpy.graph import parser as g_parser, traversal
+        from cortexpy.graph.parser.random_access import RandomAccess
         if len(args.graphs) == 1:
-            ra_parser = g_parser.RandomAccess(
+            ra_parser = RandomAccess(
                 stack.enter_context(open(args.graphs[0], 'rb')),
                 kmer_cache_size=args.cache_size
             )
         else:
-            ra_parser = g_parser.RandomAccessCollection(
-                [g_parser.RandomAccess(stack.enter_context(open(graph_path, 'rb')),
+            ra_parser = RandomAccessCollection(
+                [RandomAccess(stack.enter_context(open(graph_path, 'rb')),
                                        kmer_cache_size=args.cache_size)
                  for graph_path in args.graphs])
-        engine = traversal.Engine(
+        engine = Engine(
             ra_parser,
-            orientation=traversal.constants.EngineTraversalOrientation[args.orientation.name],
+            orientation=EngineTraversalOrientation[args.orientation.name],
             max_nodes=args.max_nodes,
             logging_interval=args.logging_interval
         )

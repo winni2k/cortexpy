@@ -10,3 +10,9 @@ class EdgeTraversalOrientation(Enum):
         if orientation == cls.original:
             return cls.reverse
         return cls.original
+
+
+class EngineTraversalOrientation(Enum):
+    original = 0
+    reverse = 1
+    both = 2

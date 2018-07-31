@@ -101,7 +101,7 @@ class BranchTestDriver(object):
         if self.expected_start_kmer_string is None:
             self.expected_start_kmer_string = self.start_kmer_string
         stream = self.graph_builder.build()
-        ra_parser = cortexpy.graph.parser.RandomAccess(stream)
+        ra_parser = cortexpy.graph.parser.random_access.RandomAccess(stream)
         traverser = branch.Traverser(
             ra_parser,
             traversal_color=self.traversal_color,

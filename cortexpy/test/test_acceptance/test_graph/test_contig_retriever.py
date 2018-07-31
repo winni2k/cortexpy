@@ -1,4 +1,4 @@
-from cortexpy import graph
+from cortexpy.graph.contig_retriever import ContigRetriever
 from cortexpy.test import builder
 
 
@@ -11,7 +11,7 @@ class TestGetKmerGraph(object):
                         .with_dna_sequence('AAAT')
                         .build(tmpdir))
 
-        retriever = graph.ContigRetriever(open(output_graph, 'rb'))
+        retriever = ContigRetriever(open(output_graph, 'rb'))
 
         # when
         kmer_graph = retriever.get_kmer_graph('GTTT')

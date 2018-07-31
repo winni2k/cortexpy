@@ -3,8 +3,7 @@ from cortexpy.graph.cortex import (
     build_empty_cortex_graph_from_ra_parser, ConsistentCortexDiGraph,
     CortexDiGraph,
 )
-from cortexpy.constants import EdgeTraversalOrientation
-from .constants import EngineTraversalOrientation
+from cortexpy.constants import EdgeTraversalOrientation, EngineTraversalOrientation
 
 SERIALIZER_GRAPH = CortexDiGraph
 

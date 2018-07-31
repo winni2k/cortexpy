@@ -4,7 +4,7 @@ import attr
 import networkx as nx
 from networkx.readwrite import json_graph
 
-from cortexpy.graph import CortexDiGraph, Interactor
+from cortexpy.graph.interactor import CortexDiGraph, Interactor
 from .unitig import UnitigCollapser
 
 

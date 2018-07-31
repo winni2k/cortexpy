@@ -1,6 +1,6 @@
 from hypothesis import given, strategies as strat
 
-from cortexpy.graph import Interactor
+from cortexpy.graph.interactor import Interactor
 from cortexpy.test.builder.graph.cortex import get_cortex_builder
 from cortexpy.test.builder.graph.kmer import kmer_strings
 from cortexpy.test.expectation import KmerGraphExpectation

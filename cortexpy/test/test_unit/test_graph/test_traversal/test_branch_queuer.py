@@ -1,9 +1,8 @@
 import attr
 from hypothesis import given, strategies as s
 
-from cortexpy.constants import EdgeTraversalOrientation
+from cortexpy.constants import EdgeTraversalOrientation, EngineTraversalOrientation
 from cortexpy.graph.traversal.branch import Traversed, Queuer, SERIALIZER_GRAPH
-from cortexpy.graph.traversal import EngineTraversalOrientation
 
 
 @attr.s(slots=True)

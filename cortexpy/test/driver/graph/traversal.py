@@ -1,8 +1,8 @@
 import attr
 
-import cortexpy.graph
-from cortexpy.graph import traversal
-from cortexpy.graph.traversal import EngineTraversalOrientation
+from cortexpy.graph.parser.random_access import RandomAccess
+from cortexpy.constants import EngineTraversalOrientation
+from cortexpy.graph.traversal.engine import Engine
 from cortexpy.test import builder as builder, expectation as expectation
 
 
@@ -49,8 +49,8 @@ class EngineTestDriver(object):
         return self
 
     def run(self):
-        random_access_parser = cortexpy.graph.parser.RandomAccess(self.graph_builder.build())
-        self.traverser = traversal.Engine(random_access_parser,
+        random_access_parser = RandomAccess(self.graph_builder.build())
+        self.traverser = Engine(random_access_parser,
                                           traversal_colors=self.traversal_colors,
                                           max_nodes=self.max_nodes,
                                           orientation=self.traversal_orientation)

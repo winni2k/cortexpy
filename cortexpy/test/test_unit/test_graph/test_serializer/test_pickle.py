@@ -2,7 +2,7 @@ import io
 
 import networkx as nx
 
-from cortexpy.graph import ContigRetriever
+from cortexpy.graph.contig_retriever import ContigRetriever
 from cortexpy.test import builder as builder
 
 

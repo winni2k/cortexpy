@@ -7,10 +7,9 @@ import pytest
 from hypothesis import given, assume
 from hypothesis import strategies as s
 import cortexpy.test.builder as builder
-import cortexpy.graph.parser as parser
-from cortexpy.graph.parser import RandomAccess
-from cortexpy.graph.parser.header import from_stream
-from cortexpy.graph.parser.random_access import KmerUintSequence
+import cortexpy.graph.parser.random_access as parser
+from cortexpy.graph.parser.header import Header
+from cortexpy.graph.parser.random_access import KmerUintSequence, RandomAccess
 import cortexpy.graph.serializer.kmer as kmer_serializer
 from cortexpy.test.builder.graph.body import KmerRecord, as_edge_set
 from cortexpy.test.builder.graph.kmer import kmer_records
@@ -39,7 +38,7 @@ class TestDunderGetitemDunder(object):
             graph_builder.with_kmer_record(kmer)
             expected_kmers.append(kmer)
 
-        cg = parser.RandomAccess(graph_builder.build())
+        cg = RandomAccess(graph_builder.build())
 
         # when
         for expected_kmer in expected_kmers:
@@ -69,7 +68,7 @@ class TestDunderGetitemDunder(object):
             b.with_kmer(kmer_string)
         fh = b.build()
 
-        ra = RandomAccess(fh, kmer_cache_size=None)
+        ra = parser.RandomAccess(fh, kmer_cache_size=None)
         for k_string in list(ra):
             ra[k_string]
         with mock.patch.object(fh, 'read', wraps=fh.read) as mocked_seek:
@@ -226,7 +225,7 @@ class TestKmerUintSequence(object):
 
         graph_stream = graph_builder.build()
         header_stream = graph_builder.header.build()
-        header = from_stream(header_stream)
+        header = Header.from_stream(header_stream)
 
         # when
         sequence = KmerUintSequence(graph_handle=graph_stream,

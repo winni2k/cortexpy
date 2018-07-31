@@ -1,6 +1,6 @@
 import attr
 
-from cortexpy.graph import Interactor
+from cortexpy.graph.interactor import Interactor
 from cortexpy.graph.serializer.unitig import UnitigFinder
 from cortexpy.test.builder.graph import cortex
 

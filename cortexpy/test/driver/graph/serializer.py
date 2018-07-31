@@ -1,7 +1,10 @@
 import attr
 
-from cortexpy.graph import traversal, parser, ContigRetriever, Interactor
+from cortexpy.graph.interactor import Interactor
+from cortexpy.graph.contig_retriever import ContigRetriever
+from cortexpy.graph.parser.random_access import RandomAccess
 from cortexpy.graph.serializer import unitig
+from cortexpy.graph.traversal.engine import Engine
 from cortexpy.test import builder as builder
 from cortexpy.test.expectation.kmer import CollapsedKmerUnitgGraphExpectation
 
@@ -40,8 +43,8 @@ class SerializerTestDriver(object):
             self.retriever = ContigRetriever(self.graph_builder.build())
             return self.retriever.get_kmer_graph(self.contig_to_retrieve)
         elif self.traverse:
-            traverser = traversal.Engine(parser.RandomAccess(self.graph_builder.build()),
-                                         traversal_colors=self.traversal_colors)
+            traverser = Engine(RandomAccess(self.graph_builder.build()),
+                               traversal_colors=self.traversal_colors)
             graph = traverser.traverse_from(self.traversal_start_kmer).graph
             return Interactor(graph) \
                 .make_graph_nodes_consistent([self.traversal_start_kmer]) \

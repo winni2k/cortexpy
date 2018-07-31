@@ -4,8 +4,8 @@ import attr
 import networkx as nx
 
 from cortexpy.utils import lexlo
-from . import parser as parser
-from .parser.kmer import EmptyKmerBuilder, revcomp_target_to_match_ref
+from .parser.random_access import RandomAccess
+from .parser.kmer import EmptyKmerBuilder, revcomp_target_to_match_ref, connect_kmers
 
 RETRIEVED_CONTIG_NAME = 'retrieved_contig'
 
@@ -22,7 +22,7 @@ class ContigRetriever(object):
     empty_kmer_builder = attr.ib(init=False)
 
     def __attrs_post_init__(self):
-        self.graph_parser = parser.RandomAccess(self.graph_handle)
+        self.graph_parser = RandomAccess(self.graph_handle)
         self.num_colors = self.graph_parser.num_colors + 1
         self.contig_color = self.num_colors - 1
         self.non_contig_colors = list(range(self.num_colors - 1))
@@ -50,7 +50,7 @@ class ContigRetriever(object):
             this_kmer = kmers[kmer_idx][0]
             next_kmer = kmers[kmer_idx + 1][0]
 
-            parser.kmer.connect_kmers(this_kmer, next_kmer, self.contig_color,
+            connect_kmers(this_kmer, next_kmer, self.contig_color,
                                       identical_kmer_check=False)
         return kmers
 

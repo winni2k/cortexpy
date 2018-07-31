@@ -3,7 +3,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 import struct
 
-from cortexpy.graph.parser import Header
+from cortexpy.graph.parser.header import Header
 from cortexpy.graph.parser.kmer import calc_kmer_container_size
 
 

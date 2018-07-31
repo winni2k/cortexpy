@@ -5,12 +5,12 @@ import math
 from itertools import repeat
 
 import cortexpy.edge_set
-from cortexpy.edge_set import EdgeSet
-from cortexpy.graph.parser.constants import (
+from cortexpy.utils import revcomp, lexlo
+
+from .constants import (
     UINT64_T, UINT32_T, LETTER_TO_NUM,
     NUM_LETTERS_PER_UINT, NUM_TO_BITS,
 )
-from cortexpy.utils import revcomp, lexlo
 from .kmer_ext import raw_kmer_to_string, raw_edges_to_list, raw_to_coverage
 
 
@@ -252,7 +252,7 @@ class KmerData(object):
                 self.kmer_container_size_in_uint64ts * UINT64_T + self.num_colors * UINT32_T
             )
             tuples = raw_edges_to_list(self._data[start:])
-            self._edges = [EdgeSet(t) for t in tuples]
+            self._edges = [cortexpy.edge_set.EdgeSet(t) for t in tuples]
         return self._edges
 
     @edges.setter

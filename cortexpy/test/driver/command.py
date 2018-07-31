@@ -10,8 +10,8 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-from cortexpy.graph import CortexDiGraph
-from cortexpy.graph.parser import RandomAccess
+from cortexpy.graph.cortex import CortexDiGraph
+from cortexpy.graph.parser.random_access import RandomAccess
 from cortexpy.test import builder, expectation
 from cortexpy.test import runner
 

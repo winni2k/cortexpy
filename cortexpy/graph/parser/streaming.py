@@ -3,21 +3,21 @@ import io
 from ..cortex import build_cortex_graph_from_header
 from cortexpy.graph.parser.kmer import Kmer, KmerData, RawKmerConverter
 from cortexpy.graph.parser.constants import UINT64_T
-from cortexpy.graph.parser.header import from_stream
+from cortexpy.graph.parser.header import Header
 
 
 def kmer_generator_from_stream(stream):
-    header = from_stream(stream)
+    header = Header.from_stream(stream)
     return kmer_generator_from_stream_and_header(stream, header)
 
 
 def kmer_list_generator_from_stream(stream):
-    header = from_stream(stream)
+    header = Header.from_stream(stream)
     return kmer_list_generator_from_stream_and_header(stream, header)
 
 
 def kmer_string_generator_from_stream(stream):
-    header = from_stream(stream)
+    header = Header.from_stream(stream)
     return kmer_string_generator_from_stream_and_header(stream, header)
 
 
@@ -52,6 +52,6 @@ def kmer_list_generator_from_stream_and_header(stream, header):
 
 
 def load_cortex_graph(stream):
-    header = from_stream(stream)
+    header = Header.from_stream(stream)
     kmer_generator = kmer_generator_from_stream_and_header(stream, header)
     return build_cortex_graph_from_header(header, kmer_generator=kmer_generator)

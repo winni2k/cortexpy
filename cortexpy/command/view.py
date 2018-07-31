@@ -43,7 +43,7 @@ def view_traversal(argv):
     from contextlib import ExitStack
     from cortexpy.graph.interactor import Interactor, Contigs
     from cortexpy.graph.serializer.serializer import Serializer
-    from cortexpy.graph.serializer import KmerGraph
+    from cortexpy.graph.serializer.kmer import KmerGraph
     from cortexpy.graph.parser.streaming import load_cortex_graph
 
     with ExitStack() as stack:
@@ -107,7 +107,7 @@ def view_contig(argv):
     parser.add_argument('--to-json', action='store_true')
     args = parser.parse_args(argv)
 
-    from cortexpy.graph import ContigRetriever
+    from cortexpy.graph.contig_retriever import ContigRetriever
     from cortexpy.graph.serializer.serializer import Serializer
 
     contig_retriever = ContigRetriever(open(args.graph, 'rb'))

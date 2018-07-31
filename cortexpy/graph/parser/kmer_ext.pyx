@@ -1,7 +1,5 @@
 # distutils: language=c++
 
-from struct import unpack
-
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 

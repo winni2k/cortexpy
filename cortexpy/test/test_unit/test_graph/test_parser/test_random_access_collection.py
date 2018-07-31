@@ -4,7 +4,8 @@ import pytest
 from hypothesis import given, assume
 from hypothesis import strategies as s
 import cortexpy.test.builder as builder
-import cortexpy.graph.parser as parser
+import cortexpy.graph.parser.random_access as parser
+from cortexpy.graph.parser.random_access_collection import RandomAccessCollection
 from cortexpy.test.builder.graph.body import KmerRecord, as_edge_set
 from cortexpy.test.builder.graph.kmer import kmer_records
 
@@ -37,7 +38,7 @@ class GraphCollection(object):
         return self
 
     def build(self):
-        return parser.RandomAccessCollection(
+        return RandomAccessCollection(
             ra_parsers=[parser.RandomAccess(builder.build()) for builder in self.graph_builders])
 
 
@@ -119,7 +120,7 @@ class TestGetKmerForString(object):
         expected_kmer = KmerRecord('AAA', [1], [as_edge_set('........')])
         graph_builder.with_kmer_record(expected_kmer)
 
-        cg = parser.RandomAccessCollection([parser.RandomAccess(graph_builder.build())])
+        cg = RandomAccessCollection([parser.RandomAccess(graph_builder.build())])
 
         # when
         assert expected_kmer.kmer == cg.get_kmer_for_string('AAA').kmer

@@ -3,13 +3,12 @@ import attr
 import collections
 import networkx as nx
 
-from cortexpy import graph
+from ..interactor import Interactor
 from cortexpy.graph.cortex import build_empty_cortex_graph_from_ra_parser
 from cortexpy.graph.parser.kmer import EmptyKmerBuilder
 from cortexpy.utils import lexlo, IntervalLogger, kmerize_contig, kmerize_fasta
-from .constants import EngineTraversalOrientation
 from . import branch
-from cortexpy.constants import EdgeTraversalOrientation
+from cortexpy.constants import EdgeTraversalOrientation, EngineTraversalOrientation
 import logging
 
 logger = logging.getLogger(__name__)
@@ -192,7 +191,7 @@ class Engine(object):
             kmer1_string, kmer2_string = kmer2_string, kmer1_string
         kmer1 = self.ra_parser.get_kmer_for_string(kmer1_string)
         kmer2 = self.ra_parser.get_kmer_for_string(kmer2_string)
-        interactor = graph.Interactor.from_graph(self.graph)
+        interactor = Interactor.from_graph(self.graph)
         interactor.add_edge_to_graph_for_kmer_pair(kmer1, kmer2, kmer1_string, kmer2_string,
                                                    kmer1.colors)
 

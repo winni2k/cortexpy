@@ -14,18 +14,21 @@ def assemble(argv):
 
     import sys
     from Bio import SeqIO
-    from cortexpy.graph import traversal, parser, Interactor, Contigs
     from cortexpy.utils import kmerize_fasta
+    from cortexpy.graph.interactor import Interactor, Contigs
+    from cortexpy.graph.parser.random_access import RandomAccess
+    from cortexpy.constants import EngineTraversalOrientation
+    from cortexpy.graph.traversal.engine import Engine
 
-    random_access = parser.RandomAccess(open(args.graph, 'rb'))
+    random_access = RandomAccess(open(args.graph, 'rb'))
     if args.color is None:
         colors = list(range(random_access.num_colors))
     else:
         colors = [args.color]
-    traverser = traversal.Engine(
+    traverser = Engine(
         random_access,
         traversal_colors=colors,
-        orientation=traversal.constants.EngineTraversalOrientation.both,
+        orientation=EngineTraversalOrientation.both,
         max_nodes=args.max_nodes,
     )
     traverser.traverse_from_each_kmer_in_fasta(args.start_sequences_fasta)

@@ -7,9 +7,9 @@ import attr
 import numpy as np
 
 import cortexpy.graph.parser.header
-from cortexpy.graph.cortex import build_cortex_graph, CortexGraphMapping
-from cortexpy.graph.parser.constants import UINT64_T
-from cortexpy.graph.parser.kmer import (
+import cortexpy.graph.cortex
+from .constants import UINT64_T
+from .kmer import (
     Kmer, KmerData, KmerUintComparator,
     StringKmerConverter,
 )
@@ -34,7 +34,7 @@ class RandomAccess(Mapping):
     def __attrs_post_init__(self):
         assert self.graph_handle.seekable()
         self.graph_handle.seek(0)
-        self.header = cortexpy.graph.parser.header.from_stream(self.graph_handle)
+        self.header = cortexpy.graph.parser.header.Header.from_stream(self.graph_handle)
         body_start_stream_position = self.graph_handle.tell()
 
         self.graph_handle.seek(0, SEEK_END)
@@ -192,8 +192,8 @@ def load_ra_cortex_graph(file_handle, ra_parser_args=None):
     if ra_parser_args is None:
         ra_parser_args = {}
     ra_parser = RandomAccess(file_handle, **ra_parser_args)
-    return build_cortex_graph(sample_names=ra_parser.sample_names,
+    return cortexpy.graph.cortex.build_cortex_graph(sample_names=ra_parser.sample_names,
                               kmer_size=ra_parser.kmer_size,
                               num_colors=ra_parser.num_colors,
                               colors=ra_parser.colors,
-                              kmer_mapping=CortexGraphMapping(ra_parser))
+                              kmer_mapping=cortexpy.graph.cortex.CortexGraphMapping(ra_parser))

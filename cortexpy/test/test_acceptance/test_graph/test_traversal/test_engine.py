@@ -1,6 +1,6 @@
-from cortexpy.graph import traversal
-from cortexpy.graph.parser import RandomAccess
-from cortexpy.graph.traversal import EngineTraversalOrientation
+from cortexpy.graph.parser.random_access import RandomAccess
+from cortexpy.constants import EngineTraversalOrientation
+from cortexpy.graph.traversal.engine import Engine
 from cortexpy.test import builder
 from cortexpy.test.expectation import KmerGraphExpectation
 
@@ -15,7 +15,7 @@ class TestTraverseFrom(object):
                         .with_dna_sequence('AAATAAG', name='sample_1')
                         .build(tmpdir))
 
-        traverser = traversal.Engine(
+        traverser = Engine(
             RandomAccess(open(output_graph, 'rb')),
             traversal_colors=(0,),
             orientation=EngineTraversalOrientation.both
@@ -58,7 +58,7 @@ class TestTraverseFromEachKmerInIterable(object):
                         .with_dna_sequence('GGGC')
                         .build(tmpdir))
 
-        traverser = traversal.Engine(
+        traverser = Engine(
             RandomAccess(open(output_graph, 'rb')),
             traversal_colors=(0,),
             orientation=EngineTraversalOrientation.both

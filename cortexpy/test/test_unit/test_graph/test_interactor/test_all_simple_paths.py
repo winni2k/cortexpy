@@ -1,5 +1,4 @@
-
-from cortexpy.graph import Interactor, Contigs
+from cortexpy.graph.interactor import Interactor, Contigs
 from cortexpy.test.builder.graph.cortex import (
     CortexGraphBuilder,
     get_cortex_builder,

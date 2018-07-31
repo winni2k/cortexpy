@@ -1,5 +1,6 @@
 import os
-import cortexpy.graph.parser as parser
+
+from cortexpy.graph.parser.header import Header
 
 
 class TestManyColorsHeaderOnlyFixture(object):
@@ -10,7 +11,7 @@ class TestManyColorsHeaderOnlyFixture(object):
 
         # when
         with open(graph_header_fixture, 'rb') as header_handle:
-            header = parser.header.from_stream(header_handle)
+            header = Header.from_stream(header_handle)
 
         # then
         assert header.version == 6

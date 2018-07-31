@@ -1,7 +1,8 @@
 import json
 
 import cortexpy.graph.serializer.serializer
-from cortexpy.graph import Interactor, ContigRetriever
+from cortexpy.graph.interactor import Interactor
+from cortexpy.graph.contig_retriever import ContigRetriever
 from cortexpy.graph.parser.streaming import load_cortex_graph
 from cortexpy.test import builder as builder, expectation
 

@@ -2074,7 +2074,7 @@ static PyObject *__pyx_codeobj__32;
 static PyObject *__pyx_codeobj__39;
 /* Late includes */
 
-/* "cortexpy/graph/parser/kmer_ext.pyx":11
+/* "cortexpy/graph/parser/kmer_ext.pyx":9
  * cdef string NUM_TO_LETTER_LIST = b'ACGT'
  * 
  * def raw_kmer_to_bytes(unsigned kmer_size, const unsigned char[:] kmer_bytes not None):             # <<<<<<<<<<<<<<
@@ -2114,11 +2114,11 @@ static PyObject *__pyx_pw_8cortexpy_5graph_6parser_8kmer_ext_1raw_kmer_to_bytes(
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_kmer_bytes)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("raw_kmer_to_bytes", 1, 2, 2, 1); __PYX_ERR(0, 11, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("raw_kmer_to_bytes", 1, 2, 2, 1); __PYX_ERR(0, 9, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "raw_kmer_to_bytes") < 0)) __PYX_ERR(0, 11, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "raw_kmer_to_bytes") < 0)) __PYX_ERR(0, 9, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -2126,19 +2126,19 @@ static PyObject *__pyx_pw_8cortexpy_5graph_6parser_8kmer_ext_1raw_kmer_to_bytes(
       values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
     }
-    __pyx_v_kmer_size = __Pyx_PyInt_As_unsigned_int(values[0]); if (unlikely((__pyx_v_kmer_size == (unsigned int)-1) && PyErr_Occurred())) __PYX_ERR(0, 11, __pyx_L3_error)
-    __pyx_v_kmer_bytes = __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_char__const__(values[1], 0); if (unlikely(!__pyx_v_kmer_bytes.memview)) __PYX_ERR(0, 11, __pyx_L3_error)
+    __pyx_v_kmer_size = __Pyx_PyInt_As_unsigned_int(values[0]); if (unlikely((__pyx_v_kmer_size == (unsigned int)-1) && PyErr_Occurred())) __PYX_ERR(0, 9, __pyx_L3_error)
+    __pyx_v_kmer_bytes = __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_char__const__(values[1], 0); if (unlikely(!__pyx_v_kmer_bytes.memview)) __PYX_ERR(0, 9, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("raw_kmer_to_bytes", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 11, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("raw_kmer_to_bytes", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 9, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("cortexpy.graph.parser.kmer_ext.raw_kmer_to_bytes", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
   if (unlikely(((PyObject *)__pyx_v_kmer_bytes.memview) == Py_None)) {
-    PyErr_Format(PyExc_TypeError, "Argument '%.200s' must not be None", "kmer_bytes"); __PYX_ERR(0, 11, __pyx_L1_error)
+    PyErr_Format(PyExc_TypeError, "Argument '%.200s' must not be None", "kmer_bytes"); __PYX_ERR(0, 9, __pyx_L1_error)
   }
   __pyx_r = __pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_raw_kmer_to_bytes(__pyx_self, __pyx_v_kmer_size, __pyx_v_kmer_bytes);
 
@@ -2174,7 +2174,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_raw_kmer_to_bytes(C
   PyObject *__pyx_t_11 = NULL;
   __Pyx_RefNannySetupContext("raw_kmer_to_bytes", 0);
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":12
+  /* "cortexpy/graph/parser/kmer_ext.pyx":10
  * 
  * def raw_kmer_to_bytes(unsigned kmer_size, const unsigned char[:] kmer_bytes not None):
  *     assert kmer_size > 0             # <<<<<<<<<<<<<<
@@ -2185,12 +2185,12 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_raw_kmer_to_bytes(C
   if (unlikely(!Py_OptimizeFlag)) {
     if (unlikely(!((__pyx_v_kmer_size > 0) != 0))) {
       PyErr_SetNone(PyExc_AssertionError);
-      __PYX_ERR(0, 12, __pyx_L1_error)
+      __PYX_ERR(0, 10, __pyx_L1_error)
     }
   }
   #endif
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":13
+  /* "cortexpy/graph/parser/kmer_ext.pyx":11
  * def raw_kmer_to_bytes(unsigned kmer_size, const unsigned char[:] kmer_bytes not None):
  *     assert kmer_size > 0
  *     assert kmer_size <= kmer_bytes.shape[0] * 4             # <<<<<<<<<<<<<<
@@ -2201,12 +2201,12 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_raw_kmer_to_bytes(C
   if (unlikely(!Py_OptimizeFlag)) {
     if (unlikely(!((__pyx_v_kmer_size <= ((__pyx_v_kmer_bytes.shape[0]) * 4)) != 0))) {
       PyErr_SetNone(PyExc_AssertionError);
-      __PYX_ERR(0, 13, __pyx_L1_error)
+      __PYX_ERR(0, 11, __pyx_L1_error)
     }
   }
   #endif
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":16
+  /* "cortexpy/graph/parser/kmer_ext.pyx":14
  *     cdef vector[char] letters
  *     cdef vector[char] four_letters
  *     four_letters.resize(4,0)             # <<<<<<<<<<<<<<
@@ -2217,10 +2217,10 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_raw_kmer_to_bytes(C
     __pyx_v_four_letters.resize(4, 0);
   } catch(...) {
     __Pyx_CppExn2PyErr();
-    __PYX_ERR(0, 16, __pyx_L1_error)
+    __PYX_ERR(0, 14, __pyx_L1_error)
   }
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":19
+  /* "cortexpy/graph/parser/kmer_ext.pyx":17
  *     cdef char kmer_byte
  *     cdef size_t ulong_idx, ulong_offset, byte_offset, pair_offset, pair_idx
  *     for ulong_idx in range(kmer_bytes.shape[0]//SIZE_OF_INT64):             # <<<<<<<<<<<<<<
@@ -2229,14 +2229,14 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_raw_kmer_to_bytes(C
  */
   if (unlikely(__pyx_v_8cortexpy_5graph_6parser_8kmer_ext_SIZE_OF_INT64 == 0)) {
     PyErr_SetString(PyExc_ZeroDivisionError, "integer division or modulo by zero");
-    __PYX_ERR(0, 19, __pyx_L1_error)
+    __PYX_ERR(0, 17, __pyx_L1_error)
   }
   __pyx_t_1 = ((__pyx_v_kmer_bytes.shape[0]) / __pyx_v_8cortexpy_5graph_6parser_8kmer_ext_SIZE_OF_INT64);
   __pyx_t_2 = __pyx_t_1;
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_ulong_idx = __pyx_t_3;
 
-    /* "cortexpy/graph/parser/kmer_ext.pyx":20
+    /* "cortexpy/graph/parser/kmer_ext.pyx":18
  *     cdef size_t ulong_idx, ulong_offset, byte_offset, pair_offset, pair_idx
  *     for ulong_idx in range(kmer_bytes.shape[0]//SIZE_OF_INT64):
  *         ulong_offset = ulong_idx*SIZE_OF_INT64             # <<<<<<<<<<<<<<
@@ -2245,7 +2245,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_raw_kmer_to_bytes(C
  */
     __pyx_v_ulong_offset = (__pyx_v_ulong_idx * __pyx_v_8cortexpy_5graph_6parser_8kmer_ext_SIZE_OF_INT64);
 
-    /* "cortexpy/graph/parser/kmer_ext.pyx":21
+    /* "cortexpy/graph/parser/kmer_ext.pyx":19
  *     for ulong_idx in range(kmer_bytes.shape[0]//SIZE_OF_INT64):
  *         ulong_offset = ulong_idx*SIZE_OF_INT64
  *         for byte_offset in reversed(range(SIZE_OF_INT64)):             # <<<<<<<<<<<<<<
@@ -2255,7 +2255,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_raw_kmer_to_bytes(C
     for (__pyx_t_4 = __pyx_v_8cortexpy_5graph_6parser_8kmer_ext_SIZE_OF_INT64-1 + 1; __pyx_t_4 >= 0 + 1; ) { __pyx_t_4-=1;
       __pyx_v_byte_offset = __pyx_t_4;
 
-      /* "cortexpy/graph/parser/kmer_ext.pyx":22
+      /* "cortexpy/graph/parser/kmer_ext.pyx":20
  *         ulong_offset = ulong_idx*SIZE_OF_INT64
  *         for byte_offset in reversed(range(SIZE_OF_INT64)):
  *             kmer_byte = kmer_bytes[ulong_offset + byte_offset]             # <<<<<<<<<<<<<<
@@ -2267,11 +2267,11 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_raw_kmer_to_bytes(C
       if (unlikely(__pyx_t_5 >= (size_t)__pyx_v_kmer_bytes.shape[0])) __pyx_t_6 = 0;
       if (unlikely(__pyx_t_6 != -1)) {
         __Pyx_RaiseBufferIndexError(__pyx_t_6);
-        __PYX_ERR(0, 22, __pyx_L1_error)
+        __PYX_ERR(0, 20, __pyx_L1_error)
       }
       __pyx_v_kmer_byte = (*((unsigned char const  *) ( /* dim=0 */ (__pyx_v_kmer_bytes.data + __pyx_t_5 * __pyx_v_kmer_bytes.strides[0]) )));
 
-      /* "cortexpy/graph/parser/kmer_ext.pyx":23
+      /* "cortexpy/graph/parser/kmer_ext.pyx":21
  *         for byte_offset in reversed(range(SIZE_OF_INT64)):
  *             kmer_byte = kmer_bytes[ulong_offset + byte_offset]
  *             for pair_idx in range(4):             # <<<<<<<<<<<<<<
@@ -2281,7 +2281,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_raw_kmer_to_bytes(C
       for (__pyx_t_7 = 0; __pyx_t_7 < 4; __pyx_t_7+=1) {
         __pyx_v_pair_idx = __pyx_t_7;
 
-        /* "cortexpy/graph/parser/kmer_ext.pyx":24
+        /* "cortexpy/graph/parser/kmer_ext.pyx":22
  *             kmer_byte = kmer_bytes[ulong_offset + byte_offset]
  *             for pair_idx in range(4):
  *                 four_letters[3-pair_idx] = NUM_TO_LETTER_LIST[kmer_byte & 0x3]             # <<<<<<<<<<<<<<
@@ -2290,7 +2290,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_raw_kmer_to_bytes(C
  */
         (__pyx_v_four_letters[(3 - __pyx_v_pair_idx)]) = (__pyx_v_8cortexpy_5graph_6parser_8kmer_ext_NUM_TO_LETTER_LIST[(__pyx_v_kmer_byte & 0x3)]);
 
-        /* "cortexpy/graph/parser/kmer_ext.pyx":25
+        /* "cortexpy/graph/parser/kmer_ext.pyx":23
  *             for pair_idx in range(4):
  *                 four_letters[3-pair_idx] = NUM_TO_LETTER_LIST[kmer_byte & 0x3]
  *                 kmer_byte >>= 2             # <<<<<<<<<<<<<<
@@ -2300,7 +2300,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_raw_kmer_to_bytes(C
         __pyx_v_kmer_byte = (__pyx_v_kmer_byte >> 2);
       }
 
-      /* "cortexpy/graph/parser/kmer_ext.pyx":26
+      /* "cortexpy/graph/parser/kmer_ext.pyx":24
  *                 four_letters[3-pair_idx] = NUM_TO_LETTER_LIST[kmer_byte & 0x3]
  *                 kmer_byte >>= 2
  *             for kmer_byte in four_letters:             # <<<<<<<<<<<<<<
@@ -2314,7 +2314,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_raw_kmer_to_bytes(C
         ++__pyx_t_8;
         __pyx_v_kmer_byte = __pyx_t_9;
 
-        /* "cortexpy/graph/parser/kmer_ext.pyx":27
+        /* "cortexpy/graph/parser/kmer_ext.pyx":25
  *                 kmer_byte >>= 2
  *             for kmer_byte in four_letters:
  *                 letters.push_back(kmer_byte)             # <<<<<<<<<<<<<<
@@ -2325,10 +2325,10 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_raw_kmer_to_bytes(C
           __pyx_v_letters.push_back(__pyx_v_kmer_byte);
         } catch(...) {
           __Pyx_CppExn2PyErr();
-          __PYX_ERR(0, 27, __pyx_L1_error)
+          __PYX_ERR(0, 25, __pyx_L1_error)
         }
 
-        /* "cortexpy/graph/parser/kmer_ext.pyx":26
+        /* "cortexpy/graph/parser/kmer_ext.pyx":24
  *                 four_letters[3-pair_idx] = NUM_TO_LETTER_LIST[kmer_byte & 0x3]
  *                 kmer_byte >>= 2
  *             for kmer_byte in four_letters:             # <<<<<<<<<<<<<<
@@ -2339,7 +2339,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_raw_kmer_to_bytes(C
     }
   }
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":28
+  /* "cortexpy/graph/parser/kmer_ext.pyx":26
  *             for kmer_byte in four_letters:
  *                 letters.push_back(kmer_byte)
  *     return bytes(letters[(letters.size() - kmer_size):])             # <<<<<<<<<<<<<<
@@ -2347,19 +2347,19 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_raw_kmer_to_bytes(C
  *     # the above code was reimplemented from this
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_10 = __pyx_convert_vector_to_py_char(__pyx_v_letters); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 28, __pyx_L1_error)
+  __pyx_t_10 = __pyx_convert_vector_to_py_char(__pyx_v_letters); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 26, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
-  __pyx_t_11 = __Pyx_PyObject_GetSlice(__pyx_t_10, (__pyx_v_letters.size() - __pyx_v_kmer_size), 0, NULL, NULL, NULL, 1, 0, 1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 28, __pyx_L1_error)
+  __pyx_t_11 = __Pyx_PyObject_GetSlice(__pyx_t_10, (__pyx_v_letters.size() - __pyx_v_kmer_size), 0, NULL, NULL, NULL, 1, 0, 1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 26, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_11);
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  __pyx_t_10 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyBytes_Type)), __pyx_t_11); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 28, __pyx_L1_error)
+  __pyx_t_10 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyBytes_Type)), __pyx_t_11); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 26, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
   __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
   __pyx_r = __pyx_t_10;
   __pyx_t_10 = 0;
   goto __pyx_L0;
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":11
+  /* "cortexpy/graph/parser/kmer_ext.pyx":9
  * cdef string NUM_TO_LETTER_LIST = b'ACGT'
  * 
  * def raw_kmer_to_bytes(unsigned kmer_size, const unsigned char[:] kmer_bytes not None):             # <<<<<<<<<<<<<<
@@ -2380,7 +2380,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_raw_kmer_to_bytes(C
   return __pyx_r;
 }
 
-/* "cortexpy/graph/parser/kmer_ext.pyx":37
+/* "cortexpy/graph/parser/kmer_ext.pyx":35
  *     # return NUM_TO_LETTER[kmer[(len(kmer) - self.kmer_size):]]
  * 
  * def raw_kmer_to_string(int kmer_size, kmer_bytes):             # <<<<<<<<<<<<<<
@@ -2420,11 +2420,11 @@ static PyObject *__pyx_pw_8cortexpy_5graph_6parser_8kmer_ext_3raw_kmer_to_string
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_kmer_bytes)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("raw_kmer_to_string", 1, 2, 2, 1); __PYX_ERR(0, 37, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("raw_kmer_to_string", 1, 2, 2, 1); __PYX_ERR(0, 35, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "raw_kmer_to_string") < 0)) __PYX_ERR(0, 37, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "raw_kmer_to_string") < 0)) __PYX_ERR(0, 35, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -2432,12 +2432,12 @@ static PyObject *__pyx_pw_8cortexpy_5graph_6parser_8kmer_ext_3raw_kmer_to_string
       values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
     }
-    __pyx_v_kmer_size = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_kmer_size == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 37, __pyx_L3_error)
+    __pyx_v_kmer_size = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_kmer_size == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 35, __pyx_L3_error)
     __pyx_v_kmer_bytes = values[1];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("raw_kmer_to_string", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 37, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("raw_kmer_to_string", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 35, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("cortexpy.graph.parser.kmer_ext.raw_kmer_to_string", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -2461,7 +2461,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_2raw_kmer_to_string
   PyObject *__pyx_t_6 = NULL;
   __Pyx_RefNannySetupContext("raw_kmer_to_string", 0);
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":38
+  /* "cortexpy/graph/parser/kmer_ext.pyx":36
  * 
  * def raw_kmer_to_string(int kmer_size, kmer_bytes):
  *     return raw_kmer_to_bytes(kmer_size, kmer_bytes).decode('utf8')             # <<<<<<<<<<<<<<
@@ -2469,9 +2469,9 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_2raw_kmer_to_string
  * def raw_kmer_to_list(int kmer_size, kmer_bytes):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_raw_kmer_to_bytes); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 38, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_raw_kmer_to_bytes); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 36, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_kmer_size); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 38, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_kmer_size); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 36, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_4 = NULL;
   __pyx_t_5 = 0;
@@ -2488,7 +2488,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_2raw_kmer_to_string
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_2)) {
     PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_t_3, __pyx_v_kmer_bytes};
-    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 38, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 36, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -2497,14 +2497,14 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_2raw_kmer_to_string
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
     PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_t_3, __pyx_v_kmer_bytes};
-    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 38, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 36, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   } else
   #endif
   {
-    __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 38, __pyx_L1_error)
+    __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 36, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     if (__pyx_t_4) {
       __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_4); __pyx_t_4 = NULL;
@@ -2515,22 +2515,22 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_2raw_kmer_to_string
     __Pyx_GIVEREF(__pyx_v_kmer_bytes);
     PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_5, __pyx_v_kmer_bytes);
     __pyx_t_3 = 0;
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 38, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 36, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_decode); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 38, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_decode); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 36, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_tuple_, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 38, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_tuple_, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 36, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":37
+  /* "cortexpy/graph/parser/kmer_ext.pyx":35
  *     # return NUM_TO_LETTER[kmer[(len(kmer) - self.kmer_size):]]
  * 
  * def raw_kmer_to_string(int kmer_size, kmer_bytes):             # <<<<<<<<<<<<<<
@@ -2553,7 +2553,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_2raw_kmer_to_string
   return __pyx_r;
 }
 
-/* "cortexpy/graph/parser/kmer_ext.pyx":40
+/* "cortexpy/graph/parser/kmer_ext.pyx":38
  *     return raw_kmer_to_bytes(kmer_size, kmer_bytes).decode('utf8')
  * 
  * def raw_kmer_to_list(int kmer_size, kmer_bytes):             # <<<<<<<<<<<<<<
@@ -2593,11 +2593,11 @@ static PyObject *__pyx_pw_8cortexpy_5graph_6parser_8kmer_ext_5raw_kmer_to_list(P
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_kmer_bytes)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("raw_kmer_to_list", 1, 2, 2, 1); __PYX_ERR(0, 40, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("raw_kmer_to_list", 1, 2, 2, 1); __PYX_ERR(0, 38, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "raw_kmer_to_list") < 0)) __PYX_ERR(0, 40, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "raw_kmer_to_list") < 0)) __PYX_ERR(0, 38, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -2605,12 +2605,12 @@ static PyObject *__pyx_pw_8cortexpy_5graph_6parser_8kmer_ext_5raw_kmer_to_list(P
       values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
     }
-    __pyx_v_kmer_size = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_kmer_size == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 40, __pyx_L3_error)
+    __pyx_v_kmer_size = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_kmer_size == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 38, __pyx_L3_error)
     __pyx_v_kmer_bytes = values[1];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("raw_kmer_to_list", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 40, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("raw_kmer_to_list", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 38, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("cortexpy.graph.parser.kmer_ext.raw_kmer_to_list", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -2634,7 +2634,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_4raw_kmer_to_list(C
   PyObject *__pyx_t_6 = NULL;
   __Pyx_RefNannySetupContext("raw_kmer_to_list", 0);
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":41
+  /* "cortexpy/graph/parser/kmer_ext.pyx":39
  * 
  * def raw_kmer_to_list(int kmer_size, kmer_bytes):
  *     return list(raw_kmer_to_string(kmer_size, kmer_bytes))             # <<<<<<<<<<<<<<
@@ -2642,9 +2642,9 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_4raw_kmer_to_list(C
  * def raw_edges_to_list(const unsigned char[:] edge_bytes not None):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_raw_kmer_to_string); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 41, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_raw_kmer_to_string); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 39, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_kmer_size); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 41, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_kmer_size); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 39, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_4 = NULL;
   __pyx_t_5 = 0;
@@ -2661,7 +2661,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_4raw_kmer_to_list(C
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_2)) {
     PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_t_3, __pyx_v_kmer_bytes};
-    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 41, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 39, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -2670,14 +2670,14 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_4raw_kmer_to_list(C
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
     PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_t_3, __pyx_v_kmer_bytes};
-    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 41, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_5, 2+__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 39, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   } else
   #endif
   {
-    __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 41, __pyx_L1_error)
+    __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 39, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     if (__pyx_t_4) {
       __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_4); __pyx_t_4 = NULL;
@@ -2688,19 +2688,19 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_4raw_kmer_to_list(C
     __Pyx_GIVEREF(__pyx_v_kmer_bytes);
     PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_5, __pyx_v_kmer_bytes);
     __pyx_t_3 = 0;
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 41, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 39, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = PySequence_List(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 41, __pyx_L1_error)
+  __pyx_t_2 = PySequence_List(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 39, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_r = __pyx_t_2;
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":40
+  /* "cortexpy/graph/parser/kmer_ext.pyx":38
  *     return raw_kmer_to_bytes(kmer_size, kmer_bytes).decode('utf8')
  * 
  * def raw_kmer_to_list(int kmer_size, kmer_bytes):             # <<<<<<<<<<<<<<
@@ -2723,7 +2723,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_4raw_kmer_to_list(C
   return __pyx_r;
 }
 
-/* "cortexpy/graph/parser/kmer_ext.pyx":43
+/* "cortexpy/graph/parser/kmer_ext.pyx":41
  *     return list(raw_kmer_to_string(kmer_size, kmer_bytes))
  * 
  * def raw_edges_to_list(const unsigned char[:] edge_bytes not None):             # <<<<<<<<<<<<<<
@@ -2740,7 +2740,7 @@ static PyObject *__pyx_pw_8cortexpy_5graph_6parser_8kmer_ext_7raw_edges_to_list(
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("raw_edges_to_list (wrapper)", 0);
   assert(__pyx_arg_edge_bytes); {
-    __pyx_v_edge_bytes = __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_char__const__(__pyx_arg_edge_bytes, 0); if (unlikely(!__pyx_v_edge_bytes.memview)) __PYX_ERR(0, 43, __pyx_L3_error)
+    __pyx_v_edge_bytes = __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_char__const__(__pyx_arg_edge_bytes, 0); if (unlikely(!__pyx_v_edge_bytes.memview)) __PYX_ERR(0, 41, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -2749,7 +2749,7 @@ static PyObject *__pyx_pw_8cortexpy_5graph_6parser_8kmer_ext_7raw_edges_to_list(
   return NULL;
   __pyx_L4_argument_unpacking_done:;
   if (unlikely(((PyObject *)__pyx_v_edge_bytes.memview) == Py_None)) {
-    PyErr_Format(PyExc_TypeError, "Argument '%.200s' must not be None", "edge_bytes"); __PYX_ERR(0, 43, __pyx_L1_error)
+    PyErr_Format(PyExc_TypeError, "Argument '%.200s' must not be None", "edge_bytes"); __PYX_ERR(0, 41, __pyx_L1_error)
   }
   __pyx_r = __pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_6raw_edges_to_list(__pyx_self, __pyx_v_edge_bytes);
 
@@ -2780,7 +2780,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_6raw_edges_to_list(
   int __pyx_t_8;
   __Pyx_RefNannySetupContext("raw_edges_to_list", 0);
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":47
+  /* "cortexpy/graph/parser/kmer_ext.pyx":45
  *     cdef int i, e_byte_idx
  *     cdef vector[int] edge_set
  *     edge_set.resize(8, 0)             # <<<<<<<<<<<<<<
@@ -2791,22 +2791,22 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_6raw_edges_to_list(
     __pyx_v_edge_set.resize(8, 0);
   } catch(...) {
     __Pyx_CppExn2PyErr();
-    __PYX_ERR(0, 47, __pyx_L1_error)
+    __PYX_ERR(0, 45, __pyx_L1_error)
   }
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":48
+  /* "cortexpy/graph/parser/kmer_ext.pyx":46
  *     cdef vector[int] edge_set
  *     edge_set.resize(8, 0)
  *     tuples = []             # <<<<<<<<<<<<<<
  *     for e_byte_idx in range(edge_bytes.shape[0]):
  *         e_byte = edge_bytes[e_byte_idx]
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 48, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 46, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_tuples = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":49
+  /* "cortexpy/graph/parser/kmer_ext.pyx":47
  *     edge_set.resize(8, 0)
  *     tuples = []
  *     for e_byte_idx in range(edge_bytes.shape[0]):             # <<<<<<<<<<<<<<
@@ -2818,7 +2818,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_6raw_edges_to_list(
   for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
     __pyx_v_e_byte_idx = __pyx_t_4;
 
-    /* "cortexpy/graph/parser/kmer_ext.pyx":50
+    /* "cortexpy/graph/parser/kmer_ext.pyx":48
  *     tuples = []
  *     for e_byte_idx in range(edge_bytes.shape[0]):
  *         e_byte = edge_bytes[e_byte_idx]             # <<<<<<<<<<<<<<
@@ -2833,11 +2833,11 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_6raw_edges_to_list(
     } else if (unlikely(__pyx_t_5 >= __pyx_v_edge_bytes.shape[0])) __pyx_t_6 = 0;
     if (unlikely(__pyx_t_6 != -1)) {
       __Pyx_RaiseBufferIndexError(__pyx_t_6);
-      __PYX_ERR(0, 50, __pyx_L1_error)
+      __PYX_ERR(0, 48, __pyx_L1_error)
     }
     __pyx_v_e_byte = (*((unsigned char const  *) ( /* dim=0 */ (__pyx_v_edge_bytes.data + __pyx_t_5 * __pyx_v_edge_bytes.strides[0]) )));
 
-    /* "cortexpy/graph/parser/kmer_ext.pyx":51
+    /* "cortexpy/graph/parser/kmer_ext.pyx":49
  *     for e_byte_idx in range(edge_bytes.shape[0]):
  *         e_byte = edge_bytes[e_byte_idx]
  *         for i in range(8):             # <<<<<<<<<<<<<<
@@ -2847,7 +2847,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_6raw_edges_to_list(
     for (__pyx_t_6 = 0; __pyx_t_6 < 8; __pyx_t_6+=1) {
       __pyx_v_i = __pyx_t_6;
 
-      /* "cortexpy/graph/parser/kmer_ext.pyx":52
+      /* "cortexpy/graph/parser/kmer_ext.pyx":50
  *         e_byte = edge_bytes[e_byte_idx]
  *         for i in range(8):
  *             edge_set[7-i] = e_byte & 0x1             # <<<<<<<<<<<<<<
@@ -2856,7 +2856,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_6raw_edges_to_list(
  */
       (__pyx_v_edge_set[(7 - __pyx_v_i)]) = (__pyx_v_e_byte & 0x1);
 
-      /* "cortexpy/graph/parser/kmer_ext.pyx":53
+      /* "cortexpy/graph/parser/kmer_ext.pyx":51
  *         for i in range(8):
  *             edge_set[7-i] = e_byte & 0x1
  *             e_byte >>= 1             # <<<<<<<<<<<<<<
@@ -2866,23 +2866,23 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_6raw_edges_to_list(
       __pyx_v_e_byte = (__pyx_v_e_byte >> 1);
     }
 
-    /* "cortexpy/graph/parser/kmer_ext.pyx":54
+    /* "cortexpy/graph/parser/kmer_ext.pyx":52
  *             edge_set[7-i] = e_byte & 0x1
  *             e_byte >>= 1
  *         tuples.append(tuple(edge_set))             # <<<<<<<<<<<<<<
  *     return tuples
  * 
  */
-    __pyx_t_1 = __pyx_convert_vector_to_py_int(__pyx_v_edge_set); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 54, __pyx_L1_error)
+    __pyx_t_1 = __pyx_convert_vector_to_py_int(__pyx_v_edge_set); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 52, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_7 = __Pyx_PySequence_Tuple(__pyx_t_1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 54, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PySequence_Tuple(__pyx_t_1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 52, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_tuples, __pyx_t_7); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 54, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_tuples, __pyx_t_7); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 52, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   }
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":55
+  /* "cortexpy/graph/parser/kmer_ext.pyx":53
  *             e_byte >>= 1
  *         tuples.append(tuple(edge_set))
  *     return tuples             # <<<<<<<<<<<<<<
@@ -2894,7 +2894,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_6raw_edges_to_list(
   __pyx_r = __pyx_v_tuples;
   goto __pyx_L0;
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":43
+  /* "cortexpy/graph/parser/kmer_ext.pyx":41
  *     return list(raw_kmer_to_string(kmer_size, kmer_bytes))
  * 
  * def raw_edges_to_list(const unsigned char[:] edge_bytes not None):             # <<<<<<<<<<<<<<
@@ -2916,7 +2916,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_6raw_edges_to_list(
   return __pyx_r;
 }
 
-/* "cortexpy/graph/parser/kmer_ext.pyx":63
+/* "cortexpy/graph/parser/kmer_ext.pyx":61
  *     # self._edges = edge_sets
  * 
  * def raw_to_coverage(const unsigned char[:] buffer not None, size_t offset, size_t num_colors):             # <<<<<<<<<<<<<<
@@ -2959,17 +2959,17 @@ static PyObject *__pyx_pw_8cortexpy_5graph_6parser_8kmer_ext_9raw_to_coverage(Py
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_offset)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("raw_to_coverage", 1, 3, 3, 1); __PYX_ERR(0, 63, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("raw_to_coverage", 1, 3, 3, 1); __PYX_ERR(0, 61, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_num_colors)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("raw_to_coverage", 1, 3, 3, 2); __PYX_ERR(0, 63, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("raw_to_coverage", 1, 3, 3, 2); __PYX_ERR(0, 61, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "raw_to_coverage") < 0)) __PYX_ERR(0, 63, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "raw_to_coverage") < 0)) __PYX_ERR(0, 61, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
       goto __pyx_L5_argtuple_error;
@@ -2978,20 +2978,20 @@ static PyObject *__pyx_pw_8cortexpy_5graph_6parser_8kmer_ext_9raw_to_coverage(Py
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
       values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
     }
-    __pyx_v_buffer = __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_char__const__(values[0], 0); if (unlikely(!__pyx_v_buffer.memview)) __PYX_ERR(0, 63, __pyx_L3_error)
-    __pyx_v_offset = __Pyx_PyInt_As_size_t(values[1]); if (unlikely((__pyx_v_offset == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 63, __pyx_L3_error)
-    __pyx_v_num_colors = __Pyx_PyInt_As_size_t(values[2]); if (unlikely((__pyx_v_num_colors == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 63, __pyx_L3_error)
+    __pyx_v_buffer = __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_char__const__(values[0], 0); if (unlikely(!__pyx_v_buffer.memview)) __PYX_ERR(0, 61, __pyx_L3_error)
+    __pyx_v_offset = __Pyx_PyInt_As_size_t(values[1]); if (unlikely((__pyx_v_offset == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 61, __pyx_L3_error)
+    __pyx_v_num_colors = __Pyx_PyInt_As_size_t(values[2]); if (unlikely((__pyx_v_num_colors == (size_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 61, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("raw_to_coverage", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 63, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("raw_to_coverage", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 61, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("cortexpy.graph.parser.kmer_ext.raw_to_coverage", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
   if (unlikely(((PyObject *)__pyx_v_buffer.memview) == Py_None)) {
-    PyErr_Format(PyExc_TypeError, "Argument '%.200s' must not be None", "buffer"); __PYX_ERR(0, 63, __pyx_L1_error)
+    PyErr_Format(PyExc_TypeError, "Argument '%.200s' must not be None", "buffer"); __PYX_ERR(0, 61, __pyx_L1_error)
   }
   __pyx_r = __pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_8raw_to_coverage(__pyx_self, __pyx_v_buffer, __pyx_v_offset, __pyx_v_num_colors);
 
@@ -3022,7 +3022,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_8raw_to_coverage(CY
   PyObject *__pyx_t_10 = NULL;
   __Pyx_RefNannySetupContext("raw_to_coverage", 0);
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":66
+  /* "cortexpy/graph/parser/kmer_ext.pyx":64
  *     cdef unsigned coverage
  *     cdef vector[unsigned] coverages
  *     coverages.reserve(num_colors)             # <<<<<<<<<<<<<<
@@ -3031,7 +3031,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_8raw_to_coverage(CY
  */
   __pyx_v_coverages.reserve(__pyx_v_num_colors);
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":67
+  /* "cortexpy/graph/parser/kmer_ext.pyx":65
  *     cdef vector[unsigned] coverages
  *     coverages.reserve(num_colors)
  *     for color in range(num_colors):             # <<<<<<<<<<<<<<
@@ -3043,7 +3043,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_8raw_to_coverage(CY
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_color = __pyx_t_3;
 
-    /* "cortexpy/graph/parser/kmer_ext.pyx":68
+    /* "cortexpy/graph/parser/kmer_ext.pyx":66
  *     coverages.reserve(num_colors)
  *     for color in range(num_colors):
  *         coverage = (buffer[offset]<<0) | (buffer[offset+1]<<8) | (buffer[offset+2]<<16) | (buffer[offset+3]<<24)             # <<<<<<<<<<<<<<
@@ -3055,32 +3055,32 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_8raw_to_coverage(CY
     if (unlikely(__pyx_t_4 >= (size_t)__pyx_v_buffer.shape[0])) __pyx_t_5 = 0;
     if (unlikely(__pyx_t_5 != -1)) {
       __Pyx_RaiseBufferIndexError(__pyx_t_5);
-      __PYX_ERR(0, 68, __pyx_L1_error)
+      __PYX_ERR(0, 66, __pyx_L1_error)
     }
     __pyx_t_6 = (__pyx_v_offset + 1);
     __pyx_t_5 = -1;
     if (unlikely(__pyx_t_6 >= (size_t)__pyx_v_buffer.shape[0])) __pyx_t_5 = 0;
     if (unlikely(__pyx_t_5 != -1)) {
       __Pyx_RaiseBufferIndexError(__pyx_t_5);
-      __PYX_ERR(0, 68, __pyx_L1_error)
+      __PYX_ERR(0, 66, __pyx_L1_error)
     }
     __pyx_t_7 = (__pyx_v_offset + 2);
     __pyx_t_5 = -1;
     if (unlikely(__pyx_t_7 >= (size_t)__pyx_v_buffer.shape[0])) __pyx_t_5 = 0;
     if (unlikely(__pyx_t_5 != -1)) {
       __Pyx_RaiseBufferIndexError(__pyx_t_5);
-      __PYX_ERR(0, 68, __pyx_L1_error)
+      __PYX_ERR(0, 66, __pyx_L1_error)
     }
     __pyx_t_8 = (__pyx_v_offset + 3);
     __pyx_t_5 = -1;
     if (unlikely(__pyx_t_8 >= (size_t)__pyx_v_buffer.shape[0])) __pyx_t_5 = 0;
     if (unlikely(__pyx_t_5 != -1)) {
       __Pyx_RaiseBufferIndexError(__pyx_t_5);
-      __PYX_ERR(0, 68, __pyx_L1_error)
+      __PYX_ERR(0, 66, __pyx_L1_error)
     }
     __pyx_v_coverage = (((((*((unsigned char const  *) ( /* dim=0 */ (__pyx_v_buffer.data + __pyx_t_4 * __pyx_v_buffer.strides[0]) ))) << 0) | ((*((unsigned char const  *) ( /* dim=0 */ (__pyx_v_buffer.data + __pyx_t_6 * __pyx_v_buffer.strides[0]) ))) << 8)) | ((*((unsigned char const  *) ( /* dim=0 */ (__pyx_v_buffer.data + __pyx_t_7 * __pyx_v_buffer.strides[0]) ))) << 16)) | ((*((unsigned char const  *) ( /* dim=0 */ (__pyx_v_buffer.data + __pyx_t_8 * __pyx_v_buffer.strides[0]) ))) << 24));
 
-    /* "cortexpy/graph/parser/kmer_ext.pyx":69
+    /* "cortexpy/graph/parser/kmer_ext.pyx":67
  *     for color in range(num_colors):
  *         coverage = (buffer[offset]<<0) | (buffer[offset+1]<<8) | (buffer[offset+2]<<16) | (buffer[offset+3]<<24)
  *         coverages.push_back(coverage)             # <<<<<<<<<<<<<<
@@ -3091,10 +3091,10 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_8raw_to_coverage(CY
       __pyx_v_coverages.push_back(__pyx_v_coverage);
     } catch(...) {
       __Pyx_CppExn2PyErr();
-      __PYX_ERR(0, 69, __pyx_L1_error)
+      __PYX_ERR(0, 67, __pyx_L1_error)
     }
 
-    /* "cortexpy/graph/parser/kmer_ext.pyx":70
+    /* "cortexpy/graph/parser/kmer_ext.pyx":68
  *         coverage = (buffer[offset]<<0) | (buffer[offset+1]<<8) | (buffer[offset+2]<<16) | (buffer[offset+3]<<24)
  *         coverages.push_back(coverage)
  *         offset += 4             # <<<<<<<<<<<<<<
@@ -3104,7 +3104,7 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_8raw_to_coverage(CY
     __pyx_v_offset = (__pyx_v_offset + 4);
   }
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":71
+  /* "cortexpy/graph/parser/kmer_ext.pyx":69
  *         coverages.push_back(coverage)
  *         offset += 4
  *     return tuple(coverages)             # <<<<<<<<<<<<<<
@@ -3112,16 +3112,16 @@ static PyObject *__pyx_pf_8cortexpy_5graph_6parser_8kmer_ext_8raw_to_coverage(CY
  *     # originally:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_9 = __pyx_convert_vector_to_py_unsigned_int(__pyx_v_coverages); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 71, __pyx_L1_error)
+  __pyx_t_9 = __pyx_convert_vector_to_py_unsigned_int(__pyx_v_coverages); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 69, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_9);
-  __pyx_t_10 = __Pyx_PySequence_Tuple(__pyx_t_9); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 71, __pyx_L1_error)
+  __pyx_t_10 = __Pyx_PySequence_Tuple(__pyx_t_9); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 69, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
   __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
   __pyx_r = __pyx_t_10;
   __pyx_t_10 = 0;
   goto __pyx_L0;
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":63
+  /* "cortexpy/graph/parser/kmer_ext.pyx":61
  *     # self._edges = edge_sets
  * 
  * def raw_to_coverage(const unsigned char[:] buffer not None, size_t offset, size_t num_colors):             # <<<<<<<<<<<<<<
@@ -17111,8 +17111,8 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {0, 0, 0, 0, 0, 0, 0}
 };
 static int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 19, __pyx_L1_error)
-  __pyx_builtin_reversed = __Pyx_GetBuiltinName(__pyx_n_s_reversed); if (!__pyx_builtin_reversed) __PYX_ERR(0, 21, __pyx_L1_error)
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 17, __pyx_L1_error)
+  __pyx_builtin_reversed = __Pyx_GetBuiltinName(__pyx_n_s_reversed); if (!__pyx_builtin_reversed) __PYX_ERR(0, 19, __pyx_L1_error)
   __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(1, 132, __pyx_L1_error)
   __pyx_builtin_MemoryError = __Pyx_GetBuiltinName(__pyx_n_s_MemoryError); if (!__pyx_builtin_MemoryError) __PYX_ERR(1, 147, __pyx_L1_error)
   __pyx_builtin_enumerate = __Pyx_GetBuiltinName(__pyx_n_s_enumerate); if (!__pyx_builtin_enumerate) __PYX_ERR(1, 150, __pyx_L1_error)
@@ -17129,14 +17129,14 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":38
+  /* "cortexpy/graph/parser/kmer_ext.pyx":36
  * 
  * def raw_kmer_to_string(int kmer_size, kmer_bytes):
  *     return raw_kmer_to_bytes(kmer_size, kmer_bytes).decode('utf8')             # <<<<<<<<<<<<<<
  * 
  * def raw_kmer_to_list(int kmer_size, kmer_bytes):
  */
-  __pyx_tuple_ = PyTuple_Pack(1, __pyx_n_s_utf8); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 38, __pyx_L1_error)
+  __pyx_tuple_ = PyTuple_Pack(1, __pyx_n_s_utf8); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 36, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple_);
   __Pyx_GIVEREF(__pyx_tuple_);
 
@@ -17365,65 +17365,65 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__22);
   __Pyx_GIVEREF(__pyx_tuple__22);
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":11
+  /* "cortexpy/graph/parser/kmer_ext.pyx":9
  * cdef string NUM_TO_LETTER_LIST = b'ACGT'
  * 
  * def raw_kmer_to_bytes(unsigned kmer_size, const unsigned char[:] kmer_bytes not None):             # <<<<<<<<<<<<<<
  *     assert kmer_size > 0
  *     assert kmer_size <= kmer_bytes.shape[0] * 4
  */
-  __pyx_tuple__23 = PyTuple_Pack(10, __pyx_n_s_kmer_size, __pyx_n_s_kmer_bytes, __pyx_n_s_letters, __pyx_n_s_four_letters, __pyx_n_s_kmer_byte, __pyx_n_s_ulong_idx, __pyx_n_s_ulong_offset, __pyx_n_s_byte_offset, __pyx_n_s_pair_offset, __pyx_n_s_pair_idx); if (unlikely(!__pyx_tuple__23)) __PYX_ERR(0, 11, __pyx_L1_error)
+  __pyx_tuple__23 = PyTuple_Pack(10, __pyx_n_s_kmer_size, __pyx_n_s_kmer_bytes, __pyx_n_s_letters, __pyx_n_s_four_letters, __pyx_n_s_kmer_byte, __pyx_n_s_ulong_idx, __pyx_n_s_ulong_offset, __pyx_n_s_byte_offset, __pyx_n_s_pair_offset, __pyx_n_s_pair_idx); if (unlikely(!__pyx_tuple__23)) __PYX_ERR(0, 9, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__23);
   __Pyx_GIVEREF(__pyx_tuple__23);
-  __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(2, 0, 10, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__23, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cortexpy_graph_parser_kmer_ext_p, __pyx_n_s_raw_kmer_to_bytes, 11, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 11, __pyx_L1_error)
+  __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(2, 0, 10, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__23, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cortexpy_graph_parser_kmer_ext_p, __pyx_n_s_raw_kmer_to_bytes, 9, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 9, __pyx_L1_error)
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":37
+  /* "cortexpy/graph/parser/kmer_ext.pyx":35
  *     # return NUM_TO_LETTER[kmer[(len(kmer) - self.kmer_size):]]
  * 
  * def raw_kmer_to_string(int kmer_size, kmer_bytes):             # <<<<<<<<<<<<<<
  *     return raw_kmer_to_bytes(kmer_size, kmer_bytes).decode('utf8')
  * 
  */
-  __pyx_tuple__25 = PyTuple_Pack(2, __pyx_n_s_kmer_size, __pyx_n_s_kmer_bytes); if (unlikely(!__pyx_tuple__25)) __PYX_ERR(0, 37, __pyx_L1_error)
+  __pyx_tuple__25 = PyTuple_Pack(2, __pyx_n_s_kmer_size, __pyx_n_s_kmer_bytes); if (unlikely(!__pyx_tuple__25)) __PYX_ERR(0, 35, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__25);
   __Pyx_GIVEREF(__pyx_tuple__25);
-  __pyx_codeobj__26 = (PyObject*)__Pyx_PyCode_New(2, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cortexpy_graph_parser_kmer_ext_p, __pyx_n_s_raw_kmer_to_string, 37, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__26)) __PYX_ERR(0, 37, __pyx_L1_error)
+  __pyx_codeobj__26 = (PyObject*)__Pyx_PyCode_New(2, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cortexpy_graph_parser_kmer_ext_p, __pyx_n_s_raw_kmer_to_string, 35, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__26)) __PYX_ERR(0, 35, __pyx_L1_error)
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":40
+  /* "cortexpy/graph/parser/kmer_ext.pyx":38
  *     return raw_kmer_to_bytes(kmer_size, kmer_bytes).decode('utf8')
  * 
  * def raw_kmer_to_list(int kmer_size, kmer_bytes):             # <<<<<<<<<<<<<<
  *     return list(raw_kmer_to_string(kmer_size, kmer_bytes))
  * 
  */
-  __pyx_tuple__27 = PyTuple_Pack(2, __pyx_n_s_kmer_size, __pyx_n_s_kmer_bytes); if (unlikely(!__pyx_tuple__27)) __PYX_ERR(0, 40, __pyx_L1_error)
+  __pyx_tuple__27 = PyTuple_Pack(2, __pyx_n_s_kmer_size, __pyx_n_s_kmer_bytes); if (unlikely(!__pyx_tuple__27)) __PYX_ERR(0, 38, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__27);
   __Pyx_GIVEREF(__pyx_tuple__27);
-  __pyx_codeobj__28 = (PyObject*)__Pyx_PyCode_New(2, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__27, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cortexpy_graph_parser_kmer_ext_p, __pyx_n_s_raw_kmer_to_list, 40, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__28)) __PYX_ERR(0, 40, __pyx_L1_error)
+  __pyx_codeobj__28 = (PyObject*)__Pyx_PyCode_New(2, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__27, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cortexpy_graph_parser_kmer_ext_p, __pyx_n_s_raw_kmer_to_list, 38, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__28)) __PYX_ERR(0, 38, __pyx_L1_error)
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":43
+  /* "cortexpy/graph/parser/kmer_ext.pyx":41
  *     return list(raw_kmer_to_string(kmer_size, kmer_bytes))
  * 
  * def raw_edges_to_list(const unsigned char[:] edge_bytes not None):             # <<<<<<<<<<<<<<
  *     cdef char e_byte
  *     cdef int i, e_byte_idx
  */
-  __pyx_tuple__29 = PyTuple_Pack(7, __pyx_n_s_edge_bytes, __pyx_n_s_edge_bytes, __pyx_n_s_e_byte, __pyx_n_s_i, __pyx_n_s_e_byte_idx, __pyx_n_s_edge_set, __pyx_n_s_tuples); if (unlikely(!__pyx_tuple__29)) __PYX_ERR(0, 43, __pyx_L1_error)
+  __pyx_tuple__29 = PyTuple_Pack(7, __pyx_n_s_edge_bytes, __pyx_n_s_edge_bytes, __pyx_n_s_e_byte, __pyx_n_s_i, __pyx_n_s_e_byte_idx, __pyx_n_s_edge_set, __pyx_n_s_tuples); if (unlikely(!__pyx_tuple__29)) __PYX_ERR(0, 41, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__29);
   __Pyx_GIVEREF(__pyx_tuple__29);
-  __pyx_codeobj__30 = (PyObject*)__Pyx_PyCode_New(1, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__29, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cortexpy_graph_parser_kmer_ext_p, __pyx_n_s_raw_edges_to_list, 43, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__30)) __PYX_ERR(0, 43, __pyx_L1_error)
+  __pyx_codeobj__30 = (PyObject*)__Pyx_PyCode_New(1, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__29, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cortexpy_graph_parser_kmer_ext_p, __pyx_n_s_raw_edges_to_list, 41, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__30)) __PYX_ERR(0, 41, __pyx_L1_error)
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":63
+  /* "cortexpy/graph/parser/kmer_ext.pyx":61
  *     # self._edges = edge_sets
  * 
  * def raw_to_coverage(const unsigned char[:] buffer not None, size_t offset, size_t num_colors):             # <<<<<<<<<<<<<<
  *     cdef unsigned coverage
  *     cdef vector[unsigned] coverages
  */
-  __pyx_tuple__31 = PyTuple_Pack(6, __pyx_n_s_buffer, __pyx_n_s_offset, __pyx_n_s_num_colors, __pyx_n_s_coverage, __pyx_n_s_coverages, __pyx_n_s_color); if (unlikely(!__pyx_tuple__31)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __pyx_tuple__31 = PyTuple_Pack(6, __pyx_n_s_buffer, __pyx_n_s_offset, __pyx_n_s_num_colors, __pyx_n_s_coverage, __pyx_n_s_coverages, __pyx_n_s_color); if (unlikely(!__pyx_tuple__31)) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__31);
   __Pyx_GIVEREF(__pyx_tuple__31);
-  __pyx_codeobj__32 = (PyObject*)__Pyx_PyCode_New(3, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__31, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cortexpy_graph_parser_kmer_ext_p, __pyx_n_s_raw_to_coverage, 63, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__32)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __pyx_codeobj__32 = (PyObject*)__Pyx_PyCode_New(3, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__31, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cortexpy_graph_parser_kmer_ext_p, __pyx_n_s_raw_to_coverage, 61, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__32)) __PYX_ERR(0, 61, __pyx_L1_error)
 
   /* "View.MemoryView":285
  *         return self.name
@@ -17696,10 +17696,9 @@ static int __pyx_pymod_exec_kmer_ext(PyObject *__pyx_pyinit_module)
 #endif
 #endif
 {
-  PyObject *__pyx_t_1 = NULL;
+  std::string __pyx_t_1;
   PyObject *__pyx_t_2 = NULL;
-  std::string __pyx_t_3;
-  static PyThread_type_lock __pyx_t_4[8];
+  static PyThread_type_lock __pyx_t_3[8];
   __Pyx_RefNannyDeclarations
   #if CYTHON_PEP489_MULTI_PHASE_INIT
   if (__pyx_m && __pyx_m == __pyx_pyinit_module) return 0;
@@ -17798,28 +17797,7 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_patch_abc() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":3
- * # distutils: language=c++
- * 
- * from struct import unpack             # <<<<<<<<<<<<<<
- * 
- * from libcpp.string cimport string
- */
-  __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 3, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_INCREF(__pyx_n_s_unpack);
-  __Pyx_GIVEREF(__pyx_n_s_unpack);
-  PyList_SET_ITEM(__pyx_t_1, 0, __pyx_n_s_unpack);
-  __pyx_t_2 = __Pyx_Import(__pyx_n_s_struct, __pyx_t_1, -1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 3, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_ImportFrom(__pyx_t_2, __pyx_n_s_unpack); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 3, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_unpack, __pyx_t_1) < 0) __PYX_ERR(0, 3, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "cortexpy/graph/parser/kmer_ext.pyx":8
+  /* "cortexpy/graph/parser/kmer_ext.pyx":6
  * from libcpp.vector cimport vector
  * 
  * cdef size_t SIZE_OF_INT64 = 8             # <<<<<<<<<<<<<<
@@ -17828,80 +17806,80 @@ if (!__Pyx_RefNanny) {
  */
   __pyx_v_8cortexpy_5graph_6parser_8kmer_ext_SIZE_OF_INT64 = 8;
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":9
+  /* "cortexpy/graph/parser/kmer_ext.pyx":7
  * 
  * cdef size_t SIZE_OF_INT64 = 8
  * cdef string NUM_TO_LETTER_LIST = b'ACGT'             # <<<<<<<<<<<<<<
  * 
  * def raw_kmer_to_bytes(unsigned kmer_size, const unsigned char[:] kmer_bytes not None):
  */
-  __pyx_t_3 = __pyx_convert_string_from_py_std__in_string(__pyx_n_b_ACGT); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 9, __pyx_L1_error)
-  __pyx_v_8cortexpy_5graph_6parser_8kmer_ext_NUM_TO_LETTER_LIST = __pyx_t_3;
+  __pyx_t_1 = __pyx_convert_string_from_py_std__in_string(__pyx_n_b_ACGT); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 7, __pyx_L1_error)
+  __pyx_v_8cortexpy_5graph_6parser_8kmer_ext_NUM_TO_LETTER_LIST = __pyx_t_1;
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":11
+  /* "cortexpy/graph/parser/kmer_ext.pyx":9
  * cdef string NUM_TO_LETTER_LIST = b'ACGT'
  * 
  * def raw_kmer_to_bytes(unsigned kmer_size, const unsigned char[:] kmer_bytes not None):             # <<<<<<<<<<<<<<
  *     assert kmer_size > 0
  *     assert kmer_size <= kmer_bytes.shape[0] * 4
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_8cortexpy_5graph_6parser_8kmer_ext_1raw_kmer_to_bytes, NULL, __pyx_n_s_cortexpy_graph_parser_kmer_ext); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 11, __pyx_L1_error)
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_8cortexpy_5graph_6parser_8kmer_ext_1raw_kmer_to_bytes, NULL, __pyx_n_s_cortexpy_graph_parser_kmer_ext); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 9, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_raw_kmer_to_bytes, __pyx_t_2) < 0) __PYX_ERR(0, 11, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_raw_kmer_to_bytes, __pyx_t_2) < 0) __PYX_ERR(0, 9, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":37
+  /* "cortexpy/graph/parser/kmer_ext.pyx":35
  *     # return NUM_TO_LETTER[kmer[(len(kmer) - self.kmer_size):]]
  * 
  * def raw_kmer_to_string(int kmer_size, kmer_bytes):             # <<<<<<<<<<<<<<
  *     return raw_kmer_to_bytes(kmer_size, kmer_bytes).decode('utf8')
  * 
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_8cortexpy_5graph_6parser_8kmer_ext_3raw_kmer_to_string, NULL, __pyx_n_s_cortexpy_graph_parser_kmer_ext); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 37, __pyx_L1_error)
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_8cortexpy_5graph_6parser_8kmer_ext_3raw_kmer_to_string, NULL, __pyx_n_s_cortexpy_graph_parser_kmer_ext); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 35, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_raw_kmer_to_string, __pyx_t_2) < 0) __PYX_ERR(0, 37, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_raw_kmer_to_string, __pyx_t_2) < 0) __PYX_ERR(0, 35, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":40
+  /* "cortexpy/graph/parser/kmer_ext.pyx":38
  *     return raw_kmer_to_bytes(kmer_size, kmer_bytes).decode('utf8')
  * 
  * def raw_kmer_to_list(int kmer_size, kmer_bytes):             # <<<<<<<<<<<<<<
  *     return list(raw_kmer_to_string(kmer_size, kmer_bytes))
  * 
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_8cortexpy_5graph_6parser_8kmer_ext_5raw_kmer_to_list, NULL, __pyx_n_s_cortexpy_graph_parser_kmer_ext); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 40, __pyx_L1_error)
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_8cortexpy_5graph_6parser_8kmer_ext_5raw_kmer_to_list, NULL, __pyx_n_s_cortexpy_graph_parser_kmer_ext); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 38, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_raw_kmer_to_list, __pyx_t_2) < 0) __PYX_ERR(0, 40, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_raw_kmer_to_list, __pyx_t_2) < 0) __PYX_ERR(0, 38, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":43
+  /* "cortexpy/graph/parser/kmer_ext.pyx":41
  *     return list(raw_kmer_to_string(kmer_size, kmer_bytes))
  * 
  * def raw_edges_to_list(const unsigned char[:] edge_bytes not None):             # <<<<<<<<<<<<<<
  *     cdef char e_byte
  *     cdef int i, e_byte_idx
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_8cortexpy_5graph_6parser_8kmer_ext_7raw_edges_to_list, NULL, __pyx_n_s_cortexpy_graph_parser_kmer_ext); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 43, __pyx_L1_error)
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_8cortexpy_5graph_6parser_8kmer_ext_7raw_edges_to_list, NULL, __pyx_n_s_cortexpy_graph_parser_kmer_ext); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 41, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_raw_edges_to_list, __pyx_t_2) < 0) __PYX_ERR(0, 43, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_raw_edges_to_list, __pyx_t_2) < 0) __PYX_ERR(0, 41, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "cortexpy/graph/parser/kmer_ext.pyx":63
+  /* "cortexpy/graph/parser/kmer_ext.pyx":61
  *     # self._edges = edge_sets
  * 
  * def raw_to_coverage(const unsigned char[:] buffer not None, size_t offset, size_t num_colors):             # <<<<<<<<<<<<<<
  *     cdef unsigned coverage
  *     cdef vector[unsigned] coverages
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_8cortexpy_5graph_6parser_8kmer_ext_9raw_to_coverage, NULL, __pyx_n_s_cortexpy_graph_parser_kmer_ext); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_8cortexpy_5graph_6parser_8kmer_ext_9raw_to_coverage, NULL, __pyx_n_s_cortexpy_graph_parser_kmer_ext); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_raw_to_coverage, __pyx_t_2) < 0) __PYX_ERR(0, 63, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_raw_to_coverage, __pyx_t_2) < 0) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "cortexpy/graph/parser/kmer_ext.pyx":1
  * # distutils: language=c++             # <<<<<<<<<<<<<<
  * 
- * from struct import unpack
+ * from libcpp.string cimport string
  */
   __pyx_t_2 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -18007,15 +17985,15 @@ if (!__Pyx_RefNanny) {
  *     PyThread_allocate_lock(),
  *     PyThread_allocate_lock(),
  */
-  __pyx_t_4[0] = PyThread_allocate_lock();
-  __pyx_t_4[1] = PyThread_allocate_lock();
-  __pyx_t_4[2] = PyThread_allocate_lock();
-  __pyx_t_4[3] = PyThread_allocate_lock();
-  __pyx_t_4[4] = PyThread_allocate_lock();
-  __pyx_t_4[5] = PyThread_allocate_lock();
-  __pyx_t_4[6] = PyThread_allocate_lock();
-  __pyx_t_4[7] = PyThread_allocate_lock();
-  memcpy(&(__pyx_memoryview_thread_locks[0]), __pyx_t_4, sizeof(__pyx_memoryview_thread_locks[0]) * (8));
+  __pyx_t_3[0] = PyThread_allocate_lock();
+  __pyx_t_3[1] = PyThread_allocate_lock();
+  __pyx_t_3[2] = PyThread_allocate_lock();
+  __pyx_t_3[3] = PyThread_allocate_lock();
+  __pyx_t_3[4] = PyThread_allocate_lock();
+  __pyx_t_3[5] = PyThread_allocate_lock();
+  __pyx_t_3[6] = PyThread_allocate_lock();
+  __pyx_t_3[7] = PyThread_allocate_lock();
+  memcpy(&(__pyx_memoryview_thread_locks[0]), __pyx_t_3, sizeof(__pyx_memoryview_thread_locks[0]) * (8));
 
   /* "View.MemoryView":544
  *         info.obj = self
@@ -18065,7 +18043,6 @@ if (!__Pyx_RefNanny) {
 
   goto __pyx_L0;
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
   __Pyx_XDECREF(__pyx_t_2);
   if (__pyx_m) {
     if (__pyx_d) {
