@@ -158,6 +158,7 @@ class Cortexpy(object):
             return subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                   universal_newlines=True)
         else:
+            args = ['cortexpy'] + args
             stdout = io.StringIO()
             stderr = io.StringIO()
             with contextlib.redirect_stdout(stdout):
