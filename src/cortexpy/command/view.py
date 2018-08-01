@@ -1,8 +1,3 @@
-class ArgparseError(ValueError):
-    """Is raised if the args object is misconfigured"""
-    pass
-
-
 def view(argv):
     import argparse
     parser = argparse.ArgumentParser(prog='cortexpy view')
@@ -27,7 +22,6 @@ def view_traversal(argv):
     parser.add_argument('traversal', help="cortexpy traversal in Python pickle format."
                                           " Read traversal from stdin traversal is '-'.")
     parser.add_argument('--to-json', action='store_true')
-    parser.add_argument('--kmers', action='store_true')
     parser.add_argument('--seed-strings', nargs='*', default=[],
                         help="Strings with seed kmers from which to start contig traversal. "
                              "Multiple strings can be specified.")
@@ -37,13 +31,11 @@ def view_traversal(argv):
     from cortexpy.logging_config import configure_logging_from_args_and_get_logger
     logger = configure_logging_from_args_and_get_logger(args, 'cortexpy.view')
 
-    assert not args.kmers or not args.to_json
     from Bio import SeqIO
     import sys
     from contextlib import ExitStack
     from cortexpy.graph.interactor import Interactor, Contigs
     from cortexpy.graph.serializer.serializer import Serializer
-    from cortexpy.graph.serializer.kmer import KmerGraph
     from cortexpy.graph.parser.streaming import load_cortex_graph
 
     with ExitStack() as stack:
@@ -76,15 +68,12 @@ def view_traversal(argv):
             print(Serializer(graph).to_json())
             return
 
-        if args.kmers:
-            seq_record_generator = KmerGraph(graph).to_seq_records()
-        else:
-            if not consistent_graph:
-                logger.info('Making graph consistent')
-                consistent_graph = Interactor.from_graph(graph) \
-                    .make_graph_nodes_consistent() \
-                    .graph
-            seq_record_generator = Contigs(consistent_graph, args.color).all_simple_paths()
+        if not consistent_graph:
+            logger.info('Making graph consistent')
+            consistent_graph = Interactor.from_graph(graph) \
+                .make_graph_nodes_consistent() \
+                .graph
+        seq_record_generator = Contigs(consistent_graph, args.color).all_simple_paths()
         seq_record_generator = annotated_seq_records(seq_record_generator, graph_idx="x")
         logger.info('Writing seq records to %s', args.out)
         SeqIO.write(seq_record_generator, output, 'fasta')
@@ -92,11 +81,18 @@ def view_traversal(argv):
 
 def view_graph(argv):
     import argparse
+
     parser = argparse.ArgumentParser(prog='cortexpy view graph')
     parser.add_argument('graph', help="cortex graph")
+    parser.add_argument('--kmers', action='store_true')
     args = parser.parse_args(argv)
 
-    print_cortex_file(open(args.graph, 'rb'))
+    import sys
+    with open(args.graph, 'rb') as fh:
+        if args.kmers:
+            write_kmer_strings(fh, sys.stdout)
+        else:
+            print_cortex_file(fh)
 
 
 def view_contig(argv):
@@ -116,6 +112,18 @@ def view_contig(argv):
         print(serializer.to_json())
     else:
         print_contig(contig_retriever, args.contig)
+
+
+def write_kmer_strings(input, output):
+    from Bio import SeqIO
+    from Bio.Seq import Seq
+    from Bio.SeqRecord import SeqRecord
+
+    from cortexpy.graph.parser.streaming import kmer_string_generator_from_stream
+
+    seqs = (SeqRecord(Seq(s), id=str(i), description="") for i, s in
+            enumerate(kmer_string_generator_from_stream(input)))
+    SeqIO.write(seqs, output, "fasta")
 
 
 def print_cortex_file(graph_handle):

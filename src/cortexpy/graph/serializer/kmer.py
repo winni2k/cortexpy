@@ -7,20 +7,6 @@ from cortexpy.graph.parser.header import Header
 from cortexpy.graph.parser.kmer import calc_kmer_container_size
 
 
-@attr.s(slots=True)
-class KmerGraph(object):
-    """Serializes kmer graphs."""
-    graph = attr.ib()
-
-    def to_seq_records(self):
-        return (
-            SeqRecord(Seq(str(node)), id=str(node_idx), description="") for node_idx, node in
-            enumerate(self.graph.nodes())
-        )
-
-
-NOT_SET = 0
-
 
 @attr.s(slots=True)
 class ColorInformationBlock(object):

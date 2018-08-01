@@ -21,7 +21,7 @@ class Test(object):
 
         # when
         completed_process = runner.Cortexpy(SPAWN_PROCESS) \
-            .view_traversal(kmers=True, to_json=False, graph=output_graph, contig=record)
+            .view_graph(kmers=True, graph=output_graph)
 
         stdout = completed_process.stdout
 

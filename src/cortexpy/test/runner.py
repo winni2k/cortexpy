@@ -52,8 +52,13 @@ class Mccortex(object):
 class Cortexpy(object):
     spawn_process = attr.ib(False)
 
-    def view_graph(self, graph):
-        return self.run(['view', 'graph', graph])
+    def view_graph(self, graph, kmers=False, out=None):
+        args = ['view', 'graph', graph]
+        if kmers:
+            args.append('--kmers')
+        if out is not None:
+            args += ['--out', out]
+        return self.run(args)
 
     def view_contig(self, contig, graph, to_json=False, other_args=()):
         run_args = []
