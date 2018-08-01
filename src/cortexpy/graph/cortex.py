@@ -1,12 +1,13 @@
-from collections.abc import Collection, Mapping
 import copy
 import itertools
-import networkx as nx
+from collections.abc import Collection, Mapping
+
 import attr
+import networkx as nx
 
 from cortexpy.constants import EdgeTraversalOrientation
-from .parser.kmer import find_all_neighbors
 from cortexpy.utils import lexlo
+from .parser.kmer import find_all_neighbors
 
 
 def build_cortex_graph_from_header(header, **kwargs):

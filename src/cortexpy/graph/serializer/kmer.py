@@ -1,11 +1,9 @@
-import attr
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
 import struct
+
+import attr
 
 from cortexpy.graph.parser.header import Header
 from cortexpy.graph.parser.kmer import calc_kmer_container_size
-
 
 
 @attr.s(slots=True)

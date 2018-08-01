@@ -1,11 +1,12 @@
-import cortexpy.test.runner as runner
+import logging
 from collections import OrderedDict
 
 import attr
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from attr import Factory
-import logging
+
+import cortexpy.test.runner as runner
 
 logger = logging.getLogger(__name__)
 

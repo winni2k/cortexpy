@@ -1,15 +1,16 @@
-import copy
-import attr
 import collections
+import copy
+import logging
+
+import attr
 import networkx as nx
 
-from ..interactor import Interactor
+from cortexpy.constants import EdgeTraversalOrientation, EngineTraversalOrientation
 from cortexpy.graph.cortex import build_empty_cortex_graph_from_ra_parser
 from cortexpy.graph.parser.kmer import EmptyKmerBuilder
 from cortexpy.utils import lexlo, IntervalLogger, kmerize_contig, kmerize_fasta
 from . import branch
-from cortexpy.constants import EdgeTraversalOrientation, EngineTraversalOrientation
-import logging
+from ..interactor import Interactor
 
 logger = logging.getLogger(__name__)
 

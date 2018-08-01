@@ -14,8 +14,8 @@ Allowed cortexpy commands are:
 See 'cortexpy <command>' for more information on a specific command.
 
 """
-import sys
 import logging
+import sys
 
 logger = logging.getLogger('cortexpy')
 

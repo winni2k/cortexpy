@@ -1,7 +1,7 @@
 import attr
 
-from cortexpy.graph.parser.random_access import RandomAccess
 from cortexpy.constants import EngineTraversalOrientation
+from cortexpy.graph.parser.random_access import RandomAccess
 from cortexpy.graph.traversal.engine import Engine
 from cortexpy.test import builder as builder, expectation as expectation
 
@@ -51,9 +51,9 @@ class EngineTestDriver(object):
     def run(self):
         random_access_parser = RandomAccess(self.graph_builder.build())
         self.traverser = Engine(random_access_parser,
-                                          traversal_colors=self.traversal_colors,
-                                          max_nodes=self.max_nodes,
-                                          orientation=self.traversal_orientation)
+                                traversal_colors=self.traversal_colors,
+                                max_nodes=self.max_nodes,
+                                orientation=self.traversal_orientation)
         assert (self.start_string is None) != (self.start_kmer_string is None)
         if self.start_string:
             self.traverser.traverse_from_each_kmer_in(self.start_string)

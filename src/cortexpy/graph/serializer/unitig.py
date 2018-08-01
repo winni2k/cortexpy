@@ -1,13 +1,13 @@
-import attr
+import logging
 from itertools import chain
+
+import attr
 import networkx as nx
 
 from cortexpy.constants import EdgeTraversalOrientation
 from cortexpy.graph.parser.kmer import revcomp_target_to_match_ref
 from cortexpy.graph.traversal.utils import OrientedGraphFuncs
 from cortexpy.utils import lexlo
-
-import logging
 
 logger = logging.getLogger(__name__)
 

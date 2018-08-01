@@ -1,5 +1,6 @@
-import attr
 import logging
+
+import attr
 
 logger = logging.getLogger(__name__)
 

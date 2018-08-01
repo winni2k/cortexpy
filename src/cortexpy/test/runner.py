@@ -1,12 +1,12 @@
 import contextlib
 import io
+import logging
 import os
 import subprocess
-from pathlib import Path
+import sys
 
 import attr
-import sys
-import logging
+
 from cortexpy.__main__ import main
 
 logger = logging.getLogger(__name__)
@@ -67,39 +67,23 @@ class Cortexpy(object):
         run_args += list(other_args)
         return self.run(['view', 'contig', str(graph), contig] + run_args)
 
-    def view_traversal(self, contig, graph,
-                       to_json=None, kmers=None, out=None,
-                       color=0, max_nodes=None, colors=None,
-                       # deprecated options
-                       output_format=None, output_type=None):
-        assert output_format is None or to_json is None
-        assert output_type is None or kmers is None
-        if (output_format is None and to_json is None) or output_format == 'json':
-            to_json = True
-        if (output_type is None and kmers is None) or output_format == 'kmers':
-            kmers = True
-
-        if colors is None:
-            colors = [color]
-        if isinstance(colors, int):
-            colors = [colors]
-        intermediate_graph = str(Path(graph).with_suffix('.traverse.pickle'))
-        command1_ret = self.traverse(graphs=[graph], out=intermediate_graph, contig=contig,
-                                     colors=colors, max_nodes=max_nodes)
-
-        command2 = ['view', 'traversal', intermediate_graph, ]
+    def view_traversal(self, graph, contig=None,
+                       to_json=None, out=None,
+                       color=0,
+                       max_paths=None, colors=None):
+        command2 = ['view', 'traversal', graph]
         if to_json:
             command2.append('--to-json')
-        if kmers:
-            command2.append('--kmers')
         elif contig:
             command2 += ['--seed-strings', contig]
+        if max_paths:
+            command2 += ['--max-paths', max_paths]
         if out:
             command2 += ['--out', out]
         command2_ret = self.run(command2)
 
-        stdout = command1_ret.stdout + command2_ret.stdout
-        stderr = command1_ret.stderr + command2_ret.stderr
+        stdout = command2_ret.stdout
+        stderr = command2_ret.stderr
         returncode = command2_ret.returncode
 
         return subprocess.CompletedProcess(command2,
@@ -121,8 +105,10 @@ class Cortexpy(object):
             cmd += seed_strings
         return self.run(cmd)
 
-    def traverse(self, *, graphs, out, contig, contig_fasta=False, colors=None, max_nodes=None,
-                 verbose=False, silent=False, logging_interval=None):
+    def traverse(self, *, graphs, contig, out='/dev/null',
+                 contig_fasta=False, colors=None,
+                 max_nodes=None, verbose=False,
+                 silent=False, logging_interval=None):
         cmd = ['traverse', contig, '--out', out]
         assert len(graphs) > 0
         cmd.append('--graphs')

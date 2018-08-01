@@ -1,5 +1,6 @@
 import struct
 from struct import unpack
+
 import attr
 
 from cortexpy.graph.parser.constants import (

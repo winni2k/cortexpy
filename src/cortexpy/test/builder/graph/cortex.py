@@ -3,8 +3,8 @@ from delegation import SingleDelegated
 
 import cortexpy.graph.cortex as cortex
 from cortexpy.graph.interactor import Interactor
-from cortexpy.graph.parser.random_access import load_ra_cortex_graph
 from cortexpy.graph.parser.kmer import EmptyKmerBuilder
+from cortexpy.graph.parser.random_access import load_ra_cortex_graph
 from cortexpy.test.builder import Graph
 
 

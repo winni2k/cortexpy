@@ -1,7 +1,7 @@
 import attr
 
-from cortexpy.graph.interactor import Interactor
 from cortexpy.graph.contig_retriever import ContigRetriever
+from cortexpy.graph.interactor import Interactor
 from cortexpy.graph.parser.random_access import RandomAccess
 from cortexpy.graph.serializer import unitig
 from cortexpy.graph.traversal.engine import Engine

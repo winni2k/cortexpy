@@ -1,7 +1,8 @@
 import json
+import logging
 import sys
 from collections import defaultdict
-import logging
+
 import attr
 
 logger = logging.getLogger(__name__)

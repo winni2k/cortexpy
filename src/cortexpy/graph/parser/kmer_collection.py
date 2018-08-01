@@ -1,4 +1,5 @@
 from itertools import chain
+
 import attr
 
 

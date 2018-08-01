@@ -1,4 +1,5 @@
 import os
+import pytest
 
 from cortexpy.test import builder, runner, expectation
 from cortexpy.test.driver import command
@@ -53,7 +54,6 @@ class TestContigs(object):
         # when
         completed_process = (
             runner.Cortexpy(SPAWN_PROCESS).view_traversal(to_json=False,
-                                                          kmers=False,
                                                           graph=output_graph,
                                                           contig='AAA')
         )
@@ -85,8 +85,7 @@ class TestContigs(object):
 
         # when
         completed_process = (
-            runner.Cortexpy(SPAWN_PROCESS).view_traversal(output_format='fasta', graph=output_graph,
-                                                          contig='AAA', output_type='contigs')
+            runner.Cortexpy(SPAWN_PROCESS).view_traversal(graph=output_graph, contig='AAA')
         )
         stdout = completed_process.stdout
 
@@ -115,7 +114,6 @@ class TestContigs(object):
         # when
         completed_process = runner.Cortexpy(SPAWN_PROCESS) \
             .view_traversal(to_json=False,
-                            kmers=False,
                             graph=output_graph,
                             contig='CAAAAAATGTTGGAGAGGTATCAAAAGTATTCACAAGAAAGTGACAT')
         stdout = completed_process.stdout
@@ -139,33 +137,13 @@ class TestContigs(object):
         output_graph = maker.build(tmpdir)
 
         # when
-        completed_process = runner.Cortexpy(True).view_traversal(graph=output_graph, contig=query,
-                                                                 max_nodes=1)
+        completed_process = runner.Cortexpy(spawn_process=True).traverse(graphs=[output_graph],
+                                                                         contig=query,
+                                                                         max_nodes=1)
 
         # then
         assert 0 != completed_process.returncode
         assert 'Max nodes (1) exceeded: 3 nodes found' in completed_process.stderr
-
-    def test_raises_with_kmer(self, tmpdir):
-        # given
-        query = 'CAACC'
-        records = [query]
-        kmer_size = 3
-        maker = builder.Mccortex().with_kmer_size(kmer_size)
-        for rec in records:
-            maker.with_dna_sequence(rec)
-
-        output_graph = maker.build(tmpdir)
-
-        # when
-        completed_process = runner.Cortexpy(True).traverse(graphs=[output_graph],
-                                                           contig=query,
-                                                           out='-',
-                                                           max_nodes=1)
-
-        # then
-        assert 0 != completed_process.returncode
-        assert ('Max nodes (1) exceeded: 3 nodes found') in completed_process.stderr
 
     def test_does_not_raise_without_max_nodes(self, tmpdir):
         # given
@@ -182,10 +160,35 @@ class TestContigs(object):
         completed_process = runner.Cortexpy(True).traverse(graphs=[output_graph],
                                                            contig=query,
                                                            out=tmpdir / 'discarded.pickle',
-                                                           max_nodes=None)
+                                                           )
 
         # then
         assert 0 == completed_process.returncode
+
+    @pytest.mark.parametrize('max_paths', (0, 1, 2))
+    def test_raises_on_max_path_1_exceeded(self, tmpdir, max_paths):
+        # given
+        records = ['CAACC', 'CAACT']
+        kmer_size = 3
+        maker = builder.Mccortex().with_kmer_size(kmer_size)
+        for rec in records:
+            maker.with_dna_sequence(rec)
+
+        # when
+        completed_process = runner.Cortexpy(spawn_process=True).view_traversal(
+            graph=maker.build(tmpdir),
+            max_paths=max_paths)
+
+        # then
+        if max_paths == 1:
+            assert 0 != completed_process.returncode
+            assert f'Max paths ({max_paths}) exceeded' in completed_process.stderr
+        else:
+            assert 0 == completed_process.returncode
+            expect = expectation.Fasta(completed_process.stdout)
+            expect.has_record('CAACC')
+            expect.has_record('CAACT')
+            expect.has_n_records(2)
 
 
 class TestTraversal(object):

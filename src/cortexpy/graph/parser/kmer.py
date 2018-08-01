@@ -1,12 +1,12 @@
+import math
 import struct
+from itertools import repeat
+
 import attr
 import numpy as np
-import math
-from itertools import repeat
 
 import cortexpy.edge_set
 from cortexpy.utils import revcomp, lexlo
-
 from .constants import (
     UINT64_T, UINT32_T, LETTER_TO_NUM,
     NUM_LETTERS_PER_UINT, NUM_TO_BITS,

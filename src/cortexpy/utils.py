@@ -1,9 +1,9 @@
 from datetime import datetime
+from functools import lru_cache
 
 import attr
 from Bio import SeqIO
 from Bio.Seq import reverse_complement
-from functools import lru_cache
 
 
 @lru_cache(typed=True)

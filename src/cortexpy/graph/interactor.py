@@ -1,16 +1,16 @@
 import collections
+import logging
 
 import attr
 import networkx as nx
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-import logging
 
 from cortexpy.constants import EdgeTraversalOrientation
 from cortexpy.graph.parser.kmer import revcomp_target_to_match_ref
 from cortexpy.utils import lexlo, revcomp
-from .serializer.unitig import UnitigCollapser
 from .cortex import CortexDiGraph, ConsistentCortexDiGraph
+from .serializer.unitig import UnitigCollapser
 
 logger = logging.getLogger(__name__)
 

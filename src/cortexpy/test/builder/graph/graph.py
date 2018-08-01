@@ -1,8 +1,10 @@
 from io import BytesIO
+
 import attr
+from Bio.Seq import Seq
+
 from cortexpy.test.builder.graph.body import as_edge_set, KmerRecord, Body
 from cortexpy.test.builder.graph.header import Header
-from Bio.Seq import Seq
 
 
 @attr.s

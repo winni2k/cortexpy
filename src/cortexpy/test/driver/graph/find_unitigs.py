@@ -1,4 +1,5 @@
 import attr
+
 from cortexpy.test.builder.unitig_finder import UnitigFinderBuilder
 from cortexpy.test.expectation.unitig_graph import GraphWithUnitigExpectation
 

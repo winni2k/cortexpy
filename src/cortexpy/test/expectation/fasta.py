@@ -1,9 +1,9 @@
 import io
+import logging
 from collections import defaultdict
 
-from Bio import SeqIO
 import attr
-import logging
+from Bio import SeqIO
 
 logger = logging.getLogger(__name__)
 

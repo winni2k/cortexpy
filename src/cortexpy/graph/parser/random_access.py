@@ -6,8 +6,9 @@ from io import SEEK_END
 import attr
 import numpy as np
 
-import cortexpy.graph.parser.header
 import cortexpy.graph.cortex
+import cortexpy.graph.parser.header
+from cortexpy.utils import lexlo
 from .constants import UINT64_T
 from .kmer import (
     Kmer, KmerData, KmerUintComparator,
@@ -17,7 +18,6 @@ from .streaming import (
     kmer_generator_from_stream_and_header,
     kmer_string_generator_from_stream_and_header,
 )
-from cortexpy.utils import lexlo
 
 
 @attr.s(slots=True, repr=False)
@@ -192,8 +192,10 @@ def load_ra_cortex_graph(file_handle, ra_parser_args=None):
     if ra_parser_args is None:
         ra_parser_args = {}
     ra_parser = RandomAccess(file_handle, **ra_parser_args)
-    return cortexpy.graph.cortex.build_cortex_graph(sample_names=ra_parser.sample_names,
-                              kmer_size=ra_parser.kmer_size,
-                              num_colors=ra_parser.num_colors,
-                              colors=ra_parser.colors,
-                              kmer_mapping=cortexpy.graph.cortex.CortexGraphMapping(ra_parser))
+    return cortexpy.graph.cortex.build_cortex_graph(
+        sample_names=ra_parser.sample_names,
+        kmer_size=ra_parser.kmer_size,
+        num_colors=ra_parser.num_colors,
+        colors=ra_parser.colors,
+        kmer_mapping=cortexpy.graph.cortex.CortexGraphMapping(ra_parser)
+    )

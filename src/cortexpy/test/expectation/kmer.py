@@ -1,5 +1,6 @@
 import collections
 import pprint
+
 import attr
 
 from cortexpy.test.expectation.graph import KmerGraphExpectation

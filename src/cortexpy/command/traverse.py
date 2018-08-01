@@ -3,7 +3,6 @@ import cortexpy.constants
 
 def traverse(argv):
     import argparse
-    from cortexpy.graph import traversal
     from .shared import get_shared_argsparse
     shared_parser = get_shared_argsparse()
     parser = argparse.ArgumentParser(
@@ -65,7 +64,7 @@ def traverse(argv):
         else:
             ra_parser = RandomAccessCollection(
                 [RandomAccess(stack.enter_context(open(graph_path, 'rb')),
-                                       kmer_cache_size=args.cache_size)
+                              kmer_cache_size=args.cache_size)
                  for graph_path in args.graphs])
         engine = Engine(
             ra_parser,

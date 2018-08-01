@@ -1,11 +1,10 @@
 import json
+import os
+import sys
 from pathlib import Path
 
 import Bio
 import attr
-import os
-
-import sys
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord

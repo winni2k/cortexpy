@@ -1,9 +1,9 @@
 import io
 
-from ..cortex import build_cortex_graph_from_header
-from cortexpy.graph.parser.kmer import Kmer, KmerData, RawKmerConverter
 from cortexpy.graph.parser.constants import UINT64_T
 from cortexpy.graph.parser.header import Header
+from cortexpy.graph.parser.kmer import Kmer, KmerData, RawKmerConverter
+from ..cortex import build_cortex_graph_from_header
 
 
 def kmer_generator_from_stream(stream):

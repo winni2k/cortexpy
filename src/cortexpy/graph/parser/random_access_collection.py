@@ -1,7 +1,7 @@
+from collections import Mapping
 from itertools import chain
 
 import attr
-from collections import Mapping
 
 from cortexpy.utils import lexlo
 from .kmer import Kmer, EmptyKmerBuilder
