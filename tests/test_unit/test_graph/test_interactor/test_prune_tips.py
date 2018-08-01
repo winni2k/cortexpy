@@ -1,4 +1,5 @@
 import networkx as nx
+import pytest
 from hypothesis import given, strategies as s
 
 from cortexpy.graph import interactor
@@ -80,7 +81,7 @@ class TestColoredDeBruijnGraph(object):
         assert set(kmers[1:]) == set(graph.nodes)
         assert 5 == len(graph)
 
-    @given(s.sampled_from([('AAC', 'ACT'), ('CAG', 'ACT')]))
+    @pytest.mark.parametrize('seed_and_expected_kmer', [('AAC', 'ACT'), ('CAG', 'ACT')])
     def test_prunes_three_tips_of_length_1_reverse_kmer(self, seed_and_expected_kmer):
         # given
         seed, expected_kmer = seed_and_expected_kmer

@@ -1,3 +1,4 @@
+import pytest
 from hypothesis import given, strategies as s
 
 from cortexpy.constants import EdgeTraversalOrientation
@@ -173,7 +174,7 @@ class TestIsUnitigEnd(object):
 
 
 class TestNextUnitigNodeIter(object):
-    @given(s.sampled_from(('AAA', 'AAT', 'ATA')))
+    @pytest.mark.parametrize('start_node', ('AAA', 'AAT', 'ATA'))
     def test_returns_two_nodes_in_order_regardless_of_starting_node(self, start_node):
         # given
         b = CortexGraphBuilder()
