@@ -32,7 +32,9 @@ class ColorInformationBlock(object):
 
 
 def dump_colored_de_bruijn_graph_to_cortex(graph, output_fh):
-    Kmers(kmer_generator=(kmer for _, kmer in graph.nodes(data=True)),
+
+    Kmers(keys = list(graph.nodes()),
+          val_callable = lambda k: graph.node[k],
           sample_names=graph.graph['sample_names'],
           kmer_size=graph.graph['kmer_size'],
           num_colors=graph.graph['num_colors']) \
@@ -42,25 +44,20 @@ def dump_colored_de_bruijn_graph_to_cortex(graph, output_fh):
 @attr.s(slots=True)
 class Kmers(object):
     """Serializes kmers to cortex binary format"""
-    kmer_generator = attr.ib()
+    keys = attr.ib()
+    val_callable = attr.ib()
     sample_names = attr.ib()
     kmer_size = attr.ib()
     num_colors = attr.ib()
     kmer_container_size = attr.ib(init=False)
-    _kmers = attr.ib(None, init=False)
 
     def __attrs_post_init__(self):
         self.kmer_container_size = calc_kmer_container_size(self.kmer_size)
-
-    @property
-    def kmers(self):
-        if self._kmers is None:
-            self._kmers = sorted(list(self.kmer_generator), key=lambda k: k.kmer)
-        return self._kmers
+        self.keys = sorted(self.keys)
 
     @property
     def n_kmers(self):
-        return len(self.kmers)
+        return len(self.keys)
 
     @property
     def header(self):
@@ -74,5 +71,5 @@ class Kmers(object):
     def dump(self, buffer):
         """to a filehandle"""
         self.header.dump(buffer)
-        for kmer in self.kmers:
-            kmer.dump(buffer)
+        for kmer_string in self.keys:
+            self.val_callable(kmer_string).dump(buffer)

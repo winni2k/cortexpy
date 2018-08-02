@@ -6,11 +6,12 @@ import numpy as np
 import pytest
 from hypothesis import given, assume
 from hypothesis import strategies as s
-import cortexpy.test.builder as builder
+
 import cortexpy.graph.parser.random_access as parser
+import cortexpy.graph.serializer.kmer as kmer_serializer
+import cortexpy.test.builder as builder
 from cortexpy.graph.parser.header import Header
 from cortexpy.graph.parser.random_access import KmerUintSequence, RandomAccess
-import cortexpy.graph.serializer.kmer as kmer_serializer
 from cortexpy.test.builder.graph.body import KmerRecord, as_edge_set
 from cortexpy.test.builder.graph.kmer import kmer_records
 from cortexpy.utils import lexlo
@@ -151,10 +152,11 @@ class TestDunderIterDunder(object):
 
             sample_names = ra_parser.sample_names
             buffer = io.BytesIO()
-            kmer_list = list(ra_parser.values())
-            random.shuffle(kmer_list)
+            key_list = list(ra_parser.keys())
+            random.shuffle(key_list)
             kmer_serializer \
-                .Kmers(kmer_list,
+                .Kmers(keys=key_list,
+                       val_callable=lambda k: ra_parser[k],
                        kmer_size=kmer_size,
                        num_colors=num_colors,
                        sample_names=sample_names) \
