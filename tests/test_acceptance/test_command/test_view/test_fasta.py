@@ -1,4 +1,5 @@
 import os
+
 import pytest
 
 from cortexpy.test import builder, runner, expectation
@@ -168,6 +169,7 @@ class TestContigs(object):
     @pytest.mark.parametrize('max_paths', (0, 1, 2))
     def test_raises_on_max_path_1_exceeded(self, tmpdir, max_paths):
         # given
+        MAX_PATH_EXIT_CODE = 64
         records = ['CAACC', 'CAACT']
         kmer_size = 3
         maker = builder.Mccortex().with_kmer_size(kmer_size)
@@ -181,7 +183,7 @@ class TestContigs(object):
 
         # then
         if max_paths == 1:
-            assert 0 != completed_process.returncode
+            assert MAX_PATH_EXIT_CODE == completed_process.returncode
             assert f'Max paths ({max_paths}) exceeded' in completed_process.stderr
         else:
             assert 0 == completed_process.returncode

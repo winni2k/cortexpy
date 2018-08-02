@@ -26,7 +26,8 @@ def view_traversal(argv):
                              "Multiple strings can be specified.")
     parser.add_argument('--color', type=int, help='Restrict view to single color')
     parser.add_argument('--max-paths', type=int, default=0,
-                        help='Raise if more than this number of paths are encountered. '
+                        help='Return exit status 64 if more than this '
+                             'number of paths are encountered. '
                              '0 turns off this check.')
     args = parser.parse_args(argv)
 
@@ -38,6 +39,10 @@ def view_traversal(argv):
     from cortexpy.graph.interactor import Interactor, Contigs
     from cortexpy.graph.serializer.serializer import Serializer
     from cortexpy.graph.parser.streaming import load_cortex_graph
+    from pathlib import Path
+    import yaml
+
+    EXIT_CODES = yaml.load(open(Path(__file__).parent / 'exit_codes.yaml', 'rt'))
 
     if args.out == '-':
         output = sys.stdout
@@ -81,7 +86,7 @@ def view_traversal(argv):
         SeqIO.write(seq_record_generator, output, 'fasta')
     except IndexError:
         logger.error('Max paths (%s) exceeded', args.max_paths)
-        return 1
+        return EXIT_CODES['MAX_PATH_EXCEEDED']
 
 
 def view_graph(argv):
