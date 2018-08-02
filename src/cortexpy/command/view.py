@@ -39,10 +39,10 @@ def view_traversal(argv):
     from cortexpy.graph.interactor import Interactor, Contigs
     from cortexpy.graph.serializer.serializer import Serializer
     from cortexpy.graph.parser.streaming import load_cortex_graph
-    from pathlib import Path
+    from . import get_exit_code_yaml_path
     import yaml
 
-    EXIT_CODES = yaml.load(open(Path(__file__).parent / 'exit_codes.yaml', 'rt'))
+    EXIT_CODES = yaml.load(open(get_exit_code_yaml_path(), 'rt'))
 
     if args.out == '-':
         output = sys.stdout
