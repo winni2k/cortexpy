@@ -71,6 +71,7 @@ class Interactor(object):
         return nodes_to_prune
 
     def prune_tips_less_than(self, n):
+        logger.info(f'Removing tips shorter than {n} k-mers')
         nodes_to_prune = self.find_nodes_of_tips_less_than(n)
         logger.info('Pruning %s nodes', len(nodes_to_prune))
         self.graph.remove_nodes_from(nodes_to_prune)
