@@ -1,9 +1,9 @@
-from hypothesis import given, strategies
+import pytest
 
 import cortexpy.test.driver.command as command
 
 
-@given(strategies.sampled_from((2, 3)))
+@pytest.mark.parametrize('tip_length', (2, 3))
 def test_prunes_two_tips(tmpdir, tip_length):
     # given
     d = command.Prune(tmpdir)

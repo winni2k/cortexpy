@@ -1,3 +1,4 @@
+import pytest
 from hypothesis import given, strategies
 
 from cortexpy.graph.cortex import CortexGraphMapping
@@ -59,8 +60,26 @@ class Test(object):
         # then
         assert 1 == len(cgm)
         assert (1,) == cgm['AAA'].coverage
+        assert ['AAA'] == list(cgm)
 
-    @given(strategies.booleans())
+    def test_deletes_overwritten_preexisting_kmer(self):
+        # given
+        kmer_builder = EmptyKmerBuilder()
+        b = get_cortex_graph_mapping_builder()
+        b.with_kmer('AAA 1 ........')
+
+        # when
+        cgm = b.build()
+        cgm['AAA'] = kmer_builder.build('AAA')
+        del cgm['AAA']
+
+        # then
+        with pytest.raises(KeyError):
+            cgm['AAA']
+        assert [] == list(cgm)
+        assert 0 == len(cgm)
+
+    @pytest.mark.parametrize('kmer_cache_off', (True, False))
     def test_disconnects_two_kmers(self, kmer_cache_off):
         # given
         b = get_cortex_graph_mapping_builder()

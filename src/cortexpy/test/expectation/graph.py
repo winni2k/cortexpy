@@ -55,8 +55,7 @@ class KmerGraphExpectation(object):
         return self
 
     def has_nodes(self, *expected_nodes):
-        expected_nodes = set(expected_nodes)
-        assert expected_nodes == set(self.graph.nodes)
+        assert sorted(expected_nodes) == sorted(self.graph.nodes)
         return self
 
     def has_edges(self, *edges):
@@ -69,7 +68,7 @@ class KmerGraphExpectation(object):
                 edge[0:2] = sorted(edge[0:2])
             expected_edges.append(tuple(edge))
 
-        assert set(expected_edges) == set(self.graph.edges(keys=True))
+        assert sorted(expected_edges) == sorted(self.graph.edges(keys=True))
         return self
 
     def has_edge(self, source, target, color):

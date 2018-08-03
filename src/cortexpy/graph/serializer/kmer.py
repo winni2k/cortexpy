@@ -32,9 +32,8 @@ class ColorInformationBlock(object):
 
 
 def dump_colored_de_bruijn_graph_to_cortex(graph, output_fh):
-
-    Kmers(keys = list(graph.nodes()),
-          val_callable = lambda k: graph.node[k],
+    Kmers(keys=list(graph.nodes()),
+          val_callable=lambda k: graph.node[k],
           sample_names=graph.graph['sample_names'],
           kmer_size=graph.graph['kmer_size'],
           num_colors=graph.graph['num_colors']) \

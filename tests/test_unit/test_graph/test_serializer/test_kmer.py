@@ -1,0 +1,2 @@
+class TestDumpCortexGraph(object):
+    pass

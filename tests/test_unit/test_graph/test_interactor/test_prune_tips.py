@@ -1,6 +1,5 @@
 import networkx as nx
 import pytest
-from hypothesis import given, strategies as s
 
 from cortexpy.graph import interactor
 from cortexpy.test.builder.graph.cortex import CortexGraphBuilder

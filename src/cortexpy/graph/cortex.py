@@ -1,6 +1,6 @@
 import copy
 import itertools
-from collections.abc import Collection, Mapping
+from collections.abc import Collection, Mapping, MutableMapping
 
 import attr
 import networkx as nx
@@ -43,7 +43,7 @@ def build_cortex_graph(*, sample_names, kmer_size, num_colors, colors, kmer_gene
 
 
 @attr.s(slots=True)
-class CortexGraphMapping(Mapping):
+class CortexGraphMapping(MutableMapping):
     """Create a dict-like kmer mapping from a RandomAccess parser (ra_parser)
 
     The exclusion set tracks kmers deleted from the ra_parser.
@@ -77,25 +77,29 @@ class CortexGraphMapping(Mapping):
             self._n_duplicates += 1
         self._new_kmers[lexlo_key] = value
 
-    def __len__(self):
-        return len(self.ra_parser) + len(self._new_kmers) - len(
-            self._exclusion_set) - self._n_duplicates
-
-    def __iter__(self):
-        for kmer_string in self.ra_parser:
-            if kmer_string not in self._exclusion_set:
-                yield kmer_string
-        for kmer_string in self._new_kmers:
-            yield kmer_string
-
     def __delitem__(self, item):
         lexlo_string = lexlo(item)
         if lexlo_string in self._exclusion_set:
             raise KeyError
-        if lexlo_string in self._new_kmers:
+        in_new_kmers = lexlo_string in self._new_kmers
+        in_ra_parser = lexlo_string in self.ra_parser
+        if in_new_kmers:
             del self._new_kmers[lexlo_string]
-        if lexlo_string in self.ra_parser:
+        if in_ra_parser:
             self._exclusion_set.add(lexlo_string)
+        if in_new_kmers and in_ra_parser:
+            self._n_duplicates -= 1
+
+    def __iter__(self):
+        for kmer_string in self._new_kmers:
+            yield kmer_string
+        for kmer_string in self.ra_parser:
+            if kmer_string not in self._exclusion_set and kmer_string not in self._new_kmers:
+                yield kmer_string
+
+    def __len__(self):
+        return len(self.ra_parser) + len(self._new_kmers) - len(
+            self._exclusion_set) - self._n_duplicates
 
     def disconnect_kmers(self, first, second, colors):
         """Disconnect two kmers"""
