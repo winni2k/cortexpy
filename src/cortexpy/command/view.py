@@ -80,6 +80,7 @@ def view_traversal(argv):
     seq_record_generator = Contigs(consistent_graph, args.color).all_simple_paths()
     seq_record_generator = annotated_seq_records(seq_record_generator, graph_idx="x")
     if args.max_paths > 0:
+        logger.info('Exiting after element %s', args.max_paths)
         seq_record_generator = raise_after_nth_element(seq_record_generator, args.max_paths)
     logger.info('Writing seq records to %s', args.out)
     try:
