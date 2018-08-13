@@ -21,11 +21,10 @@ class TestDunderGetitemDunder(object):
     @given(s.data(),
            s.integers(min_value=0, max_value=3),
            s.integers(min_value=1, max_value=3),
-           s.integers(min_value=0, max_value=5))
+           s.integers(min_value=0, max_value=3))
     def test_record_retrieval(self, data, kmer_base_size, num_colors, n_kmers):
         # given
         kmer_size = kmer_base_size * 2 + 1
-        assume(kmer_size % 2 == 1)
         graph_builder = (builder.Graph()
                          .with_kmer_size(kmer_size)
                          .with_num_colors(num_colors))
