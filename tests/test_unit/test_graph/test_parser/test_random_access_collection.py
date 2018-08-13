@@ -1,10 +1,11 @@
 import attr
 import numpy as np
 import pytest
-from hypothesis import given, assume
+from hypothesis import given
 from hypothesis import strategies as s
-import cortexpy.test.builder as builder
+
 import cortexpy.graph.parser.random_access as parser
+import cortexpy.test.builder as builder
 from cortexpy.graph.parser.random_access_collection import RandomAccessCollection
 from cortexpy.test.builder.graph.body import KmerRecord, as_edge_set
 from cortexpy.test.builder.graph.kmer import kmer_records

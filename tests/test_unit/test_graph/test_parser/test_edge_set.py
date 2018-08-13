@@ -77,7 +77,6 @@ class TestIncomingOutgoingKmers(object):
     def test_outgoing_returns_lexicographically_lowest_kmers(self):
         es = EdgeSet(np.zeros(8))
         es.add_edge('G')
-        print(es)
         assert ['CCG'] == es.get_outgoing_kmers('ACG')
 
     def test_outgoing_strings_does_not_return_lexicographically_lowest_kmer(self):
