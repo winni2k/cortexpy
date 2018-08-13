@@ -63,7 +63,7 @@ class TestContigs(object):
         # then
         assert completed_process.returncode == 0, completed_process
         expect = expectation.Fasta(stdout)
-        ids = ['gx_p{}'.format(i) for i in range(n_paths)]
+        ids = ['g0_p{}'.format(i) for i in range(n_paths)]
         for record in records:
             expect.has_record(record).has_id_in(*ids)
         expect.has_record('CAACT').has_id_in(*ids)
@@ -194,7 +194,7 @@ class TestContigs(object):
 
 
 class TestTraversal(object):
-    def test_traverses_two_subgraphs_as_two_subgraphs(self, tmpdir):
+    def test_traverses_two_subgraphs_into_three_records(self, tmpdir):
         # given
         d = command.ViewTraversal(tmpdir)
         d.with_records('CCCGC', 'CCCGA', 'AAAT')
@@ -204,6 +204,19 @@ class TestTraversal(object):
         expect = d.run()
 
         # then
-        expect.has_n_records(3)
+        expect.has_record_ids('g0_p0', 'g0_p1', 'g0_p2')
         expect.has_n_groups(1)
-        expect.has_record_ids('gx_p0', 'gx_p1', 'gx_p2')
+
+    def test_traverses_into_two_records_with_custom_graph_idx(self, tmpdir):
+        # given
+        d = command.ViewTraversal(tmpdir)
+        d.with_records('CCCGC', 'CCCGA')
+        d.with_graph_index(7)
+        d.with_kmer_size(3)
+
+        # when
+        expect = d.run()
+
+        # then
+        expect.has_record_ids('g7_p0', 'g7_p1')
+        expect.has_n_groups(1)

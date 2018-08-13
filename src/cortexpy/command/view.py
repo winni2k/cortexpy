@@ -29,6 +29,8 @@ def view_traversal(argv):
                         help='Return exit status 64 if more than this '
                              'number of paths are encountered. '
                              '0 turns off this check.')
+    parser.add_argument('--graph-index', type=int, default=0,
+                        help='Graph index to be added to description of all output paths')
     args = parser.parse_args(argv)
 
     from cortexpy.logging_config import configure_logging_from_args_and_get_logger
@@ -78,7 +80,7 @@ def view_traversal(argv):
             .make_graph_nodes_consistent() \
             .graph
     seq_record_generator = Contigs(consistent_graph, args.color).all_simple_paths()
-    seq_record_generator = annotated_seq_records(seq_record_generator, graph_idx="x")
+    seq_record_generator = annotated_seq_records(seq_record_generator, graph_idx=args.graph_index)
     if args.max_paths > 0:
         logger.info('Exiting after element %s', args.max_paths)
         seq_record_generator = raise_after_nth_element(seq_record_generator, args.max_paths)

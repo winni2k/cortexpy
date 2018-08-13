@@ -222,6 +222,7 @@ class ViewTraversal(object):
     to_json = attr.ib(False)
     subgraphs = attr.ib(False)
     seed_strings = attr.ib(None)
+    graph_index = attr.ib(None)
 
     def __attrs_post_init__(self):
         self.traverse_driver = Traverse(self.tmpdir)
@@ -267,6 +268,10 @@ class ViewTraversal(object):
         self.with_subgraph_traversal()
         return self
 
+    def with_graph_index(self, idx):
+        self.graph_index = idx
+        return self
+
     def run(self):
         self.traverse_driver.run()
         if self.subgraphs:
@@ -277,8 +282,8 @@ class ViewTraversal(object):
         ret = runner.Cortexpy(SPAWN_PROCESS).view(
             cortexpy_graph=self.traverse_driver.traversal,
             to_json=self.to_json,
-            subgraphs=out_prefix,
-            seed_strings=self.seed_strings
+            seed_strings=self.seed_strings,
+            graph_index = self.graph_index
         )
         assert ret.returncode == 0, ret
         if self.to_json:
