@@ -44,7 +44,7 @@ class Fasta(object):
         return self
 
     def has_record_ids(self, *ids):
-        assert sorted(ids)  == sorted([rec.id for rec in self.fasta_records])
+        assert sorted(ids) == sorted([rec.id for rec in self.fasta_records])
         return self
 
     def has_record(self, expected_record_seq):

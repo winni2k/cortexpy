@@ -283,7 +283,7 @@ class ViewTraversal(object):
             cortexpy_graph=self.traverse_driver.traversal,
             to_json=self.to_json,
             seed_strings=self.seed_strings,
-            graph_index = self.graph_index
+            graph_index=self.graph_index
         )
         assert ret.returncode == 0, ret
         if self.to_json:
