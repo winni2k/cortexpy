@@ -1,12 +1,15 @@
-from cortexpy.graph.parser.random_access import RandomAccess
+import pytest
+
 from cortexpy.constants import EngineTraversalOrientation
+from cortexpy.graph.parser.random_access import RandomAccess, SlurpedRandomAccess
 from cortexpy.graph.traversal.engine import Engine
 from cortexpy.test import builder
 from cortexpy.test.expectation import KmerGraphExpectation
 
 
 class TestTraverseFrom(object):
-    def test_with_bubble_and_two_colors_returns_all_kmers(self, tmpdir):
+    @pytest.mark.parametrize('ra_constructor', (RandomAccess, SlurpedRandomAccess.from_handle))
+    def test_with_bubble_and_two_colors_returns_all_kmers(self, tmpdir, ra_constructor):
         # given
         kmer_size = 3
         output_graph = (builder.Mccortex(kmer_size)
@@ -16,7 +19,7 @@ class TestTraverseFrom(object):
                         .build(tmpdir))
 
         traverser = Engine(
-            RandomAccess(open(output_graph, 'rb')),
+            ra_constructor(open(output_graph, 'rb')),
             traversal_colors=(0,),
             orientation=EngineTraversalOrientation.both
         )
@@ -50,7 +53,8 @@ class TestTraverseFrom(object):
 
 
 class TestTraverseFromEachKmerInIterable(object):
-    def test_with_two_subgraphs_returns_all_kmers(self, tmpdir):
+    @pytest.mark.parametrize('ra_constructor', (RandomAccess, SlurpedRandomAccess.from_handle))
+    def test_with_two_subgraphs_returns_all_kmers(self, tmpdir, ra_constructor):
         # given
         kmer_size = 3
         output_graph = (builder.Mccortex(kmer_size)
@@ -59,7 +63,7 @@ class TestTraverseFromEachKmerInIterable(object):
                         .build(tmpdir))
 
         traverser = Engine(
-            RandomAccess(open(output_graph, 'rb')),
+            ra_constructor(open(output_graph, 'rb')),
             traversal_colors=(0,),
             orientation=EngineTraversalOrientation.both
         )
