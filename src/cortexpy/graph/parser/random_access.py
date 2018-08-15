@@ -20,6 +20,48 @@ from .streaming import (
 )
 
 
+@attr.s(slots=True)
+class SlurpedRandomAccess(Mapping):
+    header = attr.ib()
+    kmer_dict = attr.ib(attr.Factory(dict))
+
+    @classmethod
+    def from_handle(cls, graph_handle):
+        "Slurp the whole mccortex file and serve in O(1) time complexity"
+        header = cortexpy.graph.parser.header.Header.from_stream(graph_handle)
+        kmer_dict = {k.kmer: k for k in kmer_generator_from_stream_and_header(graph_handle, header)}
+        return cls(header, kmer_dict)
+
+    def __getitem__(self, item):
+        return self.kmer_dict[item]
+
+    def __len__(self):
+        return len(self.kmer_dict)
+
+    def __iter__(self):
+        return iter(self.kmer_dict)
+
+    def get_kmer_for_string(self, string):
+        """Will compute the revcomp of kmer string before getting a kmer"""
+        return self[lexlo(string)]
+
+    @property
+    def num_colors(self):
+        return self.header.num_colors
+
+    @property
+    def colors(self):
+        return self.header.colors
+
+    @property
+    def sample_names(self):
+        return self.header.sample_names
+
+    @property
+    def kmer_size(self):
+        return self.header.kmer_size
+
+
 @attr.s(slots=True, repr=False)
 class RandomAccess(Mapping):
     """Provide fast k-mer access to Cortex graph in log(n) time (n = number of kmers in graph)"""

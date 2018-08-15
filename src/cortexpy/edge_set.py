@@ -14,7 +14,7 @@ EDGE_IDX_TO_LETTER = ['A', 'C', 'G', 'T', 'T', 'G', 'C', 'A']
 
 
 @attr.s(slots=True, cmp=False)
-class EdgeSet(object):
+class EdgeSet:
     """Adds methods for accessing an edge set array (data)"""
     data = attr.ib()
 

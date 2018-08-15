@@ -11,13 +11,15 @@ import cortexpy.graph.parser.random_access as parser
 import cortexpy.graph.serializer.kmer as kmer_serializer
 import cortexpy.test.builder as builder
 from cortexpy.graph.parser.header import Header
-from cortexpy.graph.parser.random_access import KmerUintSequence, RandomAccess
+from cortexpy.graph.parser.random_access import KmerUintSequence
 from cortexpy.test.builder.graph.body import KmerRecord, as_edge_set
 from cortexpy.test.builder.graph.kmer import kmer_records
 from cortexpy.utils import lexlo
 
 
-class TestDunderGetitemDunder(object):
+class TestDunderGetitemDunder:
+    RAClass = parser.RandomAccess
+
     @given(s.data(),
            s.integers(min_value=0, max_value=3),
            s.integers(min_value=1, max_value=3),
@@ -39,7 +41,7 @@ class TestDunderGetitemDunder(object):
             graph_builder.with_kmer_record(kmer)
             expected_kmers.append(kmer)
 
-        cg = RandomAccess(graph_builder.build())
+        cg = self.RAClass(graph_builder.build())
 
         # when
         for expected_kmer in expected_kmers:
@@ -51,41 +53,12 @@ class TestDunderGetitemDunder(object):
             for expected, actual in zip(expected_kmer.edges, kmer.edges):
                 assert expected == actual
 
-    @given(s.integers(min_value=0, max_value=16))
-    def test_cache_complexity(self, num_kmers):
-        # given
-        kmer_size = 11
-        expected_num_calls = 2 * num_kmers
-        num_colors = 1
-        b = builder.Graph() \
-            .with_kmer_size(kmer_size) \
-            .with_num_colors(num_colors)
-        seen_kmers = set()
-        for _ in range(num_kmers):
-            kmer_string = lexlo(''.join([random.choice('ACGT') for _ in range(kmer_size)]))
-            while kmer_string in seen_kmers:
-                kmer_string = lexlo(''.join([random.choice('ACGT') for _ in range(kmer_size)]))
-            seen_kmers.add(kmer_string)
-            b.with_kmer(kmer_string)
-        fh = b.build()
-
-        ra = parser.RandomAccess(fh, kmer_cache_size=None)
-        for k_string in list(ra):
-            ra[k_string]
-        with mock.patch.object(fh, 'read', wraps=fh.read) as mocked_seek:
-            # when
-            for seen_kmer in sorted(seen_kmers):
-                ra[seen_kmer]
-
-            # then
-            assert expected_num_calls == mocked_seek.call_count
-
     def test_raises_on_missing_kmer(self):
         # given
         graph_builder = builder.Graph()
         graph_builder.with_kmer_size(3)
 
-        cg = parser.RandomAccess(graph_builder.build())
+        cg = self.RAClass(graph_builder.build())
 
         # when
         with pytest.raises(KeyError):
@@ -98,11 +71,17 @@ class TestDunderGetitemDunder(object):
 
         # when
         with pytest.raises(ValueError):
-            parser.RandomAccess(graph_builder.build())
+            self.RAClass(graph_builder.build())
+
+
+class TestSlurpedDunderGetitemDunder(TestDunderGetitemDunder):
+    RAClass = parser.SlurpedRandomAccess.from_handle
 
 
 class TestGetKmerForString(object):
-    def test_gets_aaa_for_ttt_query(self):
+    @pytest.mark.parametrize('RAClass',
+                             (parser.RandomAccess, parser.SlurpedRandomAccess.from_handle))
+    def test_gets_aaa_for_ttt_query(self, RAClass):
         # given
         graph_builder = builder.Graph()
         graph_builder.with_kmer_size(3)
@@ -111,14 +90,16 @@ class TestGetKmerForString(object):
         expected_kmer = KmerRecord('AAA', [1], [as_edge_set('........')])
         graph_builder.with_kmer_record(expected_kmer)
 
-        cg = parser.RandomAccess(graph_builder.build())
+        cg = RAClass(graph_builder.build())
 
         # when
         assert expected_kmer.kmer == cg.get_kmer_for_string('AAA').kmer
         assert expected_kmer.kmer == cg.get_kmer_for_string('TTT').kmer
 
 
-class TestDunderIterDunder(object):
+class TestDunderIterDunder:
+    RAClass = parser.RandomAccess
+
     @given(s.data(),
            s.integers(min_value=1, max_value=13),
            s.integers(min_value=1, max_value=7),
@@ -142,7 +123,7 @@ class TestDunderIterDunder(object):
             seen.add(kmer.kmer)
             graph_builder.with_kmer_record(kmer)
             expected_kmers.append(kmer)
-        ra_parser = parser.RandomAccess(graph_builder.build())
+        ra_parser = self.RAClass(graph_builder.build())
 
         if test_serializer:
             for real_kmer in ra_parser.values():
@@ -162,7 +143,7 @@ class TestDunderIterDunder(object):
                        sample_names=sample_names) \
                 .dump(buffer)
             buffer.seek(0)
-            ra_parser = parser.RandomAccess(buffer)
+            ra_parser = self.RAClass(buffer)
 
         # when
         for expected_kmer in expected_kmers:
@@ -182,7 +163,7 @@ class TestDunderIterDunder(object):
         expected_kmer = KmerRecord('AAA', (1,), [as_edge_set('........')])
         graph_builder.with_kmer_record(expected_kmer)
 
-        cg = parser.RandomAccess(graph_builder.build())
+        cg = self.RAClass(graph_builder.build())
 
         # when
         for kmer in cg.values():
@@ -196,10 +177,14 @@ class TestDunderIterDunder(object):
                          .with_kmer_size(3)
                          .with_num_colors(1))
 
-        cg = parser.RandomAccess(graph_builder.build())
+        cg = self.RAClass(graph_builder.build())
 
         # when/then
         assert list(cg) == []
+
+
+class TestSlurpedDunderIterDunder(TestDunderIterDunder):
+    RAClass = parser.SlurpedRandomAccess.from_handle
 
 
 class TestKmerUintSequence(object):
@@ -238,3 +223,74 @@ class TestKmerUintSequence(object):
         for idx, expected_kmer in enumerate(expected_kmers):
             # then
             assert idx == sequence.index_kmer_string(expected_kmer.kmer)
+
+
+class TestCacheComplexity:
+    @given(s.integers(min_value=0, max_value=16))
+    def test_regular_ra_parser(self, num_kmers):
+        # given
+        kmer_size = 11
+        b = builder.Graph() \
+            .with_kmer_size(kmer_size) \
+            .with_num_colors(1)
+        seen_kmers = set()
+        for _ in range(num_kmers):
+            kmer_string = lexlo(''.join([random.choice('ACGT') for _ in range(kmer_size)]))
+            while kmer_string in seen_kmers:
+                kmer_string = lexlo(''.join([random.choice('ACGT') for _ in range(kmer_size)]))
+            seen_kmers.add(kmer_string)
+            b.with_kmer(kmer_string)
+        fh = b.build()
+
+        ra = parser.RandomAccess(fh, kmer_cache_size=None)
+        for k_string in list(ra):
+            ra[k_string]
+        with mock.patch.object(fh, 'read', wraps=fh.read) as mocked_read:
+            # when
+            for seen_kmer in sorted(seen_kmers):
+                ra[seen_kmer]
+
+            # then
+            assert 2 * num_kmers == mocked_read.call_count
+
+    @given(s.integers(min_value=0, max_value=16))
+    def test_slurping_ra_parser(self, num_kmers):
+        # given
+        kmer_size = 11
+        b = builder.Graph() \
+            .with_kmer_size(kmer_size) \
+            .with_num_colors(1)
+        seen_kmers = set()
+        for _ in range(num_kmers):
+            kmer_string = lexlo(''.join([random.choice('ACGT') for _ in range(kmer_size)]))
+            while kmer_string in seen_kmers:
+                kmer_string = lexlo(''.join([random.choice('ACGT') for _ in range(kmer_size)]))
+            seen_kmers.add(kmer_string)
+            b.with_kmer(kmer_string)
+        fh = b.build()
+
+        fh.seek(0)
+        with mock.patch.object(fh, 'seek', wraps=fh.seek) as mocked_seek:
+            # when
+            ra = parser.SlurpedRandomAccess.from_handle(fh)
+
+            # then
+            assert 0 == mocked_seek.call_count
+
+            for seen_kmer in sorted(seen_kmers):
+                ra[seen_kmer]
+            assert 0 == mocked_seek.call_count
+
+        fh.seek(0)
+        num_header_reads = 10
+        num_eof_reads = 1
+        with mock.patch.object(fh, 'read', wraps=fh.read) as mocked_read:
+            # when
+            ra = parser.SlurpedRandomAccess.from_handle(fh)
+
+            # then
+            assert num_kmers + num_eof_reads + num_header_reads == mocked_read.call_count
+
+            for seen_kmer in sorted(seen_kmers):
+                ra[seen_kmer]
+            assert num_kmers + num_eof_reads + num_header_reads == mocked_read.call_count
