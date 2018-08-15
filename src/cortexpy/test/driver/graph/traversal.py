@@ -15,6 +15,7 @@ class EngineTestDriver(object):
     traversal_orientation = attr.ib(EngineTraversalOrientation.original)
     traverser = attr.ib(None)
     traversal_colors = attr.ib((0,))
+    ra_constructor = attr.ib(RandomAccess)
 
     def with_kmer(self, *args):
         self.graph_builder.with_kmer(*args)
@@ -48,8 +49,12 @@ class EngineTestDriver(object):
         self.traversal_colors = colors
         return self
 
+    def with_ra_constructor(self, constructor):
+        self.ra_constructor = constructor
+        return self
+
     def run(self):
-        random_access_parser = RandomAccess(self.graph_builder.build())
+        random_access_parser = self.ra_constructor(self.graph_builder.build())
         self.traverser = Engine(random_access_parser,
                                 traversal_colors=self.traversal_colors,
                                 max_nodes=self.max_nodes,

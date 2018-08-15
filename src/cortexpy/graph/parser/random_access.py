@@ -26,8 +26,11 @@ class SlurpedRandomAccess(Mapping):
     kmer_dict = attr.ib(attr.Factory(dict))
 
     @classmethod
-    def from_handle(cls, graph_handle):
-        "Slurp the whole mccortex file and serve in O(1) time complexity"
+    def from_handle(cls, graph_handle, kmer_cache_size=None):
+        """
+        Slurp the whole mccortex file and serve in O(1) time complexity.
+        kmer_cache_size is ignored
+        """
         header = cortexpy.graph.parser.header.Header.from_stream(graph_handle)
         kmer_dict = {k.kmer: k for k in kmer_generator_from_stream_and_header(graph_handle, header)}
         return cls(header, kmer_dict)

@@ -1,9 +1,7 @@
-import cortexpy.constants
-
-
 def traverse(argv):
     import argparse
     from .shared import get_shared_argsparse
+    import cortexpy.constants
     shared_parser = get_shared_argsparse()
     parser = argparse.ArgumentParser(
         'cortexpy traverse', parents=[shared_parser],
@@ -38,6 +36,8 @@ def traverse(argv):
     parser.add_argument('--cache-size', type=int, default=0, help='Number of kmers to cache')
     parser.add_argument('--binary-search-cache-size', type=int, default=0,
                         help='Number of kmers to cache for binary search')
+    parser.add_argument('--slurp', action='store_true',
+                        help='Slurp all cortex graphs before traversal')
     args = parser.parse_args(argv)
 
     from cortexpy.logging_config import configure_logging_from_args_and_get_logger
@@ -55,16 +55,22 @@ def traverse(argv):
         else:
             output = stack.enter_context(open(args.out, 'wb'))
 
-        from cortexpy.graph.parser.random_access import RandomAccess
+        if args.slurp:
+            from cortexpy.graph.parser.random_access import SlurpedRandomAccess
+            RAClass = SlurpedRandomAccess.from_handle
+            logger.info("Slurping cortex graphs")
+        else:
+            from cortexpy.graph.parser.random_access import RandomAccess as RAClass
+
         if len(args.graphs) == 1:
-            ra_parser = RandomAccess(
+            ra_parser = RAClass(
                 stack.enter_context(open(args.graphs[0], 'rb')),
                 kmer_cache_size=args.cache_size
             )
         else:
             ra_parser = RandomAccessCollection(
-                [RandomAccess(stack.enter_context(open(graph_path, 'rb')),
-                              kmer_cache_size=args.cache_size)
+                [RAClass(stack.enter_context(open(graph_path, 'rb')),
+                         kmer_cache_size=args.cache_size)
                  for graph_path in args.graphs])
         engine = Engine(
             ra_parser,

@@ -2,6 +2,7 @@ import attr
 import numpy as np
 
 from cortexpy.constants import EdgeTraversalOrientation
+from cortexpy.graph.parser.kmer_ext import raw_edges_to_list
 from cortexpy.utils import revcomp, lexlo
 
 EDGE_SET_LENGTH = 8

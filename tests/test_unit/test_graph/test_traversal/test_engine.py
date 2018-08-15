@@ -4,17 +4,24 @@ from hypothesis import strategies as s
 
 import cortexpy.graph
 import cortexpy.graph.parser
+from cortexpy.graph.parser.random_access import SlurpedRandomAccess
 from cortexpy.test.driver.graph.traversal import EngineTestDriver
 from cortexpy.test.expectation import KmerGraphExpectation
 
 
-class Test(object):
-    def test_raises_on_empty(self):
+@pytest.fixture(params=('slurped', 'not_slurped'))
+def driver(request):
+    if request.param == 'slurped':
+        return EngineTestDriver(ra_constructor=SlurpedRandomAccess.from_handle)
+    return EngineTestDriver()
+
+
+class Test:
+    def test_raises_on_empty(self, driver):
         # given
-        driver = EngineTestDriver()
-        (driver
-         .with_kmer_size(3)
-         .with_start_kmer_string('AAA'))
+        driver \
+            .with_kmer_size(3) \
+            .with_start_kmer_string('AAA')
 
         # when/then
         with pytest.raises(KeyError):
@@ -22,9 +29,8 @@ class Test(object):
 
         assert len(driver.traverser.graph) == 0
 
-    def test_three_connected_kmers_returns_graph_with_three_kmers(self):
+    def test_three_connected_kmers_returns_graph_with_three_kmers(self, driver):
         # given
-        driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
          .with_kmer('AAA 1 .......T')
@@ -40,11 +46,12 @@ class Test(object):
          .has_nodes('AAA', 'AAT', 'ATC')
          .has_edges('AAA AAT 0', 'AAT ATC 0'))
 
-    @given(s.integers(min_value=0, max_value=1))
+    @pytest.mark.parametrize('traversal_color', (0, 1))
     def test_three_connected_kmers_returns_graph_with_three_kmers_for_two_colors(self,
-                                                                                 traversal_color):
+                                                                                 traversal_color,
+                                                                                 driver):
         # given
-        driver = EngineTestDriver() \
+        driver \
             .with_kmer_size(3) \
             .with_num_colors(2) \
             .with_traversal_colors(traversal_color) \
@@ -66,9 +73,8 @@ class Test(object):
                          'AAT ATC 0',
                          'AAT ATC 1')
 
-    def test_four_connected_kmers_in_star_returns_graph_with_four_kmers(self):
+    def test_four_connected_kmers_in_star_returns_graph_with_four_kmers(self, driver):
         # given
-        driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
          .with_kmer('AAA 1 .......T')
@@ -85,9 +91,8 @@ class Test(object):
          .has_nodes('AAA', 'AAT', 'ATC', 'ATG')
          .has_edges('AAA AAT 0', 'AAT ATC 0', 'AAT ATG 0'))
 
-    def test_cycle_is_traversed_once(self):
+    def test_cycle_is_traversed_once(self, driver):
         # given
-        driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
          .with_kmer('CAA 1 ....A...')
@@ -105,9 +110,8 @@ class Test(object):
          .has_nodes('CAA', 'AAA', 'AAT', 'ATA', 'TAA')
          .has_n_edges(5))
 
-    def test_cycle_and_branch_is_traversed_once(self):
+    def test_cycle_and_branch_is_traversed_once(self, driver):
         # given
-        driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
          .with_kmer('CAA 1 ....A...')
@@ -126,9 +130,8 @@ class Test(object):
          .has_nodes('CAA', 'AAA', 'AAT', 'ATA', 'TAA', 'AAC')
          .has_n_edges(6))
 
-    def test_two_cycles_are_traversed_once(self):
+    def test_two_cycles_are_traversed_once(self, driver):
         # given
-        driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
          .with_kmer('CAA 1 a...A...')
@@ -148,9 +151,8 @@ class Test(object):
          .has_nodes('CAA', 'AAA', 'AAT', 'ATA', 'TAA', 'AAC', 'ACA')
          .has_n_edges(8))
 
-    def test_two_cycles_are_traversed_once_in_revcomp(self):
+    def test_two_cycles_are_traversed_once_in_revcomp(self, driver):
         # given
-        driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
          .with_kmer('CAA 1 a...A...')
@@ -170,10 +172,9 @@ class Test(object):
             .has_nodes('TAA', 'ATA', 'AAT', 'ACA', 'AAC', 'AAA', 'CAA') \
             .has_n_edges(8)
 
-    def test_exploration_of_two_colors_returns_all_kmers(self):
+    def test_exploration_of_two_colors_returns_all_kmers(self, driver):
         # given
-        driver = EngineTestDriver() \
-            .with_kmer_size(3) \
+        driver.with_kmer_size(3) \
             .with_num_colors(2) \
             .with_traversal_colors(0, 1) \
             .with_start_kmer_string('AAA')
@@ -192,10 +193,9 @@ class Test(object):
         expect.has_edges('AAA AAT 1',
                          'AAT ATC 0')
 
-    def test_exploration_of_two_colors_on_initial_branch_point_returns_all_kmers(self):
+    def test_exploration_of_two_colors_on_initial_branch_point_returns_all_kmers(self, driver):
         # given
-        driver = EngineTestDriver() \
-            .with_kmer_size(3) \
+        driver.with_kmer_size(3) \
             .with_num_colors(2) \
             .with_traversal_colors(0, 1) \
             .with_start_kmer_string('AAA')
@@ -215,10 +215,9 @@ class Test(object):
                          'AAA AAC 1', )
 
 
-class TestTraversalOrientationBoth(object):
-    def test_with_three_linked_kmers_returns_graph_of_three_kmers(self):
+class TestTraversalOrientationBoth:
+    def test_with_three_linked_kmers_returns_graph_of_three_kmers(self, driver):
         # given
-        driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
          .with_kmer('AAA 1 .......T')
@@ -236,10 +235,9 @@ class TestTraversalOrientationBoth(object):
          .has_n_edges(2))
 
 
-class TestReverseOrientation(object):
-    def test_three_connected_kmers_returns_graph_with_three_kmers(self):
+class TestReverseOrientation:
+    def test_three_connected_kmers_returns_graph_with_three_kmers(self, driver):
         # given
-        driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
          .with_kmer('AAA 1 .......T')
@@ -257,9 +255,8 @@ class TestReverseOrientation(object):
          .has_edges(('AAA', 'AAT', 0), ('AAT', 'ATC', 0)))
 
     @given(s.sampled_from(('AAA', 'AAT', 'ATA', 'TAA')))
-    def test_cycle_is_traversed_once(self, start_kmer_string):
+    def test_cycle_is_traversed_once(self, driver, start_kmer_string):
         # given
-        driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
          .with_kmer('CAA 1 ....A...')
@@ -280,10 +277,9 @@ class TestReverseOrientation(object):
 
 
 class TestBothOrientation(object):
-    @given(s.sampled_from(('CCA', 'CAA', 'AAA', 'AAT', 'ATA', 'TAA')))
-    def test_cycle_and_branch_are_traversed_once(self, start_kmer_string):
+    @pytest.mark.parametrize('start_kmer_string', ('CCA', 'CAA', 'AAA', 'AAT', 'ATA', 'TAA'))
+    def test_cycle_and_branch_are_traversed_once(self, driver, start_kmer_string):
         # given
-        driver = EngineTestDriver()
         driver \
             .with_kmer_size(3) \
             .with_kmer('CCA 1 ....A...') \
@@ -309,12 +305,11 @@ class TestBothOrientation(object):
                        'AAA TAA 0')
 
     @given(s.data())
-    def test_star_with_two_colors(self, data):
+    def test_star_with_two_colors(self, driver, data):
         kmers = ('CAA', 'GAA', 'AAA', 'AAT', 'AAC')
         start_kmer_string = data.draw(s.sampled_from(kmers))
 
         # given
-        driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
          .with_num_colors(2)
@@ -344,12 +339,11 @@ class TestBothOrientation(object):
                        'AAA AAC 0')
 
     @given(s.data())
-    def test_branch_with_two_colors(self, data):
+    def test_branch_with_two_colors(self, driver, data):
         kmers = ('CAA', 'GAA', 'AAA', 'AAC')
         start_kmer_string = data.draw(s.sampled_from(kmers))
 
         # given
-        driver = EngineTestDriver()
         driver \
             .with_kmer_size(3) \
             .with_num_colors(2) \
@@ -376,10 +370,9 @@ class TestBothOrientation(object):
                        'AAA AAC 0')
 
 
-class TestTraverseFromEachKmerIn(object):
-    def test_does_not_raise_on_empty(self):
+class TestTraverseFromEachKmerIn:
+    def test_does_not_raise_on_empty(self, driver):
         # given
-        driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
          .with_start_string('AAA'))
@@ -389,10 +382,9 @@ class TestTraverseFromEachKmerIn(object):
 
         assert len(driver.traverser.graph) == 0
 
-    def test_cycle_and_branch_are_traversed_once(self):
+    def test_cycle_and_branch_are_traversed_once(self, driver):
         # given
         start_string = 'CCAAATAA'
-        driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
          .with_kmer('CCA 1 ....A...')
@@ -419,9 +411,8 @@ class TestTraverseFromEachKmerIn(object):
 
 
 class TestMaxNodes(object):
-    def test_of_two_returns_with_two_nodes_plus_edges(self):
+    def test_of_two_returns_with_two_nodes_plus_edges(self, driver):
         # given
-        driver = EngineTestDriver()
         (driver
          .with_kmer_size(3)
          .with_max_nodes(2)
@@ -441,20 +432,19 @@ class TestMaxNodes(object):
          .has_n_edges(3))
 
 
-class TestStartStringSize(object):
-    def test_raises_when_string_wrong_size(self):
+class TestStartStringSize:
+    def test_raises_when_string_wrong_size(self, driver):
         for start_string in ['AAA', 'AAAAAAA']:
             # given
-            driver = EngineTestDriver().with_kmer_size(5).with_start_kmer_string(start_string)
+            driver.with_kmer_size(5).with_start_kmer_string(start_string)
 
             with pytest.raises(AssertionError):
                 driver.run()
 
 
-class TestEdgeAnnotation(object):
-    def test_with_single_kmer_and_link_annotates_etra_links(self):
-        driver = EngineTestDriver() \
-            .with_kmer_size(3) \
+class TestEdgeAnnotation:
+    def test_with_single_kmer_and_link_annotates_etra_links(self, driver):
+        driver.with_kmer_size(3) \
             .with_kmer('AAA 1 1 ........ .c...C..') \
             .with_start_kmer_string('AAA') \
             .with_traversal_colors(0)
@@ -472,8 +462,8 @@ class TestEdgeAnnotation(object):
         expect.has_n_nodes(3)
         expect.has_edges('AAA AAC 1', 'AAA CAA 1')
 
-    def test_for_revcomp_with_single_kmer_and_link_annotates_etra_links(self):
-        driver = EngineTestDriver() \
+    def test_for_revcomp_with_single_kmer_and_link_annotates_etra_links(self, driver):
+        driver \
             .with_kmer_size(3) \
             .with_kmer('AAA 1 1 ........ ..g..C..') \
             .with_traversal_colors(0) \
@@ -493,19 +483,15 @@ class TestEdgeAnnotation(object):
         expect.has_edges('AAA GAA 1', 'AAA AAC 1')
 
 
-class TestFixture(object):
-    def test_multi_color_traversal_bug(self):
+class TestFixture:
+    def test_multi_color_traversal_bug(self, driver):
         start_kmer_string = 'ATCTGAT'
-        driver = EngineTestDriver() \
+        driver \
             .with_kmer_size(7) \
-            .with_kmer(
-            'ATCAGAT 1 1 .....C.. .....C..') \
-            .with_kmer(
-            'GATCTGA 1 1 a......T ..g....T') \
-            .with_kmer(
-            'AGATCTG 1 0 ....A... ........') \
-            .with_kmer(
-            'CAGATCC 0 1 ........ ...t....') \
+            .with_kmer('ATCAGAT 1 1 .....C.. .....C..') \
+            .with_kmer('GATCTGA 1 1 a......T ..g....T') \
+            .with_kmer('AGATCTG 1 0 ....A... ........') \
+            .with_kmer('CAGATCC 0 1 ........ ...t....') \
             .with_start_kmer_string(start_kmer_string) \
             .with_traversal_colors(0, 1) \
             .with_traversal_orientation('both')
