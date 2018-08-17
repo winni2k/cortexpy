@@ -86,7 +86,8 @@ def view_traversal(argv):
         seq_record_generator = raise_after_nth_element(seq_record_generator, args.max_paths)
     logger.info('Writing seq records to %s', args.out)
     try:
-        SeqIO.write(seq_record_generator, output, 'fasta')
+        for record in seq_record_generator:
+            output.write(record.format('fasta'))
     except IndexError:
         logger.error('Max paths (%s) exceeded', args.max_paths)
         return EXIT_CODES['MAX_PATH_EXCEEDED']
