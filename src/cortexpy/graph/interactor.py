@@ -32,6 +32,7 @@ class Interactor(object):
         return cls(graph=graph)
 
     def compose_in_graph(self, graph_to_add):
+        """Compose two graphs and store the result in the interactor graph"""
         for g in [graph_to_add, self.graph]:
             assert g.is_multigraph()
             assert g.is_directed()

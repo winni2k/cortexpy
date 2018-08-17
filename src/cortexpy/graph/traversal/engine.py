@@ -3,7 +3,6 @@ import copy
 import logging
 
 import attr
-import networkx as nx
 
 from cortexpy.constants import EdgeTraversalOrientation, EngineTraversalOrientation
 from cortexpy.graph.cortex import build_empty_cortex_graph_from_ra_parser
@@ -13,11 +12,6 @@ from . import branch
 from ..interactor import Interactor
 
 logger = logging.getLogger(__name__)
-
-
-def add_graph_to(graph, graph_to_add):
-    """Compose two graphs and store the result in the first graph"""
-    Interactor.from_graph(graph).compose_in_graph(graph_to_add)
 
 
 @attr.s(slots=True)
@@ -54,7 +48,8 @@ class Engine(object):
     def _traverse_from_each_kmer_in(self, kmer_generator):
         for start_kmer in kmer_generator:
             try:
-                add_graph_to(self.graph, self._traverse_from(start_kmer).graph)
+                Interactor.from_graph(self.graph) \
+                    .compose_in_graph(self._traverse_from(start_kmer).graph)
                 self.log_graph_size()
             except KeyError:
                 pass
@@ -138,7 +133,7 @@ class Engine(object):
         branch = color_branch_traverser.traverse_from(setup.start_string,
                                                       orientation=setup.orientation,
                                                       parent_graph=self.graph)
-        add_graph_to(self.graph, branch.graph)
+        Interactor.from_graph(self.graph).compose_in_graph(branch.graph)
         self._connect_branch_to_parent_graph(branch, setup)
         self._link_branch_and_queue_neighbor_traversals(branch)
 
