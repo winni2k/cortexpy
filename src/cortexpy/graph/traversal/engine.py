@@ -17,12 +17,7 @@ logger = logging.getLogger(__name__)
 
 def add_graph_to(graph, graph_to_add):
     """Compose two graphs and store the result in the first graph"""
-    for g in [graph_to_add, graph]:
-        assert g.is_multigraph()
-        assert g.is_directed()
-    graph.add_nodes_from(graph_to_add.nodes(data=True))
-    if isinstance(graph_to_add, nx.Graph):
-        graph.add_edges_from(graph_to_add.edges(keys=True))
+    Interactor.from_graph(graph).compose_in_graph(graph_to_add)
 
 
 @attr.s(slots=True)

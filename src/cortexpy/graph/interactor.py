@@ -31,6 +31,14 @@ class Interactor(object):
     def from_graph(cls, graph):
         return cls(graph=graph)
 
+    def compose_in_graph(self, graph_to_add):
+        for g in [graph_to_add, self.graph]:
+            assert g.is_multigraph()
+            assert g.is_directed()
+        self.graph.add_nodes_from(graph_to_add.nodes(data=True))
+        if isinstance(graph_to_add, nx.Graph):
+            self.graph.add_edges_from(graph_to_add.edges(keys=True))
+
     def add_edge_to_graph_for_kmer_pair(self, kmer1, kmer2, kmer1_string, kmer2_string,
                                         colors_to_add):
         if isinstance(self.graph, CortexDiGraph):
