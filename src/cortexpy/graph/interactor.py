@@ -256,9 +256,9 @@ class Contigs(object):
         unitig_graph = nx.DiGraph(unitig_graph)
         unitig_graph = nx.convert_node_labels_to_integers(unitig_graph)
         idx = 0
-        in_nodes = list(in_nodes_of(unitig_graph))
+        in_nodes = sorted(list(in_nodes_of(unitig_graph)))
         logger.info(f"Found {len(in_nodes)} incoming tip nodes")
-        out_nodes = list(out_nodes_of(unitig_graph))
+        out_nodes = sorted(list(out_nodes_of(unitig_graph)))
         logger.info(f"Found {len(out_nodes)} outgoing tip nodes")
         for sidx, source in enumerate(in_nodes):
             for tidx, target in enumerate(out_nodes):
