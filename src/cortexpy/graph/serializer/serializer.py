@@ -5,7 +5,7 @@ import networkx as nx
 from networkx.readwrite import json_graph
 
 from cortexpy.graph.interactor import CortexDiGraph, Interactor
-from .unitig import UnitigCollapser
+from cortexpy.graph.serializer.unitig import UnitigCollapser
 
 
 @attr.s(slots=True)

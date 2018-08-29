@@ -19,10 +19,3 @@ class OrientedGraphFuncs(object):
         else:
             self.edges = self.graph.in_edges
             self.other_edge_node = lambda edge: edge[0]
-
-    def degree(self, node):
-        degree = 0
-        for _, _, color in self.edges(node, keys=True, default=0):
-            if color == self.color:
-                degree += 1
-        return degree

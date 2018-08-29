@@ -5,11 +5,11 @@ import logging
 import attr
 
 from cortexpy.constants import EdgeTraversalOrientation, EngineTraversalOrientation
-from cortexpy.graph.cortex import build_empty_cortex_graph_from_ra_parser
+from cortexpy.graph.cortex import build_empty_cortex_graph_from_ra_parser, CortexDiGraph
 from cortexpy.graph.parser.kmer import EmptyKmerBuilder
 from cortexpy.utils import lexlo, IntervalLogger, kmerize_contig, kmerize_fasta
-from . import branch
-from ..interactor import Interactor
+from cortexpy.graph.traversal import branch
+from cortexpy.graph.interactor import Interactor
 
 logger = logging.getLogger(__name__)
 
@@ -182,9 +182,7 @@ class Engine(object):
             kmer1_string, kmer2_string = kmer2_string, kmer1_string
         kmer1 = self.ra_parser.get_kmer_for_string(kmer1_string)
         kmer2 = self.ra_parser.get_kmer_for_string(kmer2_string)
-        interactor = Interactor.from_graph(self.graph)
-        interactor.add_edge_to_graph_for_kmer_pair(kmer1, kmer2, kmer1_string, kmer2_string,
-                                                   kmer1.colors)
+        assert isinstance(self.graph, CortexDiGraph)
 
     def log_graph_size(self):
         if len(self.graph) > self.last_graph_size:

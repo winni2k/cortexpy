@@ -1,5 +1,6 @@
 import collections
 import logging
+from collections import OrderedDict
 
 import attr
 import networkx as nx
@@ -7,10 +8,10 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 from cortexpy.constants import EdgeTraversalOrientation
+from cortexpy.graph.cortex import CortexDiGraph, ConsistentCortexDiGraph
 from cortexpy.graph.parser.kmer import revcomp_target_to_match_ref
+from cortexpy.graph.serializer.unitig import UnitigCollapser
 from cortexpy.utils import lexlo, revcomp
-from .cortex import CortexDiGraph, ConsistentCortexDiGraph
-from .serializer.unitig import UnitigCollapser
 
 logger = logging.getLogger(__name__)
 
@@ -39,20 +40,6 @@ class Interactor(object):
         self.graph.add_nodes_from(graph_to_add.nodes(data=True))
         if isinstance(graph_to_add, nx.Graph):
             self.graph.add_edges_from(graph_to_add.edges(keys=True))
-
-    def add_edge_to_graph_for_kmer_pair(self, kmer1, kmer2, kmer1_string, kmer2_string,
-                                        colors_to_add):
-        if isinstance(self.graph, CortexDiGraph):
-            return self
-        first_is_revcomp = bool(kmer1.kmer != kmer1_string)
-        for color in colors_to_add:
-            if first_is_revcomp:
-                add_edge = kmer1.has_incoming_edge_from_kmer_in_color(kmer2, color)
-            else:
-                add_edge = kmer1.has_outgoing_edge_to_kmer_in_color(kmer2, color)
-            if add_edge:
-                self.graph.add_edge(kmer1_string, kmer2_string, key=color)
-        return self
 
     def find_nodes_of_tips_less_than(self, n):
         nodes_to_prune = set()
@@ -91,14 +78,15 @@ class Interactor(object):
         Take a Cortex graph and make all nodes have kmer_strings that are consistent with each
         other. If a seed kmer string is provided, then start with that seed kmer.
         """
-        if seed_kmer_strings is None:
-            seed_kmer_strings = []
         if self.graph.is_consistent():
             return self
+        if seed_kmer_strings is None:
+            seed_kmer_strings = []
         graph = CortexDiGraph(self.graph)
         new_graph = ConsistentCortexDiGraph(graph=self.graph.graph)
 
-        seeds = SeedKmerStringIterator(self.graph.nodes(), seed_kmer_strings)
+        seeds = SeedKmerStringIterator.from_all_kmer_strings_and_seeds(self.graph.nodes(),
+                                                                       seed_kmer_strings)
 
         for seed, lexlo_seed in seeds:
             new_graph.add_node(seed, kmer=self.graph.node[lexlo_seed])
@@ -124,15 +112,31 @@ class Interactor(object):
 
 @attr.s(slots=True)
 class SeedKmerStringIterator(object):
-    all_lexlo_kmer_strings = attr.ib()
-    seed_kmer_strings = attr.ib(attr.Factory(list))
-    _unseen_lexlo_kmer_strings = attr.ib(attr.Factory(list))
+    """
+    Iterates seeds and their lexlo representations that exist in the supplied all_kmers:
+    >>> list(SeedKmerStringIterator.from_all_kmer_strings_and_seeds(['AAC'], ['GTT']))
+    [('GTT', 'AAC')]
+
+    Kmers that are not in the seed list are return after that:
+    >>> list(SeedKmerStringIterator.from_all_kmer_strings_and_seeds(['AAA', 'AAC'], ['GTT']))
+    [('GTT', 'AAC'), ('AAA', 'AAA')]
+
+    Seeds that do not exist in the all_kmers are not returned.
+    >>> list(SeedKmerStringIterator.from_all_kmer_strings_and_seeds([], ['CCC']))
+    []
+
+    Returned kmers from all_kmers list are returned in order.
+    >>> list(SeedKmerStringIterator.from_all_kmer_strings_and_seeds(['AAA', 'AAG', 'AAC'], []))
+    [('AAA', 'AAA'), ('AAG', 'AAG'), ('AAC', 'AAC')]
+    """
+    seed_kmer_strings = attr.ib()
+    _unseen_lexlo_kmer_strings = attr.ib()
     _seen_lexlo_kmer_strings = attr.ib(attr.Factory(set))
 
-    def __attrs_post_init__(self):
-        self.seed_kmer_strings = list(self.seed_kmer_strings)
-        self._unseen_lexlo_kmer_strings = {lexlo(k_string) for k_string in
-                                           self.all_lexlo_kmer_strings}
+    @classmethod
+    def from_all_kmer_strings_and_seeds(cls, all_kmers, seeds):
+        return cls(list(seeds),
+                   OrderedDict.fromkeys(lexlo(k_string) for k_string in all_kmers))
 
     def __iter__(self):
         return self
@@ -146,7 +150,7 @@ class SeedKmerStringIterator(object):
             self._seen_lexlo_kmer_strings.add(lexlo_seed)
             return seed, lexlo_seed
         while self._unseen_lexlo_kmer_strings:
-            unseen = self._unseen_lexlo_kmer_strings.pop()
+            unseen, _ = self._unseen_lexlo_kmer_strings.popitem(last=False)
             if unseen in self._seen_lexlo_kmer_strings:
                 continue
             self._seen_lexlo_kmer_strings.add(unseen)
@@ -255,7 +259,8 @@ class Contigs(object):
             .unitig_graph
         unitig_graph = nx.DiGraph(unitig_graph)
         unitig_graph = nx.convert_node_labels_to_integers(unitig_graph)
-        idx = 0
+
+        record_idx = 0
         in_nodes = sorted(list(in_nodes_of(unitig_graph)))
         logger.info(f"Found {len(in_nodes)} incoming tip nodes")
         out_nodes = sorted(list(out_nodes_of(unitig_graph)))
@@ -263,21 +268,22 @@ class Contigs(object):
         for sidx, source in enumerate(in_nodes):
             for tidx, target in enumerate(out_nodes):
                 if source == target:
-                    yield SeqRecord(Seq(unitig_graph.node[source]['unitig']), id=str(idx),
+                    logger.info('Incoming node %s; outgoing node %s; Path number %s', sidx,
+                                tidx, record_idx)
+                    yield SeqRecord(Seq(unitig_graph.node[source]['unitig']), id=str(record_idx),
                                     description='')
-                    idx += 1
+                    record_idx += 1
                     continue
                 for pidx, path in enumerate(
-                    _all_simple_paths_graph(unitig_graph, source, target,
-                                            cutoff=len(graph) - 1)
+                    _all_simple_paths_graph(unitig_graph, source, target, cutoff=len(graph) - 1)
                 ):
                     if pidx % 100000 == 0:
                         logger.info('Incoming node %s; outgoing node %s; Path number %s', sidx,
-                                    tidx, pidx)
+                                    tidx, record_idx)
                     yield SeqRecord(Seq(convert_unitig_path_to_contig(path, unitig_graph)),
-                                    id=str(idx),
+                                    id=str(record_idx),
                                     description='')
-                    idx += 1
+                    record_idx += 1
 
 
 def _all_simple_paths_graph(G, source, target, cutoff):
@@ -299,33 +305,6 @@ def _all_simple_paths_graph(G, source, target, cutoff):
                 stack.append(iter(G[child]))
         else:  # len(visited) == cutoff:
             if child == target or target in children:
-                yield list(visited) + [target]
-            stack.pop()
-            visited.popitem()
-
-
-def _all_simple_paths_multigraph(G, source, target, cutoff=None):
-    """This function was copied from Networkx before being edited by Warren Kretzschmar
-    todo: switch back to nx.all_simple_paths once Networkx 2.2 is released"""
-    if cutoff < 1:
-        return
-    visited = collections.OrderedDict.fromkeys([source])
-    stack = [(v for u, v in G.edges(source))]
-    while stack:
-        children = stack[-1]
-        child = next(children, None)
-        if child is None:
-            stack.pop()
-            visited.popitem()
-        elif len(visited) < cutoff:
-            if child == target:
-                yield list(visited) + [target]
-            elif child not in visited:
-                visited[child] = None
-                stack.append((v for u, v in G.edges(child)))
-        else:  # len(visited) == cutoff:
-            count = ([child] + list(children)).count(target)
-            for i in range(count):
                 yield list(visited) + [target]
             stack.pop()
             visited.popitem()

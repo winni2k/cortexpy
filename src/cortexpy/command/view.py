@@ -36,7 +36,6 @@ def view_traversal(argv):
     from cortexpy.logging_config import configure_logging_from_args_and_get_logger
     logger = configure_logging_from_args_and_get_logger(args, 'cortexpy.view')
 
-    from Bio import SeqIO
     import sys
     from cortexpy.graph.interactor import Interactor, Contigs
     from cortexpy.graph.serializer.serializer import Serializer

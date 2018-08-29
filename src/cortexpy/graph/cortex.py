@@ -1,4 +1,3 @@
-import copy
 import itertools
 from collections.abc import Collection, Mapping, MutableMapping
 
@@ -6,8 +5,8 @@ import attr
 import networkx as nx
 
 from cortexpy.constants import EdgeTraversalOrientation
+from cortexpy.graph.parser.kmer import find_all_neighbors
 from cortexpy.utils import lexlo
-from .parser.kmer import find_all_neighbors
 
 
 def build_cortex_graph_from_header(header, **kwargs):
@@ -187,9 +186,6 @@ class CortexDiGraph(Collection):
     def is_consistent(self):
         return False
 
-    def fresh_copy(self):
-        return CortexDiGraph()
-
     @property
     def edges(self):
         return EdgeView(self)
@@ -226,13 +222,6 @@ class CortexDiGraph(Collection):
         second_kmer = self.node[second]
         self._kmer_mapping.connect_kmers(first_kmer, second_kmer, color=key)
 
-    def add_edges_from(self, edge_iterable):
-        for edge in edge_iterable:
-            self.add_edge(edge[0], edge[1], key=edge[2])
-
-    def __str__(self):
-        return '\n'.join(self._kmer_mapping.keys())
-
     @property
     def succ(self):
         return MultiAdjacencyView(self._kmer_mapping, EdgeTraversalOrientation.original)
@@ -240,17 +229,6 @@ class CortexDiGraph(Collection):
     @property
     def pred(self):
         return MultiAdjacencyView(self._kmer_mapping, EdgeTraversalOrientation.reverse)
-
-    def subgraph(self, kmer_strings):
-        """Return a subgraph from kmer_strings"""
-        dict_view = DictView(self._kmer_mapping, set(kmer_strings))
-        return CortexDiGraph(dict_view, self.graph)
-
-    def copy(self):
-        return self.__copy__()
-
-    def __copy__(self):
-        return CortexDiGraph(copy.copy(self._kmer_mapping), self.graph.copy())
 
     def remove_node(self, node):
         try:
@@ -361,9 +339,6 @@ class ConsistentCortexDiGraph(Collection):
     def is_multigraph(self):
         return True
 
-    def fresh_copy(self):
-        return ConsistentCortexDiGraph()
-
     def __contains__(self, item):
         return item in self._kmer_mapping
 
@@ -399,24 +374,6 @@ class ConsistentCortexDiGraph(Collection):
     def add_node(self, kmer_string, *, kmer):
         self._kmer_mapping[kmer_string] = kmer
 
-    def remove_node(self, node):
-        """This is identical to remove_node in CDBDiGraph"""
-        try:
-            node_kmer = self.node[node]
-        except KeyError:
-            return
-        for succ in self.succ[node]:
-            succ_kmer = self.node[succ]
-            self._kmer_mapping.disconnect_kmers(node_kmer, succ_kmer, node_kmer.colors)
-        for pred in self.pred[node]:
-            pred_kmer = self.node[pred]
-            self._kmer_mapping.disconnect_kmers(node_kmer, pred_kmer, node_kmer.colors)
-        del self._kmer_mapping[node]
-
-    def remove_nodes_from(self, nodes):
-        for node in nodes:
-            self.remove_node(node)
-
     @property
     def edges(self):
         return EdgeView(self)
@@ -446,82 +403,6 @@ class ConsistentCortexDiGraph(Collection):
                     yield (in_node, node, color)
                 else:
                     yield (in_node, node)
-
-    def add_edge(self, first, second, *, key):
-        """Note: edges can only be added to existing nodes"""
-        first_kmer = self.node[first]
-        second_kmer = self.node[second]
-        self._kmer_mapping.connect_kmers(first_kmer, second_kmer, color=key)
-
-    def nbunch_iter(self, nbunch=None):
-        """Return an iterator over nodes contained in nbunch that are
-        also in the graph.
-
-        The nodes in nbunch are checked for membership in the graph
-        and if not are silently ignored.
-
-        Parameters
-        ----------
-        nbunch : single node, container, or all nodes (default= all nodes)
-            The view will only report edges incident to these nodes.
-
-        Returns
-        -------
-        niter : iterator
-            An iterator over nodes in nbunch that are also in the graph.
-            If nbunch is None, iterate over all nodes in the graph.
-
-        Raises
-        ------
-        NetworkXError
-            If nbunch is not a node or or sequence of nodes.
-            If a node in nbunch is not hashable.
-
-        See Also
-        --------
-        Graph.__iter__
-
-        Notes
-        -----
-        When nbunch is an iterator, the returned iterator yields values
-        directly from nbunch, becoming exhausted when nbunch is exhausted.
-
-        To test whether nbunch is a single node, one can use
-        "if nbunch in self:", even after processing with this routine.
-
-        If nbunch is not a node or a (possibly empty) sequence/iterator
-        or None, a :exc:`NetworkXError` is raised.  Also, if any object in
-        nbunch is not hashable, a :exc:`NetworkXError` is raised.
-
-        Licence
-        -------
-        This method was copied from Networkx version 2.1 and then modified
-        """
-        if nbunch is None:  # include all nodes via iterator
-            bunch = iter(self._adj)
-        elif nbunch in self:  # if nbunch is a single node
-            bunch = iter([nbunch])
-        else:  # if nbunch is a sequence of nodes
-            def bunch_iter(nlist, adj):
-                try:
-                    for n in nlist:
-                        if n in adj:
-                            yield n
-                except TypeError as e:
-                    message = e.args[0]
-                    # capture error for non-sequence/iterator nbunch.
-                    if 'iter' in message:
-                        msg = "nbunch is not a node or a sequence of nodes."
-                        raise nx.NetworkXError(msg)
-                    # capture error for unhashable node.
-                    elif 'hashable' in message:
-                        msg = "Node {} in sequence nbunch is not a valid node."
-                        raise nx.NetworkXError(msg.format(n))
-                    else:
-                        raise
-
-            bunch = bunch_iter(nbunch, self._adj)
-        return bunch
 
 
 @attr.s(slots=True)
