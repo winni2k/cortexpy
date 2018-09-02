@@ -15,7 +15,7 @@ def view(argv):
 
 def view_traversal(argv):
     import argparse
-    from .shared import get_shared_argsparse
+    from cortexpy.command.shared import get_shared_argsparse
     shared_parser = get_shared_argsparse()
 
     parser = argparse.ArgumentParser(prog='cortexpy view traversal', parents=[shared_parser])

@@ -6,6 +6,20 @@ from cortexpy.test.builder.graph.cortex import (
 
 
 class TestCortex(object):
+    def test_emits_one_single_color_unitig(self):
+        # given
+        b = CortexGraphBuilder()
+        b.with_colors(0)
+        b.add_edge('AAA', 'AAT', color=0)
+        b.make_consistent('AAA')
+        graph = b.build()
+
+        # when
+        paths = list(Contigs(graph, color=0).all_simple_paths())
+
+        # then
+        assert ['AAAT'] == [str(p.seq) for p in paths]
+
     def test_only_follows_one_color_with_color_specified(self):
         # given
         b = CortexGraphBuilder()

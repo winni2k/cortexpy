@@ -1,6 +1,9 @@
 def assemble(argv):
     import argparse
-    parser = argparse.ArgumentParser(prog='cortexpy assemble', description="""
+    from cortexpy.command.shared import get_shared_argsparse
+    shared_parser = get_shared_argsparse()
+
+    parser = argparse.ArgumentParser(prog='cortexpy assemble', parents=[shared_parser], description="""
     Assemble all possible transcripts in <graph> from all k-mers in <start-sequences> and print the
     resulting transcripts as a FASTA to stdout. All specified colors are traversed and collapsed
     before output.
@@ -12,6 +15,9 @@ def assemble(argv):
                         help='Maximum number of nodes to traverse [default: %(default)s]')
     args = parser.parse_args(argv)
 
+    from cortexpy.logging_config import configure_logging_from_args_and_get_logger
+    logger = configure_logging_from_args_and_get_logger(args, 'cortexpy.assemble')
+
     import sys
     from Bio import SeqIO
     from cortexpy.utils import kmerize_fasta
@@ -19,6 +25,11 @@ def assemble(argv):
     from cortexpy.graph.parser.random_access import RandomAccess
     from cortexpy.constants import EngineTraversalOrientation
     from cortexpy.graph.traversal.engine import Engine
+
+    if args.out == '-':
+        output = sys.stdout
+    else:
+        output = open(args.out, 'wt')
 
     random_access = RandomAccess(open(args.graph, 'rb'))
     if args.color is None:
@@ -38,4 +49,4 @@ def assemble(argv):
 
     seq_record_generator = Contigs(interactor.graph).all_simple_paths()
 
-    SeqIO.write(seq_record_generator, sys.stdout, 'fasta')
+    SeqIO.write(seq_record_generator, output, 'fasta')

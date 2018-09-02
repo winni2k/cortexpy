@@ -49,13 +49,14 @@ class Assemble(object):
                         enumerate(self.initial_seqs)]
         SeqIO.write(initial_seqs, str(inital_seq_fasta), "fasta")
         output_graph = self.mccortex_builder.build(self.tmpdir)
+        output = self.tmpdir / 'output.fa'
 
-        completed_process = (
-            runner.Cortexpy(SPAWN_PROCESS).assemble(graph=output_graph,
-                                                    initial_seqs=inital_seq_fasta)
-        )
+        completed_process = runner.Cortexpy(SPAWN_PROCESS).assemble(graph=output_graph,
+                                                                    initial_seqs=inital_seq_fasta,
+                                                                    out=output)
+
         assert completed_process.returncode == 0, completed_process
-        return expectation.Fasta(completed_process.stdout)
+        return expectation.Fasta(open(output, 'r').read())
 
 
 @attr.s(slots=True)

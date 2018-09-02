@@ -137,8 +137,8 @@ class Cortexpy(object):
         cmd = [str(c) for c in cmd]
         return self.run(cmd)
 
-    def assemble(self, *, graph, initial_seqs):
-        command = ['assemble', graph, initial_seqs]
+    def assemble(self, *, graph, initial_seqs, out='/dev/null'):
+        command = ['assemble', graph, initial_seqs, '--out', out]
         return self.run(command)
 
     def run(self, args):

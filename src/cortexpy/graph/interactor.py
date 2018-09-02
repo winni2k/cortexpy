@@ -263,32 +263,40 @@ class Contigs(object):
         record_idx = 0
         in_nodes = sorted(list(in_nodes_of(unitig_graph)))
         logger.info(f"Found {len(in_nodes)} incoming tip nodes")
-        out_nodes = sorted(list(out_nodes_of(unitig_graph)))
+        out_nodes = set(sorted(list(out_nodes_of(unitig_graph))))
         logger.info(f"Found {len(out_nodes)} outgoing tip nodes")
         for sidx, source in enumerate(in_nodes):
-            for tidx, target in enumerate(out_nodes):
-                if source == target:
-                    logger.info('Incoming node %s; outgoing node %s; Path number %s', sidx,
-                                tidx, record_idx)
-                    yield SeqRecord(Seq(unitig_graph.node[source]['unitig']), id=str(record_idx),
-                                    description='')
-                    record_idx += 1
-                    continue
-                for pidx, path in enumerate(
-                    _all_simple_paths_graph(unitig_graph, source, target, cutoff=len(graph) - 1)
-                ):
-                    if pidx % 100000 == 0:
-                        logger.info('Incoming node %s; outgoing node %s; Path number %s', sidx,
-                                    tidx, record_idx)
-                    yield SeqRecord(Seq(convert_unitig_path_to_contig(path, unitig_graph)),
-                                    id=str(record_idx),
-                                    description='')
-                    record_idx += 1
+            if source in out_nodes:
+                logger.info('Incoming node %s; %s outgoing nodes; Path number %s',
+                            sidx,
+                            len(out_nodes),
+                            record_idx)
+                yield SeqRecord(Seq(unitig_graph.node[source]['unitig']), id=str(record_idx),
+                                description='')
+                record_idx += 1
+                continue
+            for pidx, path in enumerate(
+                _all_simple_paths_graph(unitig_graph, source, cutoff=len(graph) - 1,
+                                        targets=out_nodes)
+            ):
+                if pidx % 100000 == 0:
+                    logger.info('Incoming node %s; %s outgoing nodes; Path number %s', sidx,
+                                len(out_nodes), record_idx)
+                yield SeqRecord(Seq(convert_unitig_path_to_contig(path, unitig_graph)),
+                                id=str(record_idx),
+                                description='')
+                record_idx += 1
 
 
-def _all_simple_paths_graph(G, source, target, cutoff):
+def _all_simple_paths_graph(G, source, target=None, cutoff=None, targets=None):
     """This function was copied from Networkx before being edited by Warren Kretzschmar
     todo: switch back to nx.all_simple_paths once Networkx 2.2 is released"""
+    assert cutoff is not None
+    assert (target is None) != (targets is None)
+    if target is None:
+        targets = set(targets)
+    else:
+        targets = {target}
     visited = collections.OrderedDict.fromkeys([source])
     stack = [iter(G[source])]
     while stack:
@@ -298,13 +306,13 @@ def _all_simple_paths_graph(G, source, target, cutoff):
             stack.pop()
             visited.popitem()
         elif len(visited) < cutoff:
-            if child == target:
-                yield list(visited) + [target]
+            if child in targets:
+                yield list(visited) + [child]
             elif child not in visited:
                 visited[child] = None
                 stack.append(iter(G[child]))
         else:  # len(visited) == cutoff:
-            if child == target or target in children:
-                yield list(visited) + [target]
+            if child in targets or len(targets & children) != 0:
+                yield list(visited) + [child]
             stack.pop()
             visited.popitem()
