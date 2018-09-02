@@ -212,10 +212,17 @@ def make_copy_of_color_for_kmer_graph(graph, color, include_self_refs=False):
     return out_graph
 
 
-def convert_unitig_path_to_contig(path, graph):
-    if len(path) == 0:
-        return ''
-    return ''.join([graph.node[u]['repr'] for u in path])
+@attr.s(slots=True)
+class UnitigGraphPathConverter:
+    reprs = attr.ib()
+
+    @classmethod
+    def from_unitig_graph(cls, graph):
+        reprs = {u: rpr for u, rpr in graph.nodes.data('repr')}
+        return cls(reprs)
+
+    def to_contig(self, path):
+        return ''.join([self.reprs[u] for u in path])
 
 
 def in_nodes_of(graph):
@@ -259,7 +266,7 @@ class Contigs(object):
             .unitig_graph
         unitig_graph = nx.DiGraph(unitig_graph)
         unitig_graph = nx.convert_node_labels_to_integers(unitig_graph)
-
+        path_converter = UnitigGraphPathConverter.from_unitig_graph(unitig_graph)
         record_idx = 0
         in_nodes = sorted(list(in_nodes_of(unitig_graph)))
         logger.info(f"Found {len(in_nodes)} incoming tip nodes")
@@ -282,9 +289,10 @@ class Contigs(object):
                 if pidx % 100000 == 0:
                     logger.info('Incoming node %s; %s outgoing nodes; Path number %s', sidx,
                                 len(out_nodes), record_idx)
-                yield SeqRecord(Seq(convert_unitig_path_to_contig(path, unitig_graph)),
-                                id=str(record_idx),
-                                description='')
+                yield SeqRecord(
+                    Seq(path_converter.to_contig(path)),
+                    id=str(record_idx),
+                    description='')
                 record_idx += 1
 
 
