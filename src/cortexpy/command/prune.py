@@ -1,7 +1,7 @@
 def prune(argv):
     import argparse
-    from .shared import get_shared_argsparse
-    shared_parser = get_shared_argsparse()
+    from .shared import get_shared_argparse
+    shared_parser = get_shared_argparse()
     parser = argparse.ArgumentParser('cortexpy prune', parents=[shared_parser])
     parser.add_argument('-t', '--remove-tips', required=True, type=int,
                         help='Remove tips shorter than this number')

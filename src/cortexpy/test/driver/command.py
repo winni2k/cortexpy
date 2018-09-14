@@ -101,8 +101,8 @@ class Prune(object):
 
 
 @attr.s(slots=True)
-class Traverse(object):
-    """Runner for traverse acceptance tests"""
+class Subgraph(object):
+    """Runner for subgraph acceptance tests"""
     tmpdir = attr.ib()
     mccortex_builder = attr.ib(attr.Factory(builder.Mccortex))
     mccortex_builders = attr.ib(attr.Factory(list))
@@ -192,7 +192,7 @@ class Traverse(object):
             ctp_runner = runner.Cortexpy(SPAWN_PROCESS)
         else:
             ctp_runner = runner.Cortexpy(self.spawn_process)
-        return ctp_runner.traverse(graphs=mccortex_graphs,
+        return ctp_runner.subgraph(graphs=mccortex_graphs,
                                    out=self.traversal,
                                    contig=contig_fasta,
                                    contig_fasta=True,
@@ -216,8 +216,8 @@ class Traverse(object):
 
 
 @attr.s(slots=True)
-class ViewTraversal(object):
-    """Runner for view of traversal acceptance tests"""
+class Traverse(object):
+    """Runner for traversa acceptance tests"""
     tmpdir = attr.ib()
     traverse_driver = attr.ib(init=False)
     to_json = attr.ib(False)
@@ -226,7 +226,7 @@ class ViewTraversal(object):
     graph_index = attr.ib(None)
 
     def __attrs_post_init__(self):
-        self.traverse_driver = Traverse(self.tmpdir)
+        self.traverse_driver = Subgraph(self.tmpdir)
 
     def with_record(self, record, name=None):
         self.traverse_driver.with_record(record, name=name)
@@ -280,10 +280,10 @@ class ViewTraversal(object):
             out_prefix = Path(str(self.tmpdir)) / 'subgraphs'
         else:
             out_prefix = None
-        ret = runner.Cortexpy(SPAWN_PROCESS).view(
-            cortexpy_graph=self.traverse_driver.traversal,
+        ret = runner.Cortexpy(SPAWN_PROCESS).view_traversal(
+            self.traverse_driver.traversal,
             to_json=self.to_json,
-            seed_strings=self.seed_strings,
+            contig=self.seed_strings,
             graph_index=self.graph_index
         )
         assert ret.returncode == 0, ret

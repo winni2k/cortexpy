@@ -1,19 +1,3 @@
-"""
-cortexpy
-
-Usage: cortexpy [--help] <command> [<args>...]
-
-Options:
-   -h, --help  Display this help message
-
-Allowed cortexpy commands are:
-   view       View a cortex graph
-   assemble   Assemble from a cortex graph
-   traverse   Traverse a cortex graph
-
-See 'cortexpy <command>' for more information on a specific command.
-
-"""
 import logging
 import sys
 
@@ -28,6 +12,7 @@ def main(argv=sys.argv):
         'view': 'cortexpy.command.view.view',
         'assemble': 'cortexpy.command.assemble.assemble',
         'traverse': 'cortexpy.command.traverse.traverse',
+        'subgraph': 'cortexpy.command.subgraph.subgraph',
         'prune': 'cortexpy.command.prune.prune',
     }
     parser = argparse.ArgumentParser(prog='cortexpy')

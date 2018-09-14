@@ -67,49 +67,36 @@ class Cortexpy(object):
         run_args += list(other_args)
         return self.run(['view', 'contig', str(graph), contig] + run_args)
 
-    def view_traversal(self, graph, contig=None,
-                       to_json=None, out=None,
-                       color=0,
-                       max_paths=None, colors=None):
-        command2 = ['view', 'traversal', graph]
-        if to_json:
-            command2.append('--to-json')
-        elif contig:
-            command2 += ['--seed-strings', contig]
-        if max_paths:
-            command2 += ['--max-paths', max_paths]
-        if out:
-            command2 += ['--out', out]
-        command2_ret = self.run(command2)
-
-        stdout = command2_ret.stdout
-        stderr = command2_ret.stderr
-        returncode = command2_ret.returncode
-
-        return subprocess.CompletedProcess(command2,
-                                           returncode,
-                                           stdout=stdout,
-                                           stderr=stderr)
-
-    def view(self, *, cortexpy_graph, to_json=False, kmers=False, seed_strings=None,
-             graph_index=None):
-        cmd = ['view', 'traversal', cortexpy_graph, ]
+    def view_traversal(self, graph,
+                       contig=None,
+                       to_json=False,
+                       out=None,
+                       max_paths=None,
+                       input_gfa=False,
+                       kmers=False,
+                       graph_index=None):
+        cmd = ['traverse', graph]
         if to_json:
             cmd.append('--to-json')
+        if contig is not None:
+            cmd += ['--seed-strings', contig]
+        if max_paths:
+            cmd += ['--max-paths', max_paths]
+        if input_gfa:
+            cmd.append('--from-gfa')
         if kmers:
             cmd.append('--kmers')
-        if seed_strings:
-            cmd.append('--seed-strings')
-            cmd += seed_strings
         if graph_index is not None:
             cmd += ['--graph-index', graph_index]
+        if out:
+            cmd += ['--out', out]
         return self.run(cmd)
 
-    def traverse(self, *, graphs, contig, out='/dev/null',
+    def subgraph(self, *, graphs, contig, out='/dev/null',
                  contig_fasta=False, colors=None,
                  max_nodes=None, verbose=False,
                  silent=False, logging_interval=None):
-        cmd = ['traverse', contig, '--out', out]
+        cmd = ['subgraph', contig, '--out', out]
         assert len(graphs) > 0
         cmd.append('--graphs')
         cmd += graphs

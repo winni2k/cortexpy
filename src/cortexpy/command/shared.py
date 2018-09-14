@@ -1,4 +1,4 @@
-def get_shared_argsparse():
+def get_shared_argparse():
     import argparse
     shared_parser = argparse.ArgumentParser(add_help=False)
     group = shared_parser.add_mutually_exclusive_group()

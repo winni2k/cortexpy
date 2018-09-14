@@ -35,6 +35,10 @@ class Fasta(object):
             self.fasta_groups[group_id] += 1
             print(self.fasta_groups)
 
+    def has_no_records(self):
+        self.has_n_records(0)
+        return self
+
     def has_n_records(self, n):
         assert n == len(self.fasta_records)
         return self

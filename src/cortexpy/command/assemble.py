@@ -1,7 +1,7 @@
 def assemble(argv):
     import argparse
-    from cortexpy.command.shared import get_shared_argsparse
-    shared_parser = get_shared_argsparse()
+    from cortexpy.command.shared import get_shared_argparse
+    shared_parser = get_shared_argparse()
 
     parser = argparse.ArgumentParser(prog='cortexpy assemble', parents=[shared_parser], description="""
     Assemble all possible transcripts in <graph> from all k-mers in <start-sequences> and print the

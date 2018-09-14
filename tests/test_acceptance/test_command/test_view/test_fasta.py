@@ -85,9 +85,9 @@ class TestContigs(object):
         output_graph = maker.build(tmpdir)
 
         # when
-        completed_process = (
-            runner.Cortexpy(SPAWN_PROCESS).view_traversal(graph=output_graph, contig='AAA')
-        )
+        completed_process = runner.Cortexpy(SPAWN_PROCESS) \
+            .view_traversal(graph=output_graph, contig='AAA')
+
         stdout = completed_process.stdout
 
         # then
@@ -138,7 +138,7 @@ class TestContigs(object):
         output_graph = maker.build(tmpdir)
 
         # when
-        completed_process = runner.Cortexpy(spawn_process=True).traverse(graphs=[output_graph],
+        completed_process = runner.Cortexpy(spawn_process=True).subgraph(graphs=[output_graph],
                                                                          contig=query,
                                                                          max_nodes=1)
 
@@ -158,7 +158,7 @@ class TestContigs(object):
         output_graph = maker.build(tmpdir)
 
         # when
-        completed_process = runner.Cortexpy(True).traverse(graphs=[output_graph],
+        completed_process = runner.Cortexpy(True).subgraph(graphs=[output_graph],
                                                            contig=query,
                                                            out=tmpdir / 'discarded.pickle',
                                                            )
@@ -196,7 +196,7 @@ class TestContigs(object):
 class TestTraversal(object):
     def test_traverses_two_subgraphs_into_three_records(self, tmpdir):
         # given
-        d = command.ViewTraversal(tmpdir)
+        d = command.Traverse(tmpdir)
         d.with_records('CCCGC', 'CCCGA', 'AAAT')
         d.with_kmer_size(3)
 
@@ -209,7 +209,7 @@ class TestTraversal(object):
 
     def test_traverses_into_two_records_with_custom_graph_idx(self, tmpdir):
         # given
-        d = command.ViewTraversal(tmpdir)
+        d = command.Traverse(tmpdir)
         d.with_records('CCCGC', 'CCCGA')
         d.with_graph_index(7)
         d.with_kmer_size(3)
