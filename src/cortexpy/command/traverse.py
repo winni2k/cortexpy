@@ -10,7 +10,7 @@ def traverse(argv):
 
         Input is a cortex graph. Output is a FASTA.
 
-        This tool also allows the creaton of a JSON representation of a CORTEX graph that is consistent 
+        This tool also allows the creation of a JSON representation of a CORTEX graph that is consistent 
         with seed strings by using the --to-json and --seed-strings arguments.
         """
     )

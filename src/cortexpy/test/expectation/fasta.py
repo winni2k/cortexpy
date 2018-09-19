@@ -29,11 +29,8 @@ class Fasta(object):
         self.fasta_records = [rec for rec in SeqIO.parse(io.StringIO(self.fasta_string), "fasta")]
         self.fasta_record_dict = {str(rec.seq): rec for rec in self.fasta_records}
         for rec in self.fasta_records:
-            print(rec.id)
             group_id = rec.id.split('_')[0]
-            print(group_id)
             self.fasta_groups[group_id] += 1
-            print(self.fasta_groups)
 
     def has_no_records(self):
         self.has_n_records(0)

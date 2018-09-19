@@ -3,7 +3,6 @@ import os
 import pytest
 
 from cortexpy.test import builder, runner, expectation
-from cortexpy.test.driver import command
 
 if os.environ.get('CI'):
     SPAWN_PROCESS = True
@@ -191,32 +190,3 @@ class TestContigs(object):
             expect.has_record('CAACC')
             expect.has_record('CAACT')
             expect.has_n_records(2)
-
-
-class TestTraversal(object):
-    def test_traverses_two_subgraphs_into_three_records(self, tmpdir):
-        # given
-        d = command.Traverse(tmpdir)
-        d.with_records('CCCGC', 'CCCGA', 'AAAT')
-        d.with_kmer_size(3)
-
-        # when
-        expect = d.run()
-
-        # then
-        expect.has_record_ids('g0_p0', 'g0_p1', 'g0_p2')
-        expect.has_n_groups(1)
-
-    def test_traverses_into_two_records_with_custom_graph_idx(self, tmpdir):
-        # given
-        d = command.Traverse(tmpdir)
-        d.with_records('CCCGC', 'CCCGA')
-        d.with_graph_index(7)
-        d.with_kmer_size(3)
-
-        # when
-        expect = d.run()
-
-        # then
-        expect.has_record_ids('g7_p0', 'g7_p1')
-        expect.has_n_groups(1)
