@@ -53,9 +53,9 @@ class TestContigs(object):
 
         # when
         completed_process = (
-            runner.Cortexpy(SPAWN_PROCESS).view_traversal(to_json=False,
-                                                          graph=output_graph,
-                                                          contig='AAA')
+            runner.Cortexpy(SPAWN_PROCESS).traverse(to_json=False,
+                                                    graph=output_graph,
+                                                    contig='AAA')
         )
         stdout = completed_process.stdout
 
@@ -85,7 +85,7 @@ class TestContigs(object):
 
         # when
         completed_process = runner.Cortexpy(SPAWN_PROCESS) \
-            .view_traversal(graph=output_graph, contig='AAA')
+            .traverse(graph=output_graph, contig='AAA')
 
         stdout = completed_process.stdout
 
@@ -113,9 +113,9 @@ class TestContigs(object):
 
         # when
         completed_process = runner.Cortexpy(SPAWN_PROCESS) \
-            .view_traversal(to_json=False,
-                            graph=output_graph,
-                            contig='CAAAAAATGTTGGAGAGGTATCAAAAGTATTCACAAGAAAGTGACAT')
+            .traverse(to_json=False,
+                      graph=output_graph,
+                      contig='CAAAAAATGTTGGAGAGGTATCAAAAGTATTCACAAGAAAGTGACAT')
         stdout = completed_process.stdout
 
         # then
@@ -176,7 +176,7 @@ class TestContigs(object):
             maker.with_dna_sequence(rec)
 
         # when
-        completed_process = runner.Cortexpy(spawn_process=True).view_traversal(
+        completed_process = runner.Cortexpy(spawn_process=True).traverse(
             graph=maker.build(tmpdir),
             max_paths=max_paths)
 

@@ -1,5 +1,5 @@
-import os
 import json
+import os
 
 from cortexpy.test import builder as builder, runner as runner
 from cortexpy.test.expectation.json import JsonGraph, expect_zero_return_code
@@ -107,5 +107,3 @@ class TestContig(object):
         expect.has_repr_edge('GAA', 'G', 1)
         expect.has_repr_edge('AAACC', 'GAA', 0)
         expect.has_n_edges(6)
-
-

@@ -224,6 +224,7 @@ class Traverse(object):
     subgraphs = attr.ib(False)
     seed_strings = attr.ib(None)
     graph_index = attr.ib(None)
+    extra_start_kmer = attr.ib(None)
 
     def __attrs_post_init__(self):
         self.traverse_driver = Subgraph(self.tmpdir)
@@ -273,6 +274,10 @@ class Traverse(object):
         self.graph_index = idx
         return self
 
+    def with_extra_start_kmer(self, kmer):
+        self.extra_start_kmer = kmer
+        return self
+
     def run(self):
         self.traverse_driver.run()
         if self.subgraphs:
@@ -280,11 +285,12 @@ class Traverse(object):
             out_prefix = Path(str(self.tmpdir)) / 'subgraphs'
         else:
             out_prefix = None
-        ret = runner.Cortexpy(SPAWN_PROCESS).view_traversal(
+        ret = runner.Cortexpy(SPAWN_PROCESS).traverse(
             self.traverse_driver.traversal,
             to_json=self.to_json,
             contig=self.seed_strings,
-            graph_index=self.graph_index
+            graph_index=self.graph_index,
+            extra_start_kmer=self.extra_start_kmer
         )
         assert ret.returncode == 0, ret
         if self.to_json:

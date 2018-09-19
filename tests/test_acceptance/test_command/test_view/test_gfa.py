@@ -33,7 +33,7 @@ class TestTraversal:
             fh.write(GfaBuilder().build())
 
         # when
-        runner.Cortexpy().view_traversal(input_graph, out=output_graph, input_gfa=True)
+        runner.Cortexpy().traverse(input_graph, out=output_graph, input_gfa=True)
 
         # then
         expect = Fasta(output_graph.read())

@@ -5,7 +5,7 @@ import attr
 import networkx as nx
 
 from cortexpy.constants import EdgeTraversalOrientation
-from cortexpy.graph.parser.kmer import find_all_neighbors
+from cortexpy.graph.parser.kmer import find_all_neighbors, disconnect_kmers
 from cortexpy.utils import lexlo
 
 
@@ -373,6 +373,9 @@ class ConsistentCortexDiGraph(Collection):
 
     def add_node(self, kmer_string, *, kmer):
         self._kmer_mapping[kmer_string] = kmer
+
+    def remove_edge(self, k, v, key):
+        disconnect_kmers(self._kmer_mapping[k], self._kmer_mapping[v], [key])
 
     @property
     def edges(self):

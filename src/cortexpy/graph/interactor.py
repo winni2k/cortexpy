@@ -253,7 +253,7 @@ class Contigs(object):
     graph = attr.ib()
     color = attr.ib(None)
 
-    def all_simple_paths(self):
+    def all_simple_paths(self, extra_incoming_node=None):
         if not isinstance(self.graph, nx.Graph):
             assert self.graph.is_consistent()
         if self.color is not None:
@@ -261,6 +261,10 @@ class Contigs(object):
                                                       include_self_refs=False)
         else:
             graph = self.graph
+        if extra_incoming_node:
+            for neighbor in graph.pred[extra_incoming_node]:
+                for color in self.graph.graph['colors']:
+                    graph.remove_edge(neighbor, extra_incoming_node, color)
         unitig_graph = UnitigCollapser(graph) \
             .collapse_kmer_unitigs() \
             .unitig_graph

@@ -57,3 +57,46 @@ class TestCycle:
 
         # then
         expect.has_no_records()
+
+    def test_multiple_kmers_with_extra_start_kmer_reports_pseudo_linear_contig(self, tmpdir):
+        # given
+        d = command.Traverse(tmpdir)
+        d.with_records('CCCACCC')
+        d.with_extra_start_kmer('CAC')
+        d.with_kmer_size(3)
+
+        # when
+        expect = d.run()
+
+        # then
+        expect.has_record('CACCCA')
+        expect.has_n_records(1)
+
+    def test_contig_with_extra_start_kmer_reports_shorter_contig(self, tmpdir):
+        # given
+        d = command.Traverse(tmpdir)
+        d.with_records('ACCCAAA')
+        d.with_extra_start_kmer('CCC')
+        d.with_kmer_size(3)
+
+        # when
+        expect = d.run()
+
+        # then
+        expect.has_record('CCCAAA')
+        expect.has_record('ACC')
+        expect.has_n_records(2)
+
+    def test_contig_with_extra_start_kmer_that_is_start_reports_same_contig(self, tmpdir):
+        # given
+        d = command.Traverse(tmpdir)
+        d.with_records('ACCCAAA')
+        d.with_extra_start_kmer('ACC')
+        d.with_kmer_size(3)
+
+        # when
+        expect = d.run()
+
+        # then
+        expect.has_record('ACCCAAA')
+        expect.has_n_records(1)

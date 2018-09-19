@@ -67,14 +67,15 @@ class Cortexpy(object):
         run_args += list(other_args)
         return self.run(['view', 'contig', str(graph), contig] + run_args)
 
-    def view_traversal(self, graph,
-                       contig=None,
-                       to_json=False,
-                       out=None,
-                       max_paths=None,
-                       input_gfa=False,
-                       kmers=False,
-                       graph_index=None):
+    def traverse(self, graph,
+                 contig=None,
+                 to_json=False,
+                 out=None,
+                 max_paths=None,
+                 input_gfa=False,
+                 kmers=False,
+                 graph_index=None,
+                 extra_start_kmer=None):
         cmd = ['traverse', graph]
         if to_json:
             cmd.append('--to-json')
@@ -88,6 +89,8 @@ class Cortexpy(object):
             cmd.append('--kmers')
         if graph_index is not None:
             cmd += ['--graph-index', graph_index]
+        if extra_start_kmer is not None:
+            cmd += ['--extra-start-kmer', extra_start_kmer]
         if out:
             cmd += ['--out', out]
         return self.run(cmd)

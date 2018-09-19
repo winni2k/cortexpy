@@ -26,6 +26,7 @@ def traverse(argv):
                              '0 turns off this check.')
     parser.add_argument('--graph-index', type=int, default=0,
                         help='Graph index to be added to description of all output paths')
+    parser.add_argument('--extra-start-kmer', help='Extra k-mer from which to start traversal')
     args = parser.parse_args(argv)
 
     from cortexpy.logging_config import configure_logging_from_args_and_get_logger
@@ -73,7 +74,13 @@ def traverse(argv):
         consistent_graph = Interactor.from_graph(graph) \
             .make_graph_nodes_consistent() \
             .graph
-    seq_record_generator = Contigs(consistent_graph, args.color).all_simple_paths()
+
+    if args.extra_start_kmer:
+        if args.extra_start_kmer not in graph:
+            logger.error(f'Could not find extra start kmer ({args.extra_start_kmer}) in graph')
+            return 1
+
+    seq_record_generator = Contigs(consistent_graph, args.color).all_simple_paths(args.extra_start_kmer)
     seq_record_generator = annotated_seq_records(seq_record_generator, graph_idx=args.graph_index)
     if args.max_paths > 0:
         logger.info('Exiting after element %s', args.max_paths)
