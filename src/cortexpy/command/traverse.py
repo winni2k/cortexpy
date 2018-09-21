@@ -26,7 +26,10 @@ def traverse(argv):
                              '0 turns off this check.')
     parser.add_argument('--graph-index', type=int, default=0,
                         help='Graph index to be added to description of all output paths')
-    parser.add_argument('--extra-start-kmer', help='Extra k-mer from which to start traversal')
+    parser.add_argument('--extra-start-kmer',
+                        help='Disconnect this k-mer from incoming k-mers before '
+                             'candidate transcript creation. '
+                             'This argument may fail if not used together with --seed-strings.')
     args = parser.parse_args(argv)
 
     from cortexpy.logging_config import configure_logging_from_args_and_get_logger

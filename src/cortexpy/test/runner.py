@@ -15,12 +15,7 @@ logger = logging.getLogger(__name__)
 @attr.s(slots=True)
 class Mccortex(object):
     kmer_size = attr.ib()
-    mccortex_bin = attr.ib(None)
-
-    def __attrs_post_init__(self):
-        if self.mccortex_bin is None:
-            bin_dir = os.environ['BIN_DIR']
-            self.mccortex_bin = os.path.join(bin_dir, 'mccortex')
+    mccortex_bin = attr.ib('mccortex')
 
     def view(self, graph):
         return self.run(['view', '-k', graph])

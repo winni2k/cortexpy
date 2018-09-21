@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class Mccortex(object):
     kmer_size = attr.ib(3)
     sequences = attr.ib(Factory(OrderedDict))
-    mccortex_bin = attr.ib(None)
+    mccortex_bin = attr.ib('mccortex')
 
     def with_kmer_size(self, kmer_size):
         self.kmer_size = kmer_size
