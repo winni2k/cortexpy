@@ -1,15 +1,19 @@
+import gzip
+import logging
 from itertools import repeat
+
 import cortexpy.test.builder as builder
 from cortexpy.graph.parser.header import Header
+from cortexpy.graph.parser.links import Links
 from cortexpy.graph.parser.random_access import RandomAccess
 from cortexpy.graph.parser.streaming import kmer_generator_from_stream
 from cortexpy.test.builder.graph.body import KmerRecord, as_edge_set
-import logging
+from cortexpy.test.links import LinksExpectation
 
 logger = logging.getLogger(__name__)
 
 
-class TestHeaderFromStream(object):
+class TestHeaderFromStream:
     def test_parses_a_graph_header(self, tmpdir):
         # given
         sample_name = 'sample_0'
@@ -39,7 +43,7 @@ class TestHeaderFromStream(object):
             assert getattr(header, key) == value
 
 
-class TestKmerGeneratorFromStream(object):
+class TestKmerGeneratorFromStream:
     def test_parses_a_graph(self, tmpdir):
         # given
         kmer_size = 3
@@ -119,7 +123,7 @@ class TestKmerGeneratorFromStream(object):
             assert kmer.edges == expected_kmer.edges
 
 
-class TestRandomAccess(object):
+class TestRandomAccess:
     def test_retrieves_kmer_by_random_access(self, tmpdir):
         # given
         kmer_size = 3
@@ -140,3 +144,27 @@ class TestRandomAccess(object):
         assert actual.kmer == expected.kmer
         assert actual.coverage == expected.coverage
         assert actual.edges == expected.edges
+
+
+class TestLinkParsing:
+    def test_turner_et_al_example(self, tmpdir):
+        # given
+        kmer_size = 5
+        mc_builder = builder.Mccortex() \
+            .with_dna_sequence('ACTGATTTCGATGCGATGCGATGCCACGGTGG') \
+            .with_kmer_size(kmer_size)
+        mc_graph = mc_builder.build(tmpdir)
+
+        link_file = builder.mccortex.MccortexLinks(mc_graph) \
+            .with_link_dna_sequence('TTTCGATGCGATGCGATGCCACG') \
+            .build(tmpdir)
+
+        # when
+        expect = LinksExpectation(Links.from_stream(gzip.open(link_file, 'rt')))
+
+        # then
+        expect.has_link_group_for_kmer('ATCGA').has_links('R 3 1 GGC')
+        expect.has_link_group_for_kmer('ATCGC').has_links('R 2 1 GC', 'R 1 1 C')
+        expect.has_link_group_for_kmer('ATGCG').has_links('R 2 1 CA', 'R 1 1 A')
+        expect.has_link_group_for_kmer('ATGCC').has_links('R 3 1 CCA')
+        expect.has_n_link_groups(4)
