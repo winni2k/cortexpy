@@ -21,7 +21,7 @@ def assemble(argv):
     import sys
     from Bio import SeqIO
     from cortexpy.utils import kmerize_fasta
-    from cortexpy.graph.interactor import Interactor, Contigs
+    from cortexpy.graph.interactor import Interactor
     from cortexpy.graph.parser.random_access import RandomAccess
     from cortexpy.constants import EngineTraversalOrientation
     from cortexpy.graph.traversal.engine import Engine
@@ -47,6 +47,6 @@ def assemble(argv):
     interactor = Interactor.from_graph(traverser.graph).make_graph_nodes_consistent(
         seed_kmer_strings=kmers)
 
-    seq_record_generator = Contigs(interactor.graph).all_simple_paths()
+    seq_record_generator = interactor.all_simple_paths()
 
     SeqIO.write(seq_record_generator, output, 'fasta')

@@ -109,6 +109,51 @@ class Interactor(object):
         self.graph = new_graph
         return self
 
+    def keep_color(self, color):
+        self.graph = make_copy_of_color_for_kmer_graph(self.graph, color, include_self_refs=False)
+        return self
+
+    def all_simple_paths(self, extra_incoming_node=None):
+        if not isinstance(self.graph, nx.Graph):
+            assert self.graph.is_consistent()
+        if extra_incoming_node:
+            for neighbor in self.graph.pred[extra_incoming_node]:
+                for color in self.graph.graph['colors']:
+                    self.graph.remove_edge(neighbor, extra_incoming_node, color)
+        unitig_graph = UnitigCollapser(self.graph) \
+            .collapse_kmer_unitigs() \
+            .unitig_graph
+        unitig_graph = nx.DiGraph(unitig_graph)
+        unitig_graph = nx.convert_node_labels_to_integers(unitig_graph)
+        path_converter = UnitigGraphPathConverter.from_unitig_graph(unitig_graph)
+        record_idx = 0
+        in_nodes = sorted(list(in_nodes_of(unitig_graph)))
+        logger.info(f"Found {len(in_nodes)} incoming tip nodes")
+        out_nodes = set(sorted(list(out_nodes_of(unitig_graph))))
+        logger.info(f"Found {len(out_nodes)} outgoing tip nodes")
+        for sidx, source in enumerate(in_nodes):
+            if source in out_nodes:
+                logger.info('Incoming node %s; %s outgoing nodes; Path number %s',
+                            sidx,
+                            len(out_nodes),
+                            record_idx)
+                yield SeqRecord(Seq(unitig_graph.node[source]['unitig']), id=str(record_idx),
+                                description='')
+                record_idx += 1
+                continue
+            for pidx, path in enumerate(
+                _all_simple_paths_graph(unitig_graph, source, out_nodes,cutoff=len(self.graph) - 1)
+
+            ):
+                if pidx % 100000 == 0:
+                    logger.info('Incoming node %s; %s outgoing nodes; Path number %s', sidx,
+                                len(out_nodes), record_idx)
+                yield SeqRecord(
+                    Seq(path_converter.to_contig(path)),
+                    id=str(record_idx),
+                    description='')
+                record_idx += 1
+
 
 @attr.s(slots=True)
 class SeedKmerStringIterator(object):
@@ -248,67 +293,14 @@ def edge_nodes_of(graph):
             yield (node, EdgeTraversalOrientation.reverse)
 
 
-@attr.s(slots=True)
-class Contigs(object):
-    graph = attr.ib()
-    color = attr.ib(None)
-
-    def all_simple_paths(self, extra_incoming_node=None):
-        if not isinstance(self.graph, nx.Graph):
-            assert self.graph.is_consistent()
-        if self.color is not None:
-            graph = make_copy_of_color_for_kmer_graph(self.graph, self.color,
-                                                      include_self_refs=False)
-        else:
-            graph = self.graph
-        if extra_incoming_node:
-            for neighbor in graph.pred[extra_incoming_node]:
-                for color in self.graph.graph['colors']:
-                    graph.remove_edge(neighbor, extra_incoming_node, color)
-        unitig_graph = UnitigCollapser(graph) \
-            .collapse_kmer_unitigs() \
-            .unitig_graph
-        unitig_graph = nx.DiGraph(unitig_graph)
-        unitig_graph = nx.convert_node_labels_to_integers(unitig_graph)
-        path_converter = UnitigGraphPathConverter.from_unitig_graph(unitig_graph)
-        record_idx = 0
-        in_nodes = sorted(list(in_nodes_of(unitig_graph)))
-        logger.info(f"Found {len(in_nodes)} incoming tip nodes")
-        out_nodes = set(sorted(list(out_nodes_of(unitig_graph))))
-        logger.info(f"Found {len(out_nodes)} outgoing tip nodes")
-        for sidx, source in enumerate(in_nodes):
-            if source in out_nodes:
-                logger.info('Incoming node %s; %s outgoing nodes; Path number %s',
-                            sidx,
-                            len(out_nodes),
-                            record_idx)
-                yield SeqRecord(Seq(unitig_graph.node[source]['unitig']), id=str(record_idx),
-                                description='')
-                record_idx += 1
-                continue
-            for pidx, path in enumerate(
-                _all_simple_paths_graph(unitig_graph, source, cutoff=len(graph) - 1,
-                                        targets=out_nodes)
-            ):
-                if pidx % 100000 == 0:
-                    logger.info('Incoming node %s; %s outgoing nodes; Path number %s', sidx,
-                                len(out_nodes), record_idx)
-                yield SeqRecord(
-                    Seq(path_converter.to_contig(path)),
-                    id=str(record_idx),
-                    description='')
-                record_idx += 1
-
-
-def _all_simple_paths_graph(G, source, target=None, cutoff=None, targets=None):
+def _all_simple_paths_graph(G, source, target, cutoff=None):
     """This function was copied from Networkx before being edited by Warren Kretzschmar
     todo: switch back to nx.all_simple_paths once Networkx 2.2 is released"""
     assert cutoff is not None
-    assert (target is None) != (targets is None)
-    if target is None:
-        targets = set(targets)
-    else:
+    if target in G:
         targets = {target}
+    else:
+        targets = set(target)
     visited = collections.OrderedDict.fromkeys([source])
     stack = [iter(G[source])]
     while stack:

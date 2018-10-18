@@ -36,7 +36,7 @@ def traverse(argv):
     logger = configure_logging_from_args_and_get_logger(args, 'cortexpy.view')
 
     import sys
-    from cortexpy.graph.interactor import Interactor, Contigs
+    from cortexpy.graph.interactor import Interactor
     from cortexpy.graph.serializer.serializer import Serializer
     from cortexpy.graph.parser.streaming import load_cortex_graph
     from . import get_exit_code_yaml_path
@@ -83,7 +83,7 @@ def traverse(argv):
             logger.error(f'Could not find extra start kmer ({args.extra_start_kmer}) in graph')
             return 1
 
-    seq_record_generator = Contigs(consistent_graph, args.color).all_simple_paths(args.extra_start_kmer)
+    seq_record_generator = Interactor(consistent_graph).all_simple_paths(args.extra_start_kmer)
     seq_record_generator = annotated_seq_records(seq_record_generator, graph_idx=args.graph_index)
     if args.max_paths > 0:
         logger.info('Exiting after element %s', args.max_paths)

@@ -1,4 +1,4 @@
-from cortexpy.graph.interactor import Interactor, Contigs
+from cortexpy.graph.interactor import Interactor
 from cortexpy.test.builder.graph.cortex import (
     CortexGraphBuilder,
     get_cortex_builder,
@@ -15,7 +15,7 @@ class TestCortex(object):
         graph = b.build()
 
         # when
-        paths = list(Contigs(graph, color=0).all_simple_paths())
+        paths = list(Interactor(graph).all_simple_paths())
 
         # then
         assert ['AAAT'] == [str(p.seq) for p in paths]
@@ -30,7 +30,7 @@ class TestCortex(object):
         graph = b.build()
 
         # when
-        paths = list(Contigs(graph, color=0).all_simple_paths())
+        paths = list(Interactor(graph).keep_color(0).all_simple_paths())
 
         # then
         assert ['AAAT'] == [str(p.seq) for p in paths]
@@ -45,7 +45,7 @@ class TestCortex(object):
         graph = b.build()
 
         # when
-        paths = list(Contigs(graph).all_simple_paths())
+        paths = list(Interactor(graph).all_simple_paths())
 
         # then
         assert {'AAATA'} == set([str(p.seq) for p in paths])
@@ -61,7 +61,7 @@ class TestCortex(object):
         graph = b.build()
 
         # when
-        paths = list(Contigs(graph).all_simple_paths())
+        paths = list(Interactor(graph).all_simple_paths())
 
         # then
         assert {'AAATA', 'AAATC'} == set([str(p.seq) for p in paths])
@@ -75,7 +75,7 @@ class TestCortex(object):
         cdb = b.build()
 
         # when
-        paths = list(Contigs(cdb).all_simple_paths())
+        paths = list(Interactor(cdb).all_simple_paths())
 
         # then
         assert {'CAAA', 'TAAA'} == set([str(p.seq) for p in paths])
@@ -92,7 +92,7 @@ class TestCortex(object):
         cdb = Interactor(cdb).make_graph_nodes_consistent(['AAG']).graph
 
         # when
-        paths = list(Contigs(cdb).all_simple_paths())
+        paths = list(Interactor(cdb).all_simple_paths())
 
         # then
         assert {'AAGCG', 'AAGCC'} == set([str(p.seq) for p in paths])

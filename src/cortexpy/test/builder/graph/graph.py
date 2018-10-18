@@ -8,7 +8,7 @@ from cortexpy.test.builder.graph.header import Header
 
 
 @attr.s
-class Graph(object):
+class Graph:
     header = attr.ib(attr.Factory(Header))
     body = attr.ib(attr.Factory(Body))
     kmer_size_is_set = attr.ib(False, init=False)
