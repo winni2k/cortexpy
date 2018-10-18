@@ -40,7 +40,7 @@ class Mccortex(object):
         command += mccortex_args
         command = [str(arg) for arg in command]
 
-        return subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return subprocess.run(command, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
 @attr.s(slots=True)

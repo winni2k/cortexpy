@@ -102,9 +102,10 @@ class Prune(object):
 
 @attr.s(slots=True)
 class Subgraph(object):
-    """Runner for subgraph acceptance tests"""
+    """Driver for subgraph acceptance tests"""
     tmpdir = attr.ib()
-    mccortex_builder = attr.ib(attr.Factory(builder.Mccortex))
+    mccortex_builder_factory = builder.mccortex.MccortexGraphLinks
+    mccortex_builder = attr.ib(None)
     mccortex_builders = attr.ib(attr.Factory(list))
     traversal_contigs = attr.ib(None)
     added_records = attr.ib(attr.Factory(list))
@@ -116,6 +117,11 @@ class Subgraph(object):
     silent = attr.ib(False)
     logging_interval_seconds = attr.ib(0)
     kmer_size = attr.ib(None)
+    link_records = attr.ib(attr.Factory(list))
+
+    def __attrs_post_init__(self):
+        if self.mccortex_builder is None:
+            self.mccortex_builder = self.mccortex_builder_factory()
 
     def with_record(self, record, name=None):
         if name:
@@ -132,6 +138,10 @@ class Subgraph(object):
         for rec, name in zip(records, names):
             self.mccortex_builder.with_dna_sequence(rec, name=name)
             self.added_records.append(rec)
+        return self
+
+    def with_link_records(self, *records):
+        self.link_records += list(records)
         return self
 
     def with_initial_contigs(self, *contigs):
@@ -167,25 +177,32 @@ class Subgraph(object):
 
     def with_extra_graph(self):
         self.mccortex_builders.append(self.mccortex_builder)
-        self.mccortex_builder = builder.Mccortex()
+        self.mccortex_builder = self.mccortex_builder_factory()
         return self
+
+    def _write_contig_fasta(self):
+        contig_fasta = self.tmpdir / 'cortexpy_initial_contigs.fa'
+        if self.traversal_contigs:
+            initial_contigs = self.traversal_contigs
+        else:
+            initial_contigs = self.added_records
+        Bio.SeqIO.write(
+            [SeqRecord(Seq(s), id=f'{i}', description='') for i, s in enumerate(initial_contigs)],
+            str(contig_fasta), 'fasta'
+        )
+        return contig_fasta
 
     def _run(self):
         mccortex_graphs = []
         self.mccortex_builders.append(self.mccortex_builder)
         for idx, mc_builder in enumerate(self.mccortex_builders):
             mc_builder.with_kmer_size(self.kmer_size)
+            mc_builder.with_link_dna_sequences(*self.link_records)
             builder_dir = self.tmpdir / 'mc_graph_{}'.format(idx)
             builder_dir.mkdir()
-            mccortex_graphs.append(mc_builder.build(builder_dir))
+            mccortex_graphs.append(mc_builder.build(builder_dir)[0])
 
-        contig_fasta = self.tmpdir / 'cortexpy_initial_contigs.fa'
-        if self.traversal_contigs:
-            initial_contigs = self.traversal_contigs
-        else:
-            initial_contigs = self.added_records
-        with open(str(contig_fasta), 'w') as fh:
-            Bio.SeqIO.write([SeqRecord(Seq(s)) for s in initial_contigs], fh, 'fasta')
+        contig_fasta = self._write_contig_fasta()
 
         self.traversal = self.tmpdir / 'traversal.ctx'
         if self.spawn_process is None:
@@ -216,26 +233,30 @@ class Subgraph(object):
 
 
 @attr.s(slots=True)
-class Traverse(object):
-    """Runner for traversa acceptance tests"""
+class TraverseDriver(object):
+    """Driver for traversal acceptance tests"""
     tmpdir = attr.ib()
-    traverse_driver = attr.ib(init=False)
     to_json = attr.ib(False)
     subgraphs = attr.ib(False)
     seed_strings = attr.ib(None)
     graph_index = attr.ib(None)
     extra_start_kmer = attr.ib(None)
+    traverse_driver = attr.ib(init=False)
 
     def __attrs_post_init__(self):
         self.traverse_driver = Subgraph(self.tmpdir)
 
-    def with_record(self, record, name=None):
-        self.traverse_driver.with_record(record, name=name)
-        return self
-
-    def with_records(self, *records, names=None):
-        self.traverse_driver.with_records(*records, names=names)
-        return self
+    def __getattr__(self, name):
+        "Let's delegate most of our responsibilities to the driver"
+        delegate = [s.strip() for s in """with_record
+        with_records
+        with_link_records
+        with_kmer_size
+        with_initial_contigs
+        with_traversal_colors""".split('\n')]
+        if name in delegate:
+            return getattr(self.traverse_driver, name)
+        raise NotImplementedError(f'Could not find attribute {name}')
 
     def with_sample_records(self, *records):
         self.with_records(*records, names=['sample_{}'.format(i) for i in range(3)])
@@ -245,24 +266,12 @@ class Traverse(object):
         self.traverse_driver.with_subgraph_output()
         return self
 
-    def with_kmer_size(self, size):
-        self.traverse_driver.with_kmer_size(size)
-        return self
-
     def with_json_output(self):
         self.to_json = True
         return self
 
-    def with_initial_contigs(self, *contigs):
-        self.traverse_driver.with_initial_contigs(*contigs)
-        return self
-
     def with_seed_strings(self, *strings):
         self.seed_strings = strings
-        return self
-
-    def with_traversal_colors(self, *colors):
-        self.traverse_driver.with_traversal_colors(*colors)
         return self
 
     def with_subgraph_view(self):

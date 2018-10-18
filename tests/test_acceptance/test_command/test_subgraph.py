@@ -99,7 +99,7 @@ class TestLogging(object):
         assert 'Log level is' not in stderr
 
 
-class Test(object):
+class Test:
     def test_creates_two_transcripts_from_four_records_in_four_colors_in_four_graphs(self, tmpdir):
         # given
         d = command.Subgraph(tmpdir)

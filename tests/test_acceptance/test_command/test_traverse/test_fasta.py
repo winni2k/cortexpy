@@ -6,7 +6,7 @@ from cortexpy.test.driver import command
 class Test:
     def test_traverses_two_subgraphs_into_three_records(self, tmpdir):
         # given
-        d = command.Traverse(tmpdir)
+        d = command.TraverseDriver(tmpdir)
         d.with_records('CCCGC', 'CCCGA', 'AAAT')
         d.with_kmer_size(3)
 
@@ -19,7 +19,7 @@ class Test:
 
     def test_traverses_into_two_records_with_custom_graph_idx(self, tmpdir):
         # given
-        d = command.Traverse(tmpdir)
+        d = command.TraverseDriver(tmpdir)
         d.with_records('CCCGC', 'CCCGA')
         d.with_graph_index(7)
         d.with_kmer_size(3)
@@ -32,11 +32,27 @@ class Test:
         expect.has_n_groups(1)
 
 
+class TestLinks:
+    @pytest.mark.xfail(reason='Not implemented')
+    def test_traverses_two_subgraphs_into_three_records(self, tmpdir):
+        # given
+        d = command.TraverseDriver(tmpdir)
+        d.with_kmer_size(5)
+        d.with_records('CAAAACCCCC', 'TAAAACCCCT')
+        d.with_link_records('CAAAACCCCT', 'TAAAACCCCC')
+
+        # when
+        expect = d.run()
+
+        # then
+        expect.has_records('CAAAACCCCT', 'TAAAACCCCC')
+
+
 class TestCycle:
     @pytest.mark.xfail(reason="Due to a bug in how kmers are collapsed to unitigs")
     def test_single_kmer_without_seed_provides_no_output(self, tmpdir):
         # given
-        d = command.Traverse(tmpdir)
+        d = command.TraverseDriver(tmpdir)
         d.with_records('CCCC')
         d.with_kmer_size(3)
 
@@ -48,7 +64,7 @@ class TestCycle:
 
     def test_multiple_kmers_without_seed_provides_no_output(self, tmpdir):
         # given
-        d = command.Traverse(tmpdir)
+        d = command.TraverseDriver(tmpdir)
         d.with_records('CCCACCC')
         d.with_kmer_size(3)
 
@@ -60,7 +76,7 @@ class TestCycle:
 
     def test_multiple_kmers_with_extra_start_kmer_reports_pseudo_linear_contig(self, tmpdir):
         # given
-        d = command.Traverse(tmpdir)
+        d = command.TraverseDriver(tmpdir)
         d.with_records('CCCACCC')
         d.with_extra_start_kmer('CAC')
         d.with_kmer_size(3)
@@ -74,7 +90,7 @@ class TestCycle:
 
     def test_contig_with_extra_start_kmer_reports_shorter_contig(self, tmpdir):
         # given
-        d = command.Traverse(tmpdir)
+        d = command.TraverseDriver(tmpdir)
         d.with_records('ACCCAAA')
         d.with_extra_start_kmer('CCC')
         d.with_kmer_size(3)
@@ -89,7 +105,7 @@ class TestCycle:
 
     def test_contig_with_extra_start_kmer_that_is_start_reports_same_contig(self, tmpdir):
         # given
-        d = command.Traverse(tmpdir)
+        d = command.TraverseDriver(tmpdir)
         d.with_records('ACCCAAA')
         d.with_extra_start_kmer('ACC')
         d.with_kmer_size(3)

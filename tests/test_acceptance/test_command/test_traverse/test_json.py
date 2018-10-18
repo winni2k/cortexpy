@@ -9,7 +9,7 @@ class Test:
         for query_string_idx, query_string in enumerate(['CCC', record1, record2]):
             query_dir = tmpdir / str(query_string_idx)
             query_dir.ensure(dir=True)
-            d = command.Traverse(query_dir)
+            d = command.TraverseDriver(query_dir)
             d.with_records(record1, record2)
             d.with_kmer_size(3)
             d.with_json_output()
@@ -34,7 +34,7 @@ class Test:
         record1 = 'AAACCCGAG'
         record2 = 'ACCG'
         query_string = 'CTC'
-        d = command.Traverse(tmpdir)
+        d = command.TraverseDriver(tmpdir)
         d.with_records(record1, record2)
         d.with_kmer_size(3)
         d.with_seed_strings(query_string)
@@ -56,7 +56,7 @@ class Test:
     def test_with_peripheral_edges_creates_unitigs(self, tmpdir):
         # given
         record1 = 'AAACCCGAA'
-        d = command.Traverse(tmpdir)
+        d = command.TraverseDriver(tmpdir)
         d.with_json_output()
         d.with_kmer_size(3)
         d.with_record('ACCG')
@@ -83,7 +83,7 @@ class Test:
 
     def test_with_non_matching_start_string_returns_empty_json(self, tmpdir):
         # given
-        d = command.Traverse(tmpdir)
+        d = command.TraverseDriver(tmpdir)
         d.with_json_output()
         d.with_records('AAACCCGAA')
         d.with_kmer_size(3)
@@ -97,7 +97,7 @@ class Test:
 
     def test_of_three_colors_returns_complete_graph(self, tmpdir):
         # given
-        d = command.Traverse(tmpdir)
+        d = command.TraverseDriver(tmpdir)
         d.with_sample_records(
             'AAAT',
             'AAAGG',

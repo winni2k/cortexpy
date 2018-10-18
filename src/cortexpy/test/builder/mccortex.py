@@ -3,6 +3,7 @@ from collections import OrderedDict
 from pathlib import Path
 
 import attr
+import sys
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 @attr.s(slots=True)
-class Mccortex(object):
+class Mccortex:
     kmer_size = attr.ib(3)
     sequences = attr.ib(Factory(OrderedDict))
     mccortex_bin = attr.ib('mccortex')
@@ -36,7 +37,8 @@ class Mccortex(object):
             input_fasta = str(tmpdir.join('input.{}.fasta'.format(name)))
             with open(input_fasta, 'w') as fh:
                 for sequence in dna_sequences:
-                    fh.write(SeqRecord(Seq(sequence), id=str(counter), description='').format('fasta'))
+                    fh.write(
+                        SeqRecord(Seq(sequence), id=str(counter), description='').format('fasta'))
                     counter += 1
             mccortex_args.extend(['--sample', name, '-1', input_fasta])
 
@@ -55,26 +57,47 @@ class Mccortex(object):
 
 
 @attr.s(slots=True)
-class MccortexLinks(object):
-    mccortex_graph = attr.ib()
+class MccortexLinks:
     kmer_size = attr.ib(3)
     link_sequences = attr.ib(Factory(list))
     mccortex_bin = attr.ib('mccortex')
-
-    def __attrs_post_init__(self):
-        self.mccortex_graph = Path(self.mccortex_graph)
 
     def with_link_dna_sequence(self, sequence):
         self.link_sequences.append(sequence)
         return self
 
-    def build(self, tmpdir):
-        input_fasta = str(tmpdir / f'link_input.fasta')
-        SeqIO.write([SeqRecord(Seq(s), id=str(i), description='') for i,s in enumerate(self.link_sequences)], input_fasta, 'fasta')
-        out_links = self.mccortex_graph.with_suffix('.ctp.gz')
+    def with_link_dna_sequences(self, *seqs):
+        for seq in seqs:
+            self.with_link_dna_sequence(seq)
+        return self
 
-        args = f'thread -1 {input_fasta} -o {out_links} {self.mccortex_graph}'.split()
+    def build(self, tmpdir, mccortex_graph):
+        mccortex_graph = Path(mccortex_graph)
+        input_fasta = str(tmpdir / f'link_input.fasta')
+        SeqIO.write([SeqRecord(Seq(s), id=str(i), description='') for i, s in
+                     enumerate(self.link_sequences)], input_fasta, 'fasta')
+        out_links = mccortex_graph.with_suffix('.ctp.gz')
+
+        args = f'thread -1 {input_fasta} -o {out_links} {mccortex_graph}:0'.split()
         ret = runner.Mccortex(self.kmer_size, mccortex_bin=self.mccortex_bin).run(args)
-        logger.info('\n' + ret.stdout.decode())
-        logger.warning('\n' + ret.stderr.decode())
+        print(ret.stdout.decode())
+        print(ret.stderr.decode(),file=sys.stderr)
+        assert 0 == ret.returncode
         return out_links
+
+
+@attr.s(slots=True)
+class MccortexGraphLinks:
+    graph_builder = attr.ib(attr.Factory(Mccortex))
+    link_builder = attr.ib(attr.Factory(MccortexLinks))
+
+    def __getattr__(self, name):
+        if name in ['with_link_dna_sequence', 'with_link_dna_sequences']:
+            return getattr(self.link_builder, name)
+        if name in ['with_kmer_size', 'with_dna_sequence']:
+            return getattr(self.graph_builder, name)
+        raise NotImplementedError(f'Could not find attribute {name}')
+
+    def build(self, tmpdir):
+        graph = self.graph_builder.build(tmpdir)
+        return graph, self.link_builder.build(tmpdir, graph)

@@ -51,3 +51,7 @@ class Fasta(object):
     def has_record(self, expected_record_seq):
         assert expected_record_seq in self.fasta_record_dict.keys()
         return BioSeqRecord(self.fasta_record_dict[expected_record_seq])
+
+    def has_records(self, *expected_record_seqs):
+        assert sorted(expected_record_seqs) == sorted([str(s.seq) for s in self.fasta_records])
+        return self

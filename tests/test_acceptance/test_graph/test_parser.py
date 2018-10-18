@@ -2,13 +2,15 @@ import gzip
 import logging
 from itertools import repeat
 
-import cortexpy.test.builder as builder
+import pytest
+
+import cortexpy.test.builder.mccortex as builder
 from cortexpy.graph.parser.header import Header
 from cortexpy.graph.parser.links import Links
 from cortexpy.graph.parser.random_access import RandomAccess
 from cortexpy.graph.parser.streaming import kmer_generator_from_stream
 from cortexpy.test.builder.graph.body import KmerRecord, as_edge_set
-from cortexpy.test.links import LinksExpectation
+from cortexpy.test.expectation.links import LinksExpectation
 
 logger = logging.getLogger(__name__)
 
@@ -149,18 +151,13 @@ class TestRandomAccess:
 class TestLinkParsing:
     def test_turner_et_al_example(self, tmpdir):
         # given
-        kmer_size = 5
-        mc_builder = builder.Mccortex() \
-            .with_dna_sequence('ACTGATTTCGATGCGATGCGATGCCACGGTGG') \
-            .with_kmer_size(kmer_size)
-        mc_graph = mc_builder.build(tmpdir)
-
-        link_file = builder.mccortex.MccortexLinks(mc_graph) \
-            .with_link_dna_sequence('TTTCGATGCGATGCGATGCCACG') \
-            .build(tmpdir)
+        b = builder.MccortexGraphLinks()
+        b.with_dna_sequence('ACTGATTTCGATGCGATGCGATGCCACGGTGG')
+        b.with_kmer_size(5)
+        b.with_link_dna_sequence('TTTCGATGCGATGCGATGCCACG')
 
         # when
-        expect = LinksExpectation(Links.from_stream(gzip.open(link_file, 'rt')))
+        expect = LinksExpectation(Links.from_stream(gzip.open(b.build(tmpdir)[1], 'rt')))
 
         # then
         expect.has_link_group_for_kmer('ATCGA').has_links('R 3 1 GGC')
@@ -168,3 +165,55 @@ class TestLinkParsing:
         expect.has_link_group_for_kmer('ATGCG').has_links('R 2 1 CA', 'R 1 1 A')
         expect.has_link_group_for_kmer('ATGCC').has_links('R 3 1 CCA')
         expect.has_n_link_groups(4)
+
+    def test_simple_tangle_has_four_links(self, tmpdir):
+        # given
+        b = builder.MccortexGraphLinks()
+        b.with_kmer_size(5)
+        b.with_dna_sequence('CAAAACCCCC')
+        b.with_dna_sequence('TAAAACCCCT')
+        b.with_link_dna_sequence('CAAAACCCCT')
+        b.with_link_dna_sequence('TAAAACCCCC')
+
+        # when
+        expect = LinksExpectation(Links.from_stream(gzip.open(b.build(tmpdir)[1], 'rt')))
+
+        # then
+        expect.has_link_group_for_kmer('CAAAA').has_links('F 1 1 T')
+        expect.has_link_group_for_kmer('TAAAA').has_links('F 1 1 C')
+        expect.has_link_group_for_kmer('CCCCC').has_links('R 1 1 A')
+        expect.has_link_group_for_kmer('AGGGG').has_links('F 1 1 G')
+        expect.has_n_link_groups(4)
+
+    @pytest.mark.xfail(reason='Not implemented')
+    def test_bubble_has_four_links(self, tmpdir):
+        # given
+        b = builder.MccortexGraphLinks()
+        b.with_kmer_size(5)
+        b.with_dna_sequence('AAAAACAACCC')
+        b.with_dna_sequence('AAAAATAACCC')
+        b.with_link_dna_sequence('AAAAACAACCC')
+        b.with_link_dna_sequence('AAAAATAACCC')
+
+        # when
+        expect = LinksExpectation(Links.from_stream(gzip.open(b.build(tmpdir)[1], 'rt')))
+
+        # then
+        expect.has_link_group_for_kmer('AAAAA').has_links('F 1 1 C', 'F 1 1 T')
+        expect.has_link_group_for_kmer('AACCC').has_links('R 1 1 G', 'R 1 1 A')
+
+    @pytest.mark.xfail(reason='Not implemented')
+    def test_two_bubbles_have_two_links_traversing_them(self, tmpdir):
+        # given
+        b = builder.MccortexGraphLinks()
+        b.with_kmer_size(5)
+        b.with_dna_sequence('AAAAACAACCCACCCCC')
+        b.with_dna_sequence('AAAAAGAACCCTCCCCC')
+        b.with_link_dna_sequence('AAAAACAACCCTCCCCC')
+        b.with_link_dna_sequence('AAAAAGAACCCACCCCC')
+
+        # when
+        expect = LinksExpectation(Links.from_stream(gzip.open(b.build(tmpdir)[1], 'rt')))
+
+        # then
+        expect.has_link_group_for_kmer('AAAAA').has_links('F 2 1 CT', 'F 2 1 GA')
