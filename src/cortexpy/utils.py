@@ -3,12 +3,17 @@ from functools import lru_cache
 
 import attr
 from Bio import SeqIO
-from Bio.Seq import reverse_complement
+from Bio.Seq import reverse_complement, complement
 
 
 @lru_cache(typed=True)
 def revcomp(dna_string):
     return reverse_complement(dna_string)
+
+
+@lru_cache(typed=True)
+def comp(dna_string):
+    return complement(dna_string)
 
 
 @lru_cache(typed=True)

@@ -1,3 +1,7 @@
+import io
+import json
+from collections import defaultdict
+
 import attr
 from delegation import SingleDelegated
 
@@ -5,7 +9,37 @@ import cortexpy.graph.cortex as cortex
 from cortexpy.graph.interactor import Interactor
 from cortexpy.graph.parser.kmer import EmptyKmerBuilder
 from cortexpy.graph.parser.random_access import load_ra_cortex_graph
+from cortexpy.links import Links
 from cortexpy.test.builder import Graph
+from cortexpy.utils import lexlo
+
+
+def get_cortex_builder():
+    return CortexBuilder(Graph())
+
+
+def get_cortex_graph_mapping_builder():
+    return CortexGraphMappingBuilder(Graph())
+
+
+class CortexBuilder(SingleDelegated):
+
+    def build(self):
+        return load_ra_cortex_graph(self.delegate.build())
+
+
+@attr.s()
+class CortexGraphMappingBuilder(SingleDelegated):
+    delegate = attr.ib()
+    ra_parser_args = attr.ib(attr.Factory(dict))
+
+    def build(self):
+        return load_ra_cortex_graph(self.delegate.build(),
+                                    ra_parser_args=self.ra_parser_args)._kmer_mapping
+
+    def with_kmer_cache_size(self, n):
+        self.ra_parser_args['kmer_cache_size'] = n
+        return self
 
 
 @attr.s(slots=True)
@@ -96,29 +130,29 @@ class CortexGraphBuilder(object):
         return self.graph
 
 
-class CortexBuilder(SingleDelegated):
+@attr.s(slots=True)
+class LinksBuilder:
+    header = attr.ib(None)
+    links = attr.ib(None)
 
-    def build(self):
-        return load_ra_cortex_graph(self.delegate.build())
+    def __attrs_post_init__(self):
+        if self.header is None:
+            self.header = {'graph': {'num_colours': 1}}
+        if self.links is None:
+            self.links = defaultdict(list)
 
-
-@attr.s()
-class CortexGraphMappingBuilder(SingleDelegated):
-    delegate = attr.ib()
-    ra_parser_args = attr.ib(attr.Factory(dict))
-
-    def build(self):
-        return load_ra_cortex_graph(self.delegate.build(),
-                                    ra_parser_args=self.ra_parser_args)._kmer_mapping
-
-    def with_kmer_cache_size(self, n):
-        self.ra_parser_args['kmer_cache_size'] = n
+    def with_link_for_kmer(self, link, kmer):
+        "link: <F|R> <num_juncs> <counts0,counts1,...> <junctions>"
+        assert lexlo(kmer) == kmer
+        self.links[kmer].append(link)
         return self
 
-
-def get_cortex_builder():
-    return CortexBuilder(Graph())
-
-
-def get_cortex_graph_mapping_builder():
-    return CortexGraphMappingBuilder(Graph())
+    def build(self):
+        header = json.dumps(self.header)
+        body = []
+        for kmer in sorted(self.links.keys()):
+            group = self.links[kmer]
+            body.append(f'{kmer} {len(group)}')
+            body += group
+        out = '\n'.join([header] + body)
+        return Links.from_binary_stream(io.BufferedReader(io.BytesIO(out.encode())))

@@ -6,7 +6,7 @@ import pytest
 
 import cortexpy.test.builder.mccortex as builder
 from cortexpy.graph.parser.header import Header
-from cortexpy.graph.parser.links import Links
+from cortexpy.links import Links
 from cortexpy.graph.parser.random_access import RandomAccess
 from cortexpy.graph.parser.streaming import kmer_generator_from_stream
 from cortexpy.test.builder.graph.body import KmerRecord, as_edge_set
@@ -157,7 +157,7 @@ class TestLinkParsing:
         b.with_link_dna_sequence('TTTCGATGCGATGCGATGCCACG')
 
         # when
-        expect = LinksExpectation(Links.from_stream(gzip.open(b.build(tmpdir)[1], 'rt')))
+        expect = LinksExpectation(Links.from_binary_stream(gzip.open(b.build(tmpdir)[1], 'rb')))
 
         # then
         expect.has_link_group_for_kmer('ATCGA').has_links('R 3 1 GGC')
@@ -176,13 +176,32 @@ class TestLinkParsing:
         b.with_link_dna_sequence('TAAAACCCCC')
 
         # when
-        expect = LinksExpectation(Links.from_stream(gzip.open(b.build(tmpdir)[1], 'rt')))
+        expect = LinksExpectation(Links.from_binary_stream(gzip.open(b.build(tmpdir)[1], 'rb')))
 
         # then
         expect.has_link_group_for_kmer('CAAAA').has_links('F 1 1 T')
         expect.has_link_group_for_kmer('TAAAA').has_links('F 1 1 C')
         expect.has_link_group_for_kmer('CCCCC').has_links('R 1 1 A')
         expect.has_link_group_for_kmer('AGGGG').has_links('F 1 1 G')
+        expect.has_n_link_groups(4)
+
+    def test_tangle_with_starting_non_lexlo_kmer_has_four_links(self, tmpdir):
+        # given
+        b = builder.MccortexGraphLinks()
+        b.with_kmer_size(5)
+        b.with_dna_sequence('CAAAACCCCC')
+        b.with_dna_sequence('TTTAACCCCT')
+        b.with_link_dna_sequence('CAAAACCCCT')
+        b.with_link_dna_sequence('TTTAACCCCC')
+
+        # when
+        expect = LinksExpectation(Links.from_binary_stream(gzip.open(b.build(tmpdir)[1], 'rb')))
+
+        # then
+        expect.has_link_group_for_kmer('AAACC').has_links('F 1 1 T')
+        expect.has_link_group_for_kmer('GGTTA').has_links('R 1 1 C')
+        expect.has_link_group_for_kmer('CCCCC').has_links('R 1 1 A')
+        expect.has_link_group_for_kmer('AGGGG').has_links('F 1 1 T')
         expect.has_n_link_groups(4)
 
     @pytest.mark.xfail(reason='Not implemented')
@@ -196,7 +215,7 @@ class TestLinkParsing:
         b.with_link_dna_sequence('AAAAATAACCC')
 
         # when
-        expect = LinksExpectation(Links.from_stream(gzip.open(b.build(tmpdir)[1], 'rt')))
+        expect = LinksExpectation(Links.from_binary_stream(gzip.open(b.build(tmpdir)[1], 'rb')))
 
         # then
         expect.has_link_group_for_kmer('AAAAA').has_links('F 1 1 C', 'F 1 1 T')
@@ -213,7 +232,7 @@ class TestLinkParsing:
         b.with_link_dna_sequence('AAAAAGAACCCACCCCC')
 
         # when
-        expect = LinksExpectation(Links.from_stream(gzip.open(b.build(tmpdir)[1], 'rt')))
+        expect = LinksExpectation(Links.from_binary_stream(gzip.open(b.build(tmpdir)[1], 'rb')))
 
         # then
         expect.has_link_group_for_kmer('AAAAA').has_links('F 2 1 CT', 'F 2 1 GA')

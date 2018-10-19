@@ -11,6 +11,7 @@ from cortexpy.constants import EdgeTraversalOrientation
 from cortexpy.graph.cortex import CortexDiGraph, ConsistentCortexDiGraph
 from cortexpy.graph.parser.kmer import revcomp_target_to_match_ref
 from cortexpy.graph.serializer.unitig import UnitigCollapser
+from cortexpy.links import LinkWalker
 from cortexpy.utils import lexlo, revcomp
 
 logger = logging.getLogger(__name__)
@@ -113,7 +114,7 @@ class Interactor(object):
         self.graph = make_copy_of_color_for_kmer_graph(self.graph, color, include_self_refs=False)
         return self
 
-    def all_simple_paths(self, extra_incoming_node=None):
+    def all_simple_paths(self, extra_incoming_node=None, links=None):
         if not isinstance(self.graph, nx.Graph):
             assert self.graph.is_consistent()
         if extra_incoming_node:
@@ -141,10 +142,10 @@ class Interactor(object):
                                 description='')
                 record_idx += 1
                 continue
-            for pidx, path in enumerate(
-                _all_simple_paths_graph(unitig_graph, source, out_nodes,cutoff=len(self.graph) - 1)
-
-            ):
+            if links is None:
+                paths = _all_simple_paths_graph(unitig_graph, source, out_nodes,
+                                                cutoff=len(self.graph) - 1)
+            for pidx, path in enumerate(paths):
                 if pidx % 100000 == 0:
                     logger.info('Incoming node %s; %s outgoing nodes; Path number %s', sidx,
                                 len(out_nodes), record_idx)
@@ -291,6 +292,10 @@ def edge_nodes_of(graph):
             yield (node, EdgeTraversalOrientation.original)
         if graph.in_degree(node) == 0:
             yield (node, EdgeTraversalOrientation.reverse)
+
+
+def _all_simple_paths_graph_with_links(G, source, target, links, cutoff=None):
+    link_walker = LinkWalker(links)
 
 
 def _all_simple_paths_graph(G, source, target, cutoff=None):

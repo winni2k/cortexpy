@@ -1,7 +1,10 @@
+import pytest
+
 from cortexpy.graph.interactor import Interactor
 from cortexpy.test.builder.graph.cortex import (
     CortexGraphBuilder,
     get_cortex_builder,
+    LinksBuilder,
 )
 
 
@@ -96,3 +99,24 @@ class TestCortex(object):
 
         # then
         assert {'AAGCG', 'AAGCC'} == set([str(p.seq) for p in paths])
+
+
+class TestLinks:
+    @pytest.mark.xfail(reason='Not implemented')
+    def test_with_link_for_y_graph_emits_one_path(self):
+        # given
+        b = CortexGraphBuilder()
+        b.add_path('AAA', 'AAC')
+        b.add_path('AAA', 'AAT')
+        b.make_consistent('AAA')
+        cdb = b.build()
+
+        links = LinksBuilder() \
+            .with_link_for_kmer('F 1 1 C', 'AAA') \
+            .build()
+
+        # when
+        paths = list(Interactor(cdb).all_simple_paths(links=links))
+
+        # then
+        assert {'CAAA', 'TAAA'} == set([str(p.seq) for p in paths])
