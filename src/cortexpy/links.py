@@ -1,10 +1,42 @@
+import copy
 import json
 from collections import defaultdict
+from collections.abc import Sequence
 from enum import Enum
 
 import attr
 
 from cortexpy.utils import lexlo, comp
+
+
+@attr.s(slots=True)
+class LinkedGraphTraverser(Sequence):
+    """Adapter for linked walkers to be able to work with nx.all_simple_paths"""
+    graph = attr.ib()
+    walkers = attr.ib(attr.Factory(dict))
+
+    @classmethod
+    def from_graph_and_link_walker(cls, graph, link_walker):
+        return cls(graph, {link_walker.current_unitig: link_walker})
+
+    def __contains__(self, item):
+        return item in self.graph
+
+    def __iter__(self):
+        pass
+
+    def __len__(self):
+        pass
+
+    def __getitem__(self, item):
+        walker = self.walkers[item]
+        children = []
+        for succ in walker.successors():
+            new_walker = copy.copy(walker)
+            new_walker.choose(succ)
+            children.append(new_walker.current_unitig)
+            self.walkers[children[-1]] = new_walker
+        return children
 
 
 @attr.s(slots=True)
@@ -16,46 +48,39 @@ class UnitigLinkWalker:
 
     @classmethod
     def from_links_unitigs_kmer_size_unitig(cls, links, unitigs, kmer_size, unitig):
-        obj = cls(LinkWalker(links), unitigs, kmer_size, unitig)
+        obj = cls(LinkWalker.from_links(links), unitigs, kmer_size, unitig)
         obj.link_walker.load_kmer(obj._current_unitig_right_kmer())
         return obj
 
-    def next_unitigs(self):
+    def successors(self):
         "Returns unitigs from links or all available junctions if no link info exists"
-        j_unitigs = list(self.next_junction_unitigs())
+        j_unitigs = list(self.link_successors())
         if len(j_unitigs) != 0:
             return j_unitigs
         return self.unitigs.successors(self.current_unitig)
 
-    def next_junction_unitigs(self):
+    def link_successors(self):
         "Only returns unitigs based on link information"
         available_bases = self.link_walker.next_junction_bases()
         for next_unitig in self.unitigs.successors(self.current_unitig):
             if self._unitig_choice_base(next_unitig) in available_bases:
                 yield next_unitig
 
-    def choose_or_advance(self, unitig_id):
-        pass
-
-    def choose_branch(self, unitig_id):
-        self.link_walker.choose_branch(self._unitig_choice_base(unitig_id))
-        self._advance_to_unitig(unitig_id)
+    def choose(self, successor):
+        "Register the choice of a successor and advance"
+        if next(self.link_successors(), None) is not None:
+            self.link_walker.choose_branch(self._unitig_choice_base(successor))
+        self._advance_to_successor(successor)
         return self
 
-    def advance(self):
-        successors = list(self.unitigs.successors(self.current_unitig))
-        assert 1 >= len(successors)
-        if 0 == len(successors):
-            raise StopIteration
-        self._advance_to_unitig(successors[0])
-        return self
+    def __copy__(self):
+        return UnitigLinkWalker(copy.copy(self.link_walker),
+                                self.unitigs,
+                                self.kmer_size,
+                                self.current_unitig)
 
-
-    def _load_unitig(self, unitig_id):
-        return self
-
-    def _advance_to_unitig(self, unitig_id):
-        self.current_unitig = unitig_id
+    def _advance_to_successor(self, successor):
+        self.current_unitig = successor
         self.link_walker.load_kmer(self._current_unitig_right_kmer())
 
     def _current_unitig_string(self):
@@ -72,10 +97,13 @@ class UnitigLinkWalker:
 @attr.s(slots=True)
 class LinkWalker:
     links = attr.ib()
-    junctions = attr.ib(init=False)
+    junctions = attr.ib()
 
-    def __attrs_post_init__(self):
-        self.junctions = defaultdict(list)
+
+    @classmethod
+    def from_links(cls, links):
+        junctions = defaultdict(list)
+        return cls(links, junctions)
 
     @property
     def n_junctions(self):
@@ -113,6 +141,9 @@ class LinkWalker:
         self.junctions.clear()
         return self
 
+    def __copy__(self):
+        return LinkWalker(self.links, copy.copy(self.junctions))
+
 
 class LinkOrientation(Enum):
     F = 0
@@ -149,7 +180,6 @@ class LinksHeader:
     def from_binary_stream(cls, stream):
         lines = []
         bases = list(b'ACTG')
-        print(bases)
         last_line = False
         while not last_line:
             line = stream.readline()
@@ -179,16 +209,6 @@ class LinkGroup:
     kmer = attr.ib()
     coverage = attr.ib()
     link_lines = attr.ib(attr.Factory(list))
-
-    # def junction_bases(self, is_lexlo, orientation=LinkOrientation.F):
-    #     if not is_lexlo:
-    #         orientation = LinkOrientation.other(orientation)
-    #     bases = []
-    #     for line in self.link_lines:
-    #         if line.orientation != orientation:
-    #             continue
-    #         bases.append(line.juncs[0])
-    #     return bases
 
     def get_link_junctions(self, is_lexlo, in_kmer_orientation=True):
         """kmer orientation is from the perspective of the potentially non-lexlo kmer"""

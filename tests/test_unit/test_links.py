@@ -1,6 +1,8 @@
+import copy
+
 import pytest
 
-from cortexpy.links import LinkWalker, UnitigLinkWalker
+from cortexpy.links import LinkWalker, UnitigLinkWalker, LinkedGraphTraverser
 from cortexpy.test.builder.graph.cortex import LinksBuilder
 from cortexpy.test.builder.unitigs import UnitigBuilder
 
@@ -39,7 +41,7 @@ class TestWalker:
         links = b.build()
 
         # when
-        walker = LinkWalker(links).load_kmer(kmer)
+        walker = LinkWalker.from_links(links).load_kmer(kmer)
 
         # then
         if kmer == 'AAA':
@@ -64,7 +66,7 @@ class TestWalker:
         links = b.build()
 
         # when
-        walker = LinkWalker(links).load_kmer(kmer)
+        walker = LinkWalker.from_links(links).load_kmer(kmer)
 
         # then
         assert [kmer[0]] == list(walker.next_junction_bases())
@@ -80,7 +82,7 @@ class TestWalker:
         links = b.build()
 
         # when
-        walker = LinkWalker(links)
+        walker = LinkWalker.from_links(links)
 
         # then
         assert ['A', 'C'] == list(walker.load_kmer('AAA').next_junction_bases())
@@ -93,7 +95,7 @@ class TestWalker:
         links = b.build()
 
         # when
-        walker = LinkWalker(links).load_kmer('AAA')
+        walker = LinkWalker.from_links(links).load_kmer('AAA')
 
         # then
         assert ['A'] == list(walker.next_junction_bases())
@@ -108,7 +110,7 @@ class TestWalker:
         links = b.build()
 
         # when
-        walker = LinkWalker(links).load_kmer('AAA')
+        walker = LinkWalker.from_links(links).load_kmer('AAA')
 
         # then
         with pytest.raises(KeyError):
@@ -135,13 +137,13 @@ class TestUnitigLinkWalker:
         walker = UnitigLinkWalker.from_links_unitigs_kmer_size_unitig(links, unitigs, 3, 0)
 
         # then
-        assert [1] == list(walker.next_junction_unitigs())
-        assert [1] == list(walker.next_unitigs())
+        assert [1] == list(walker.link_successors())
+        assert [1] == list(walker.successors())
         with pytest.raises(KeyError):
-            walker.choose_branch(2)
-        walker.choose_branch(1)
-        assert [] == list(walker.next_junction_unitigs())
-        assert [] == list(walker.next_unitigs())
+            walker.choose(2)
+        walker.choose(1)
+        assert [] == list(walker.link_successors())
+        assert [] == list(walker.successors())
 
     def test_two_ys_with_two_links_returns_one_and_two_nodes(self):
         # given
@@ -170,15 +172,13 @@ class TestUnitigLinkWalker:
         walker = UnitigLinkWalker.from_links_unitigs_kmer_size_unitig(links, unitigs, 3, 0)
 
         # then
-        assert [1] == list(walker.next_junction_unitigs())
-        walker.choose_branch(1)
-        assert [] == list(walker.next_junction_unitigs())
-        walker.advance()
-        assert [4, 5] == sorted(walker.next_junction_unitigs())
-        walker.choose_branch(5)
-        assert [] == list(walker.next_junction_unitigs())
-        with pytest.raises(StopIteration):
-            walker.advance()
+        assert [1] == list(walker.link_successors())
+        walker.choose(1)
+        assert [] == list(walker.link_successors())
+        walker.choose(3)
+        assert [4, 5] == sorted(walker.link_successors())
+        walker.choose(5)
+        assert [] == list(walker.link_successors())
 
     def test_two_ys_with_one_link_returns_both_nodes_the_second_time(self):
         # given
@@ -206,10 +206,65 @@ class TestUnitigLinkWalker:
         walker = UnitigLinkWalker.from_links_unitigs_kmer_size_unitig(links, unitigs, 3, 0)
 
         # then
-        assert [1] == list(walker.next_unitigs())
-        walker.choose_branch(1)
-        assert [3] == list(walker.next_unitigs())
-        walker.advance()
-        assert [4, 5] == sorted(walker.next_unitigs())
-        walker.choose_branch(5)
-        assert [] == list(walker.next_unitigs())
+        assert [1] == list(walker.successors())
+        walker.choose(1)
+        assert [3] == list(walker.successors())
+        walker.choose(3)
+        assert [4, 5] == sorted(walker.successors())
+        walker.choose(5)
+        assert [] == list(walker.successors())
+
+
+class TestUnitigLinkWalker_copy:
+    def test_y_graph_with_one_link_returns_copy_of_walker(self):
+        # given
+        links = LinksBuilder() \
+            .with_link_for_kmer('F 1 1 C', 'AAA') \
+            .build()
+
+        b = UnitigBuilder()
+        b.add_node(0, 'AAA')
+        b.add_node(1, 'AAC')
+        b.add_node(2, 'AAG')
+
+        b.add_edge(0, 1)
+        b.add_edge(0, 2)
+        unitigs = b.build()
+        walker = UnitigLinkWalker.from_links_unitigs_kmer_size_unitig(links, unitigs, 3, 0)
+
+        # when
+        new_walker = copy.copy(walker)
+        new_walker.choose(1)
+
+        # then
+        assert [1] == list(walker.successors())
+        assert [] == list(new_walker.successors())
+
+
+class TestLinkedGraphTraverser:
+    def test_y_graph_with_one_link_returns_one_node(self):
+        # given
+        links = LinksBuilder() \
+            .with_link_for_kmer('F 1 1 C', 'AAA') \
+            .build()
+
+        b = UnitigBuilder()
+        b.add_node(0, 'AAA')
+        b.add_node(1, 'AAC')
+        b.add_node(2, 'AAG')
+
+        b.add_edge(0, 1)
+        b.add_edge(0, 2)
+        unitigs = b.build()
+
+        # when
+        traverser = LinkedGraphTraverser.from_graph_and_link_walker(
+            unitigs,
+            UnitigLinkWalker.from_links_unitigs_kmer_size_unitig(links, unitigs, 3, 0)
+        )
+
+        # then
+        for node in range(3):
+            assert node in traverser
+        assert [1] == list(traverser[0])
+        assert [] == list(traverser[1])

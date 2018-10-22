@@ -308,7 +308,7 @@ def _all_simple_paths_with_links(G, source, target, links, cutoff=None):
     else:
         targets = set(target)
     visited = collections.OrderedDict.fromkeys([source])
-    stack = [walker.next_junction_unitigs()]
+    stack = [walker.link_successors()]
     while stack:
         children = stack[-1]
         child = next(children, None)
