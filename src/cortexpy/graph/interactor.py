@@ -11,7 +11,7 @@ from cortexpy.constants import EdgeTraversalOrientation
 from cortexpy.graph.cortex import CortexDiGraph, ConsistentCortexDiGraph
 from cortexpy.graph.parser.kmer import revcomp_target_to_match_ref
 from cortexpy.graph.serializer.unitig import UnitigCollapser
-from cortexpy.links import LinkWalker
+from cortexpy.links import UnitigLinkWalker
 from cortexpy.utils import lexlo, revcomp
 
 logger = logging.getLogger(__name__)
@@ -127,6 +127,7 @@ class Interactor(object):
         unitig_graph = nx.DiGraph(unitig_graph)
         unitig_graph = nx.convert_node_labels_to_integers(unitig_graph)
         path_converter = UnitigGraphPathConverter.from_unitig_graph(unitig_graph)
+
         record_idx = 0
         in_nodes = sorted(list(in_nodes_of(unitig_graph)))
         logger.info(f"Found {len(in_nodes)} incoming tip nodes")
@@ -145,6 +146,9 @@ class Interactor(object):
             if links is None:
                 paths = _all_simple_paths_graph(unitig_graph, source, out_nodes,
                                                 cutoff=len(self.graph) - 1)
+            else:
+                paths = _all_simple_paths_with_links(unitig_graph, source, out_nodes, links,
+                                                     cutoff=len(self.graph) - 1)
             for pidx, path in enumerate(paths):
                 if pidx % 100000 == 0:
                     logger.info('Incoming node %s; %s outgoing nodes; Path number %s', sidx,
@@ -294,8 +298,34 @@ def edge_nodes_of(graph):
             yield (node, EdgeTraversalOrientation.reverse)
 
 
-def _all_simple_paths_graph_with_links(G, source, target, links, cutoff=None):
-    link_walker = LinkWalker(links)
+def _all_simple_paths_with_links(G, source, target, links, cutoff=None):
+    """This function was copied from Networkx before being edited by Warren Kretzschmar"""
+    walker = UnitigLinkWalker.from_links_unitigs_kmer_size(links, G, G.graph['kmer_size'])
+    walker.load_unitig(source)
+    assert cutoff is not None
+    if target in G:
+        targets = {target}
+    else:
+        targets = set(target)
+    visited = collections.OrderedDict.fromkeys([source])
+    stack = [walker.next_junction_unitigs()]
+    while stack:
+        children = stack[-1]
+        child = next(children, None)
+        if child is None:
+            stack.pop()
+            visited.popitem()
+        elif len(visited) < cutoff:
+            if child in targets:
+                yield list(visited) + [child]
+            elif child not in visited:
+                visited[child] = None
+                stack.append(iter(G[child]))
+        else:  # len(visited) == cutoff:
+            if child in targets or len(targets & children) != 0:
+                yield list(visited) + [child]
+            stack.pop()
+            visited.popitem()
 
 
 def _all_simple_paths_graph(G, source, target, cutoff=None):

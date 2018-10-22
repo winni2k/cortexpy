@@ -98,7 +98,7 @@ class TestCortex(object):
         paths = list(Interactor(cdb).all_simple_paths())
 
         # then
-        assert {'AAGCG', 'AAGCC'} == set([str(p.seq) for p in paths])
+        assert ['AAGCC', 'AAGCG'] == sorted([str(p.seq) for p in paths])
 
 
 class TestLinks:
@@ -119,4 +119,4 @@ class TestLinks:
         paths = list(Interactor(cdb).all_simple_paths(links=links))
 
         # then
-        assert {'CAAA', 'TAAA'} == set([str(p.seq) for p in paths])
+        assert ['AAAC'] == [str(p.seq) for p in paths]

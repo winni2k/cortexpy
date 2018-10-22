@@ -8,6 +8,68 @@ from cortexpy.utils import lexlo, comp
 
 
 @attr.s(slots=True)
+class UnitigLinkWalker:
+    link_walker = attr.ib()
+    unitigs = attr.ib()
+    kmer_size = attr.ib()
+    current_unitig = attr.ib()
+
+    @classmethod
+    def from_links_unitigs_kmer_size_unitig(cls, links, unitigs, kmer_size, unitig):
+        obj = cls(LinkWalker(links), unitigs, kmer_size, unitig)
+        obj.link_walker.load_kmer(obj._current_unitig_right_kmer())
+        return obj
+
+    def next_unitigs(self):
+        "Returns unitigs from links or all available junctions if no link info exists"
+        j_unitigs = list(self.next_junction_unitigs())
+        if len(j_unitigs) != 0:
+            return j_unitigs
+        return self.unitigs.successors(self.current_unitig)
+
+    def next_junction_unitigs(self):
+        "Only returns unitigs based on link information"
+        available_bases = self.link_walker.next_junction_bases()
+        for next_unitig in self.unitigs.successors(self.current_unitig):
+            if self._unitig_choice_base(next_unitig) in available_bases:
+                yield next_unitig
+
+    def choose_or_advance(self, unitig_id):
+        pass
+
+    def choose_branch(self, unitig_id):
+        self.link_walker.choose_branch(self._unitig_choice_base(unitig_id))
+        self._advance_to_unitig(unitig_id)
+        return self
+
+    def advance(self):
+        successors = list(self.unitigs.successors(self.current_unitig))
+        assert 1 >= len(successors)
+        if 0 == len(successors):
+            raise StopIteration
+        self._advance_to_unitig(successors[0])
+        return self
+
+
+    def _load_unitig(self, unitig_id):
+        return self
+
+    def _advance_to_unitig(self, unitig_id):
+        self.current_unitig = unitig_id
+        self.link_walker.load_kmer(self._current_unitig_right_kmer())
+
+    def _current_unitig_string(self):
+        return self.unitigs.nodes[self.current_unitig]['unitig']
+
+    def _current_unitig_right_kmer(self):
+        unitig_string = self._current_unitig_string()
+        return unitig_string[(len(unitig_string) - self.kmer_size):]
+
+    def _unitig_choice_base(self, unitig_id):
+        return self.unitigs.nodes[unitig_id]['unitig'][self.kmer_size - 1]
+
+
+@attr.s(slots=True)
 class LinkWalker:
     links = attr.ib()
     junctions = attr.ib(init=False)
@@ -31,7 +93,7 @@ class LinkWalker:
                 self.junctions[junc[0]].append(junc)
         return self
 
-    def choose_junction(self, base):
+    def choose_branch(self, base):
         if len(self.junctions.keys()) == 0:
             return self
         if base in self.junctions:
