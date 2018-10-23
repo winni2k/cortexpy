@@ -81,6 +81,7 @@ class UnitigLinkWalker:
         if not available_bases <= set(successors.values()):
             raise ValueError(
                 f"""Links do not appear to match unitigs. Have these links been constructed on a different cortex graph?
+                current unitig: {self.unitigs.nodes[self.current_unitig]}
                 successors: {[self.unitigs.nodes[s] for s in successors]}
                 available bases: {available_bases}"""
             )
