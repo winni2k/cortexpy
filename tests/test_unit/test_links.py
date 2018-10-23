@@ -181,7 +181,7 @@ class TestUnitigLinkWalker:
         walker.choose(3)
         assert [4, 5] == sorted(walker.link_successors())
         walker.choose(5)
-        with pytest.raises(ValueError, message='Links do not appear to match unitigs'):
+        with pytest.raises(ValueError):
             list(walker.link_successors())
 
     def test_two_ys_with_one_link_returns_both_nodes_the_second_time(self):
@@ -237,7 +237,7 @@ class TestUnitigLinkWalker:
         walker = UnitigLinkWalker.from_links_unitigs_kmer_size_unitig(links, unitigs, 3, 0)
 
         # then
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match='Links do not appear to match unitigs'):
             list(walker.link_successors())
 
 
