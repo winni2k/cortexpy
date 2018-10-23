@@ -204,7 +204,7 @@ class TestLinkParsing:
         expect.has_link_group_for_kmer('AGGGG').has_links('F 1 1 T')
         expect.has_n_link_groups(4)
 
-    @pytest.mark.xfail(reason='Not implemented')
+    @pytest.mark.xfail(reason='Not implemented in mccortex')
     def test_bubble_has_four_links(self, tmpdir):
         # given
         b = builder.MccortexGraphLinks()
@@ -221,7 +221,7 @@ class TestLinkParsing:
         expect.has_link_group_for_kmer('AAAAA').has_links('F 1 1 C', 'F 1 1 T')
         expect.has_link_group_for_kmer('AACCC').has_links('R 1 1 G', 'R 1 1 A')
 
-    @pytest.mark.xfail(reason='Not implemented')
+    @pytest.mark.xfail(reason='Not implemented in mccortex')
     def test_two_bubbles_have_two_links_traversing_them(self, tmpdir):
         # given
         b = builder.MccortexGraphLinks()

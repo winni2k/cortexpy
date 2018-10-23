@@ -1,5 +1,3 @@
-import pytest
-
 from cortexpy.graph.interactor import Interactor
 from cortexpy.test.builder.graph.cortex import (
     CortexGraphBuilder,
@@ -102,10 +100,10 @@ class TestCortex(object):
 
 
 class TestLinks:
-    @pytest.mark.xfail(reason='Not implemented')
     def test_with_link_for_y_graph_emits_one_path(self):
         # given
         b = CortexGraphBuilder()
+        b.with_kmer_size(3)
         b.add_path('AAA', 'AAC')
         b.add_path('AAA', 'AAT')
         b.make_consistent('AAA')
@@ -120,3 +118,43 @@ class TestLinks:
 
         # then
         assert ['AAAC'] == [str(p.seq) for p in paths]
+
+    def test_bubble_and_y_with_two_links_returns_two_transcripts(self):
+        # given
+        links = LinksBuilder() \
+            .with_link_for_kmer('F 2 1 CT', 'AAA') \
+            .with_link_for_kmer('F 1 1 A', 'CCC') \
+            .build()
+
+        b = CortexGraphBuilder()
+        b.with_kmer_size(3)
+        b.add_path('AAA', 'AAC', 'ACC', 'CCC', 'CCA')
+        b.add_path('AAA', 'AAG', 'AGC', 'GCC', 'CCC', 'CCT')
+        b.make_consistent('AAA')
+        cdb = b.build()
+
+        # when
+        paths = list(Interactor(cdb).all_simple_paths(links=links))
+
+        # then
+        assert ['AAACCCA', 'AAACCCT'] == sorted([str(p.seq) for p in paths])
+
+    def test_bubble_and_y_with_two_links_returns_three_transcripts(self):
+        # given
+        links = LinksBuilder() \
+            .with_link_for_kmer('F 2 1 CT', 'AAA') \
+            .with_link_for_kmer('F 1 1 G', 'AAA') \
+            .build()
+
+        b = CortexGraphBuilder()
+        b.with_kmer_size(3)
+        b.add_path('AAA', 'AAC', 'ACC', 'CCC', 'CCA')
+        b.add_path('AAA', 'AAG', 'AGC', 'GCC', 'CCC', 'CCT')
+        b.make_consistent('AAA')
+        cdb = b.build()
+
+        # when
+        paths = list(Interactor(cdb).all_simple_paths(links=links))
+
+        # then
+        assert ['AAACCCT', 'AAAGCCCA', 'AAAGCCCT'] == sorted([str(p.seq) for p in paths])

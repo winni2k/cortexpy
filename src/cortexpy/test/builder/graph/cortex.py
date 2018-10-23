@@ -52,6 +52,13 @@ class CortexGraphBuilder(object):
     def __attrs_post_init__(self):
         self.with_colors(0)
 
+    def with_kmer_size(self, k):
+        if 'kmer_size' in self.graph.graph:
+            assert self.graph.graph['kmer_size'] == k
+        else:
+            self.graph.graph['kmer_size'] = k
+        return self
+
     def with_node_coverage(self, node, *coverage):
         if node not in self.graph:
             self.add_node(node)
@@ -59,6 +66,7 @@ class CortexGraphBuilder(object):
         return self
 
     def with_node_kmer(self, node, kmer):
+        self.with_kmer_size(len(kmer.kmer))
         self.graph.add_node(node, kmer=kmer)
         return self
 
@@ -67,7 +75,9 @@ class CortexGraphBuilder(object):
 
     def add_node(self, node):
         if node not in self.graph:
-            self.with_node_kmer(node, self.kmer_builder.build_or_get(node))
+            kmer = self.kmer_builder.build_or_get(node)
+            self.with_kmer_size(len(kmer.kmer))
+            self.with_node_kmer(node, kmer)
         return self
 
     def with_colors(self, *colors):

@@ -11,7 +11,7 @@ from cortexpy.constants import EdgeTraversalOrientation
 from cortexpy.graph.cortex import CortexDiGraph, ConsistentCortexDiGraph
 from cortexpy.graph.parser.kmer import revcomp_target_to_match_ref
 from cortexpy.graph.serializer.unitig import UnitigCollapser
-from cortexpy.links import UnitigLinkWalker
+from cortexpy.links import UnitigLinkWalker, LinkedGraphTraverser
 from cortexpy.utils import lexlo, revcomp
 
 logger = logging.getLogger(__name__)
@@ -143,12 +143,26 @@ class Interactor(object):
                                 description='')
                 record_idx += 1
                 continue
-            if links is None:
-                paths = _all_simple_paths_graph(unitig_graph, source, out_nodes,
+            if links is not None:
+                wrapped_graph = LinkedGraphTraverser.from_graph_and_link_walker(
+                    unitig_graph,
+                    UnitigLinkWalker.from_links_unitigs_kmer_size_unitig(
+                        links,
+                        unitig_graph,
+                        unitig_graph.graph['kmer_size'],
+                        source
+                    )
+                )
+                paths = _all_simple_paths_graph(wrapped_graph,
+                                                source,
+                                                out_nodes,
                                                 cutoff=len(self.graph) - 1)
             else:
-                paths = _all_simple_paths_with_links(unitig_graph, source, out_nodes, links,
-                                                     cutoff=len(self.graph) - 1)
+                paths = _all_simple_paths_graph(unitig_graph,
+                                                source,
+                                                out_nodes,
+                                                cutoff=len(self.graph) - 1)
+
             for pidx, path in enumerate(paths):
                 if pidx % 100000 == 0:
                     logger.info('Incoming node %s; %s outgoing nodes; Path number %s', sidx,

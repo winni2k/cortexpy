@@ -13,6 +13,7 @@ from cortexpy.graph.cortex import CortexDiGraph
 from cortexpy.graph.parser.random_access import RandomAccess
 from cortexpy.test import builder, expectation
 from cortexpy.test import runner
+from cortexpy.test.builder.mccortex import MccortexLinks
 
 if os.environ.get('CI'):
     SPAWN_PROCESS = True
@@ -117,7 +118,6 @@ class Subgraph(object):
     silent = attr.ib(False)
     logging_interval_seconds = attr.ib(0)
     kmer_size = attr.ib(None)
-    link_records = attr.ib(attr.Factory(list))
 
     def __attrs_post_init__(self):
         if self.mccortex_builder is None:
@@ -138,10 +138,6 @@ class Subgraph(object):
         for rec, name in zip(records, names):
             self.mccortex_builder.with_dna_sequence(rec, name=name)
             self.added_records.append(rec)
-        return self
-
-    def with_link_records(self, *records):
-        self.link_records += list(records)
         return self
 
     def with_initial_contigs(self, *contigs):
@@ -197,10 +193,10 @@ class Subgraph(object):
         self.mccortex_builders.append(self.mccortex_builder)
         for idx, mc_builder in enumerate(self.mccortex_builders):
             mc_builder.with_kmer_size(self.kmer_size)
-            mc_builder.with_link_dna_sequences(*self.link_records)
             builder_dir = self.tmpdir / 'mc_graph_{}'.format(idx)
             builder_dir.mkdir()
-            mccortex_graphs.append(mc_builder.build(builder_dir)[0])
+            mc_graph, _ = mc_builder.build(builder_dir)
+            mccortex_graphs.append(mc_graph)
 
         contig_fasta = self._write_contig_fasta()
 
@@ -242,15 +238,15 @@ class TraverseDriver(object):
     graph_index = attr.ib(None)
     extra_start_kmer = attr.ib(None)
     traverse_driver = attr.ib(init=False)
+    link_builder = attr.ib(attr.Factory(MccortexLinks))
 
     def __attrs_post_init__(self):
         self.traverse_driver = Subgraph(self.tmpdir)
 
     def __getattr__(self, name):
-        "Let's delegate most of our responsibilities to the driver"
+        """Let's delegate most of our responsibilities to the driver"""
         delegate = [s.strip() for s in """with_record
         with_records
-        with_link_records
         with_kmer_size
         with_initial_contigs
         with_traversal_colors""".split('\n')]
@@ -287,6 +283,10 @@ class TraverseDriver(object):
         self.extra_start_kmer = kmer
         return self
 
+    def with_link_records(self, *records):
+        self.link_builder.with_link_dna_sequences(*records)
+        return self
+
     def run(self):
         self.traverse_driver.run()
         if self.subgraphs:
@@ -294,13 +294,19 @@ class TraverseDriver(object):
             out_prefix = Path(str(self.tmpdir)) / 'subgraphs'
         else:
             out_prefix = None
+
+        links = self.link_builder.build(self.tmpdir, self.traverse_driver.traversal)
+
         ret = runner.Cortexpy(SPAWN_PROCESS).traverse(
             self.traverse_driver.traversal,
             to_json=self.to_json,
             contig=self.seed_strings,
             graph_index=self.graph_index,
-            extra_start_kmer=self.extra_start_kmer
+            extra_start_kmer=self.extra_start_kmer,
+            links_file=links
         )
+        print(ret.stdout)
+        print(ret.stderr, file=sys.stderr)
         assert ret.returncode == 0, ret
         if self.to_json:
             if self.subgraphs:

@@ -33,8 +33,7 @@ class Test:
 
 
 class TestLinks:
-    @pytest.mark.xfail(reason='Not implemented')
-    def test_traverses_two_subgraphs_into_three_records(self, tmpdir):
+    def test_traverses_tangle_into_two_paths(self, tmpdir):
         # given
         d = command.TraverseDriver(tmpdir)
         d.with_kmer_size(5)
@@ -46,6 +45,19 @@ class TestLinks:
 
         # then
         expect.has_records('CAAAACCCCT', 'TAAAACCCCC')
+
+    def test_traverses_two_bubbles_into_two_paths(self, tmpdir):
+        # given
+        d = command.TraverseDriver(tmpdir)
+        d.with_kmer_size(5)
+        d.with_records('AACCACAAAACCCCCGAACA', 'AACCATAAAACCCCTGAACA')
+        d.with_link_records('AACCACAAAACCCCTGAACA', 'AACCATAAAACCCCCGAACA')
+
+        # when
+        expect = d.run()
+
+        # then
+        expect.has_records('AACCACAAAACCCCTGAACA', 'AACCATAAAACCCCCGAACA')
 
 
 class TestCycle:

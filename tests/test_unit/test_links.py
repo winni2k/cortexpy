@@ -142,7 +142,9 @@ class TestUnitigLinkWalker:
         with pytest.raises(KeyError):
             walker.choose(2)
         walker.choose(1)
-        assert [] == list(walker.link_successors())
+        print(list(walker.unitigs.successors(1)))
+        with pytest.raises(ValueError):
+            list(walker.link_successors())
         assert [] == list(walker.successors())
 
     def test_two_ys_with_two_links_returns_one_and_two_nodes(self):
@@ -174,11 +176,13 @@ class TestUnitigLinkWalker:
         # then
         assert [1] == list(walker.link_successors())
         walker.choose(1)
-        assert [] == list(walker.link_successors())
+        with pytest.raises(ValueError):
+            list(walker.link_successors())
         walker.choose(3)
         assert [4, 5] == sorted(walker.link_successors())
         walker.choose(5)
-        assert [] == list(walker.link_successors())
+        with pytest.raises(ValueError, message='Links do not appear to match unitigs'):
+            list(walker.link_successors())
 
     def test_two_ys_with_one_link_returns_both_nodes_the_second_time(self):
         # given
@@ -213,6 +217,28 @@ class TestUnitigLinkWalker:
         assert [4, 5] == sorted(walker.successors())
         walker.choose(5)
         assert [] == list(walker.successors())
+
+    def test_raises_when_link_does_match_graph(self):
+        # given
+        links = LinksBuilder() \
+            .with_link_for_kmer('F 1 1 T', 'AAA') \
+            .build()
+
+        b = UnitigBuilder()
+        b.add_node(0, 'AAA')
+        b.add_node(1, 'AAC')
+        b.add_node(2, 'AAG')
+
+        b.add_edge(0, 1)
+        b.add_edge(0, 2)
+        unitigs = b.build()
+
+        # when
+        walker = UnitigLinkWalker.from_links_unitigs_kmer_size_unitig(links, unitigs, 3, 0)
+
+        # then
+        with pytest.raises(ValueError):
+            list(walker.link_successors())
 
 
 class TestUnitigLinkWalker_copy:

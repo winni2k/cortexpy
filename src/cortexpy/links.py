@@ -29,18 +29,24 @@ class LinkedGraphTraverser(Sequence):
         pass
 
     def __getitem__(self, item):
-        walker = self.walkers[item]
+        walkers = [self.walkers.pop(item)]
         children = []
-        for succ in walker.successors():
-            new_walker = copy.copy(walker)
-            new_walker.choose(succ)
-            children.append(new_walker.current_unitig)
-            self.walkers[children[-1]] = new_walker
+        successors = list(walkers[0].successors())
+        if len(successors) == 0:
+            return children
+        for _ in range(1, len(successors)):
+            walkers.append(copy.copy(walkers[0]))
+        assert len(successors) == len(walkers)
+        for succ, walker in zip(successors, walkers):
+            walker.choose(succ)
+            children.append(walker.current_unitig)
+            self.walkers[children[-1]] = walker
         return children
 
 
 @attr.s(slots=True)
 class UnitigLinkWalker:
+    """Traverses a unitig graph with links."""
     link_walker = attr.ib()
     unitigs = attr.ib()
     kmer_size = attr.ib()
@@ -53,23 +59,41 @@ class UnitigLinkWalker:
         return obj
 
     def successors(self):
-        "Returns unitigs from links or all available junctions if no link info exists"
+        """Returns nodes from links or all available junctions if no link info exists"""
+        successors = list(self.unitigs.successors(self.current_unitig))
+        if len(successors) < 2:
+            return successors
         j_unitigs = list(self.link_successors())
         if len(j_unitigs) != 0:
             return j_unitigs
-        return self.unitigs.successors(self.current_unitig)
+        return successors
 
     def link_successors(self):
-        "Only returns unitigs based on link information"
-        available_bases = self.link_walker.next_junction_bases()
-        for next_unitig in self.unitigs.successors(self.current_unitig):
-            if self._unitig_choice_base(next_unitig) in available_bases:
-                yield next_unitig
+        """Only returns unitigs based on link information"""
+        successors = list(self.unitigs.successors(self.current_unitig))
+        if len(successors) < 2:
+            raise ValueError(
+                'Tried to call link_successors for unitig that has only one successor %s',
+                [self.current_unitig, self.unitigs.nodes[self.current_unitig]]
+            )
+        available_bases = set(self.link_walker.next_junction_bases())
+        successors = {s: self._unitig_choice_base(s) for s in successors}
+        if not available_bases <= set(successors.values()):
+            raise ValueError(
+                "Links do not appear to match unitigs. Have these links been constructed on a different cortex graph?")
+        for succ in successors.keys():
+            if successors[succ] in available_bases:
+                yield succ
 
     def choose(self, successor):
-        "Register the choice of a successor and advance"
-        if next(self.link_successors(), None) is not None:
-            self.link_walker.choose_branch(self._unitig_choice_base(successor))
+        """Register the choice of a successor and advance"""
+        next_unitigs = list(self.unitigs.successors(self.current_unitig))
+        assert successor in next_unitigs
+        if len(next_unitigs) == 0:
+            raise ValueError('Cannot choose a successor for node that has no successors')
+        if len(next_unitigs) > 1:
+            if next(self.link_successors(), None) is not None:
+                self.link_walker.choose_branch(self._unitig_choice_base(successor))
         self._advance_to_successor(successor)
         return self
 
@@ -96,9 +120,9 @@ class UnitigLinkWalker:
 
 @attr.s(slots=True)
 class LinkWalker:
+    """Manages the loading and walking of links for kmers"""
     links = attr.ib()
     junctions = attr.ib()
-
 
     @classmethod
     def from_links(cls, links):
@@ -110,6 +134,7 @@ class LinkWalker:
         return sum(len(juncs) for juncs in self.junctions.values())
 
     def load_kmer(self, kmer):
+        """Load the link group for a kmer in the orientation of the kmer."""
         lexlo_kmer = lexlo(kmer)
         is_lexlo = lexlo_kmer == kmer
         try:
@@ -122,8 +147,7 @@ class LinkWalker:
         return self
 
     def choose_branch(self, base):
-        if len(self.junctions.keys()) == 0:
-            return self
+        """Choose a branch and advance all links. Keep only links consistent with branch."""
         if base in self.junctions:
             junctions_to_traverse = self.junctions[base]
             self.clear()
@@ -135,6 +159,7 @@ class LinkWalker:
                        self.junctions.keys())
 
     def next_junction_bases(self):
+        """Returns the the bases of the branches that can be chosen."""
         return self.junctions.keys()
 
     def clear(self):
@@ -185,7 +210,7 @@ class LinksHeader:
             line = stream.readline()
             peek = stream.peek(1)
             # this is a really nasty way of determining when to stop reading but I've got nothing better -,-
-            if peek[0] in bases:
+            if len(peek) == 0 or peek[0] in bases:
                 last_line = True
             if line.startswith((b'#', b'\n')):
                 continue

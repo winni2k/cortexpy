@@ -12,6 +12,9 @@ def traverse(argv):
 
         This tool also allows the creation of a JSON representation of a CORTEX graph that is consistent 
         with seed strings by using the --to-json and --seed-strings arguments.
+
+        If a links file is supplied, then branches consistent with the links will be preferred in
+        the traversal. 
         """
     )
     parser.add_argument('graph', help="cortex graph. Slurp graph from stdin is '-'.")
@@ -30,15 +33,18 @@ def traverse(argv):
                         help='Disconnect this k-mer from incoming k-mers before '
                              'candidate transcript creation. '
                              'This argument may fail if not used together with --seed-strings.')
+    parser.add_argument('--links-file', help='gzipped Mccortex-style links file for graph')
     args = parser.parse_args(argv)
 
     from cortexpy.logging_config import configure_logging_from_args_and_get_logger
     logger = configure_logging_from_args_and_get_logger(args, 'cortexpy.view')
 
     import sys
+    import gzip
     from cortexpy.graph.interactor import Interactor
     from cortexpy.graph.serializer.serializer import Serializer
     from cortexpy.graph.parser.streaming import load_cortex_graph
+    from cortexpy.links import Links
     from . import get_exit_code_yaml_path
     import yaml
 
@@ -83,7 +89,11 @@ def traverse(argv):
             logger.error(f'Could not find extra start kmer ({args.extra_start_kmer}) in graph')
             return 1
 
-    seq_record_generator = Interactor(consistent_graph).all_simple_paths(args.extra_start_kmer)
+    links = None
+    if args.links_file is not None:
+        links = Links.from_binary_stream(gzip.open(args.links_file, 'rb'))
+    seq_record_generator = Interactor(consistent_graph) \
+        .all_simple_paths(args.extra_start_kmer, links=links)
     seq_record_generator = annotated_seq_records(seq_record_generator, graph_idx=args.graph_index)
     if args.max_paths > 0:
         logger.info('Exiting after element %s', args.max_paths)

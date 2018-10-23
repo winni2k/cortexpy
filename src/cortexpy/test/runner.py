@@ -70,7 +70,8 @@ class Cortexpy(object):
                  input_gfa=False,
                  kmers=False,
                  graph_index=None,
-                 extra_start_kmer=None):
+                 extra_start_kmer=None,
+                 links_file=None):
         cmd = ['traverse', graph]
         if to_json:
             cmd.append('--to-json')
@@ -88,6 +89,8 @@ class Cortexpy(object):
             cmd += ['--extra-start-kmer', extra_start_kmer]
         if out:
             cmd += ['--out', out]
+        if links_file:
+            cmd += ['--links-file', links_file]
         return self.run(cmd)
 
     def subgraph(self, *, graphs, contig, out='/dev/null',

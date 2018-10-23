@@ -4,7 +4,7 @@ def subgraph(argv):
     import cortexpy.constants
     shared_parser = get_shared_argparse()
     parser = argparse.ArgumentParser(
-        'cortexpy traverse', parents=[shared_parser],
+        'cortexpy subgraph', parents=[shared_parser],
         description="""
         Find all subgraphs from every k-mer in an initial contig.
 
