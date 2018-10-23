@@ -91,7 +91,7 @@ def traverse(argv):
 
     links = None
     if args.links_file is not None:
-        logger.info(f'Loading links file {args.links}')
+        logger.info(f'Loading links file {args.links_file}')
         links = Links.from_binary_stream(gzip.open(args.links_file, 'rb'))
     seq_record_generator = Interactor(consistent_graph) \
         .all_simple_paths(args.extra_start_kmer, links=links)
