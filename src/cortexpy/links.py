@@ -83,7 +83,10 @@ class UnitigLinkWalker:
                 f"""Links do not appear to match unitigs. Have these links been constructed on a different cortex graph?
                 current unitig: {self.unitigs.nodes[self.current_unitig]}
                 successors: {[self.unitigs.nodes[s] for s in successors]}
-                available bases: {available_bases}"""
+                available bases: {available_bases}
+                links: {self.link_walker.links}
+                junctions: {self.link_walker.junctions}"""
+
             )
         for succ in successors.keys():
             if successors[succ] in available_bases:
