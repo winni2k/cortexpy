@@ -59,6 +59,19 @@ class TestLinks:
         # then
         expect.has_records('AACCACAAAACCCCTGAACA', 'AACCATAAAACCCCCGAACA')
 
+    def test_traverses_tangle_with_non_lexlo_kmer_into_two_paths(self, tmpdir):
+        # given
+        d = command.TraverseDriver(tmpdir)
+        d.with_kmer_size(5)
+        d.with_records('CAAATGGGGG', 'TAAATGGGGT')
+        d.with_link_records('CAAATGGGGT', 'TAAATGGGGG')
+
+        # when
+        expect = d.run()
+
+        # then
+        expect.has_records('CAAATGGGGT', 'TAAATGGGGG')
+
 
 class TestCycle:
     @pytest.mark.xfail(reason="Due to a bug in how kmers are collapsed to unitigs")

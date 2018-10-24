@@ -37,7 +37,7 @@ def traverse(argv):
     args = parser.parse_args(argv)
 
     from cortexpy.logging_config import configure_logging_from_args_and_get_logger
-    logger = configure_logging_from_args_and_get_logger(args, 'cortexpy.view')
+    logger = configure_logging_from_args_and_get_logger(args, 'cortexpy.traverse')
 
     import sys
     import gzip

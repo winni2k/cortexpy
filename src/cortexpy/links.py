@@ -3,10 +3,13 @@ import json
 from collections import defaultdict
 from collections.abc import Sequence
 from enum import Enum
+from logging import getLogger
 
 import attr
 
 from cortexpy.utils import lexlo, comp
+
+logger = getLogger('cortexpy.links')
 
 
 @attr.s(slots=True)
@@ -55,6 +58,7 @@ class UnitigLinkWalker:
     @classmethod
     def from_links_unitigs_kmer_size_unitig(cls, links, unitigs, kmer_size, unitig):
         obj = cls(LinkWalker.from_links(links), unitigs, kmer_size, unitig)
+        logger.debug('Creating UnitigWalker with unitig: %s', unitigs.nodes[obj.current_unitig])
         obj.link_walker.load_kmer(obj._current_unitig_right_kmer())
         return obj
 
@@ -84,7 +88,6 @@ class UnitigLinkWalker:
                 current unitig: {self.unitigs.nodes[self.current_unitig]}
                 successors: {[self.unitigs.nodes[s] for s in successors]}
                 available bases: {available_bases}
-                links: {self.link_walker.links}
                 junctions: {self.link_walker.junctions}"""
 
             )
@@ -94,6 +97,7 @@ class UnitigLinkWalker:
 
     def choose(self, successor):
         """Register the choice of a successor and advance"""
+        logger.debug('Choosing next unitig: %s', self.unitigs.nodes[successor])
         next_unitigs = list(self.unitigs.successors(self.current_unitig))
         assert successor in next_unitigs
         if len(next_unitigs) == 0:
@@ -146,10 +150,11 @@ class LinkWalker:
         is_lexlo = lexlo_kmer == kmer
         try:
             link_group = self.links.body[lexlo_kmer]
+            logger.debug('Loaded link group for kmer %s: %s', kmer, link_group)
         except KeyError:
             pass
         else:
-            for junc in link_group.get_link_junctions(is_lexlo, in_kmer_orientation=True):
+            for junc in link_group.get_link_junctions_in_kmer_orientation(is_lexlo):
                 self.junctions[junc[0]].append(junc)
         return self
 
@@ -242,31 +247,23 @@ class LinkGroup:
     coverage = attr.ib()
     link_lines = attr.ib(attr.Factory(list))
 
-    def get_link_junctions(self, is_lexlo, in_kmer_orientation=True):
+    def get_link_junctions_in_kmer_orientation(self, is_lexlo):
         """kmer orientation is from the perspective of the potentially non-lexlo kmer"""
-        if is_lexlo == in_kmer_orientation:
+        if is_lexlo:
             orientation = LinkOrientation.F
         else:
             orientation = LinkOrientation.R
         for line in self.link_lines:
             if line.orientation != orientation:
                 continue
-            junctions = line.juncs
-            if orientation == LinkOrientation.R:
-                junctions = comp(junctions)
-            yield junctions
+            yield line.juncs
 
-
-@attr.s(slots=True)
-class LinkGroupTraverser:
-    link_group = attr.ib()
-    age = attr.ib(0)
-
-    def __getattr__(self, item):
-        return getattr(self.link_group, item)
-
-    def age_links(self, n_junctions=1):
-        pass
+    def __str__(self):
+        elements = [f'<{self.kmer} {self.coverage}: ']
+        for line in self.link_lines:
+            elements.append('|'.join([str(l) for l in self.link_lines]))
+        elements.append('>')
+        return ''.join(elements)
 
 
 @attr.s(slots=True)
@@ -285,6 +282,9 @@ class LinkLine:
                    num_juncs=num_juncs,
                    counts=[int(fields[2])],
                    juncs=juncs)
+
+    def __str__(self):
+        return f'{self.orientation.name} {self.num_juncs} {",".join([str(c) for c in self.counts])} {self.juncs}'
 
 
 def link_groups(lines):

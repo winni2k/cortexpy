@@ -91,6 +91,7 @@ class Cortexpy(object):
             cmd += ['--out', out]
         if links_file:
             cmd += ['--links-file', links_file]
+        cmd += ['-v']
         return self.run(cmd)
 
     def subgraph(self, *, graphs, contig, out='/dev/null',

@@ -8,14 +8,8 @@ from cortexpy.test.builder.unitigs import UnitigBuilder
 
 
 class TestLinkGroup_GetLinkJunctions:
-    @pytest.mark.parametrize('is_lexlo,is_forward',
-                             [
-                                 (True, True),
-                                 (True, False),
-                                 (False, True),
-                                 (False, False),
-                             ])
-    def test_with_single_link_returns_one_base(self, is_lexlo, is_forward):
+    @pytest.mark.parametrize('is_lexlo', [True, False])
+    def test_with_single_link_returns_one_base(self, is_lexlo):
         # given
         b = LinksBuilder()
         b.with_link_for_kmer('F 3 1 ACC', 'AAA')
@@ -24,9 +18,8 @@ class TestLinkGroup_GetLinkJunctions:
         links = b.build()
 
         # then
-        junctions = list(
-            links.body['AAA'].get_link_junctions(is_lexlo, in_kmer_orientation=is_forward))
-        if is_lexlo == is_forward:
+        junctions = list(links.body['AAA'].get_link_junctions_in_kmer_orientation(is_lexlo))
+        if is_lexlo:
             assert ['ACC'] == junctions
         else:
             assert [] == junctions
@@ -58,6 +51,30 @@ class TestWalker:
             assert [] == list(walker.next_junction_bases())
 
     @pytest.mark.parametrize('kmer', ('AAA', 'TTT'))
+    def test_with_single_reverse_link_returns_one_base(self, kmer):
+        # given
+        b = LinksBuilder()
+        b.with_link_for_kmer('R 3 1 GTT', 'AAA')
+        links = b.build()
+
+        # when
+        walker = LinkWalker.from_links(links).load_kmer(kmer)
+
+        # then
+        if kmer == 'TTT':
+            assert 1 == walker.n_junctions
+            assert ['G'] == list(walker.next_junction_bases())
+            walker.choose_branch('G')
+            assert 1 == walker.n_junctions
+            walker.choose_branch('T')
+            assert 1 == walker.n_junctions
+            walker.choose_branch('T')
+            assert 0 == walker.n_junctions
+        else:
+            assert 0 == walker.n_junctions
+            assert [] == list(walker.next_junction_bases())
+
+    @pytest.mark.parametrize('kmer', ('AAA', 'TTT'))
     def test_with_reverse_and_forward_link_returns_one_base_each(self, kmer):
         # given
         b = LinksBuilder()
@@ -69,7 +86,7 @@ class TestWalker:
         walker = LinkWalker.from_links(links).load_kmer(kmer)
 
         # then
-        assert [kmer[0]] == list(walker.next_junction_bases())
+        assert ['A'] == list(walker.next_junction_bases())
 
     def test_with_two_reverse_and_forward_links_returns_two_bases_each(self):
         # given
@@ -86,7 +103,7 @@ class TestWalker:
 
         # then
         assert ['A', 'C'] == list(walker.load_kmer('AAA').next_junction_bases())
-        assert ['C', 'A'] == list(walker.clear().load_kmer('TTT').next_junction_bases())
+        assert ['G', 'T'] == list(walker.clear().load_kmer('TTT').next_junction_bases())
 
     def test_with_single_link_returns_each_junctions_base(self):
         # given
