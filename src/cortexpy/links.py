@@ -32,15 +32,14 @@ class LinkedGraphTraverser(Sequence):
         pass
 
     def __getitem__(self, item):
-        walkers = [self.walkers.pop(item)]
-        children = []
-        successors = list(walkers[0].successors())
+        parent_walker = self.walkers[item]
+        successors = list(parent_walker.successors())
         if len(successors) == 0:
-            return children
-        for _ in range(1, len(successors)):
-            walkers.append(copy.copy(walkers[0]))
-        assert len(successors) == len(walkers)
-        for succ, walker in zip(successors, walkers):
+            return []
+
+        child_walkers = [copy.copy(parent_walker) for _ in range(len(successors))]
+        children = []
+        for succ, walker in zip(successors, child_walkers):
             walker.choose(succ)
             children.append(walker.current_unitig)
             self.walkers[children[-1]] = walker
