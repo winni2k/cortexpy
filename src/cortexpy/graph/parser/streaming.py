@@ -27,12 +27,10 @@ def kmer_string_generator_from_stream_and_header(stream, header):
     assert record_size >= kmer_container_size
     kmer_converter = RawKmerConverter(header.kmer_size)
 
-    advance = record_size - kmer_container_size
-    raw_kmer = stream.read(kmer_container_size)
+    raw_kmer = stream.read(record_size)
     while raw_kmer != b'':
-        yield kmer_converter.to_string(raw_kmer)
-        stream.seek(advance, io.SEEK_CUR)
-        raw_kmer = stream.read(kmer_container_size)
+        yield kmer_converter.to_string(raw_kmer[:kmer_container_size])
+        raw_kmer = stream.read(record_size)
 
 
 def kmer_generator_from_stream_and_header(stream, header):
