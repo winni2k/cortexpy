@@ -3,6 +3,7 @@ from hypothesis import strategies as s, assume
 
 from cortexpy.edge_set import EdgeSet
 from cortexpy.test.builder.graph.body import KmerRecord
+from cortexpy.test.constants import MAX_UINT
 
 
 @s.composite
@@ -22,7 +23,7 @@ def kmer_strings(draw, min_size=3, max_size=7):
 def kmer_records(draw, kmer_size, num_colors, kmer_strings=dna_sequences):
     kmer = draw(kmer_strings(min_size=kmer_size, max_size=kmer_size))
     coverage = tuple(
-        draw(s.lists(s.integers(min_value=1), min_size=num_colors, max_size=num_colors)))
+        draw(s.lists(s.integers(min_value=1, max_value=MAX_UINT), min_size=num_colors, max_size=num_colors)))
     edges = np.array(
         draw(
             s.lists(

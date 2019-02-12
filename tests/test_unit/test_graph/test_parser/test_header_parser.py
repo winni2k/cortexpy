@@ -1,23 +1,19 @@
-import struct
-
 import pytest
 from hypothesis import assume, given
 from hypothesis import strategies as s
 
 import cortexpy.graph.parser.header as header
 from cortexpy.test.builder.graph.header import Header, ColorInformationBlock
-
-MAX_UINT = 2 ** (struct.calcsize('I') * 8) - 1
-MAX_ULONG = 2 ** (struct.calcsize('L') * 8) - 1
-UINT8_T = 1
-UINT32_T = 4
-UINT64_T = 8
+from cortexpy.test.constants import (
+    MAX_UINT, MAX_ULONG, UINT8_T, UINT32_T,
+    UINT64_T,
+)
 
 
 @s.composite
 def color_information_blocks(draw):
     bools = [draw(s.binary(min_size=1, max_size=1)) for _ in range(4)]
-    uint32_ts = [draw(s.integers(min_value=0)) for _ in range(2)]
+    uint32_ts = [draw(s.integers(min_value=0, max_value=MAX_UINT)) for _ in range(2)]
     name_size = draw(s.integers(min_value=0, max_value=3))
     name = draw(s.binary(min_size=name_size, max_size=name_size))
 
