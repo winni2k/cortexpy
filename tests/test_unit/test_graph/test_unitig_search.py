@@ -1,3 +1,5 @@
+import itertools
+
 import pytest
 from hypothesis import given, strategies as s
 
@@ -7,7 +9,7 @@ from cortexpy.test.builder.graph.cortex import CortexGraphBuilder
 
 
 class TestIsUnitigEnd(object):
-    @given(s.integers(min_value=1, max_value=2))
+    @pytest.mark.parametrize('num_colors', [1, 2])
     def test_two_connected_nodes_are_a_unitig(self, num_colors):
         # given
         colors = list(range(num_colors))
@@ -31,8 +33,8 @@ class TestIsUnitigEnd(object):
         assert search.is_unitig_end('AAT', EdgeTraversalOrientation.original)
         assert not search.is_unitig_end('AAT', EdgeTraversalOrientation.reverse)
 
-    @given(s.sampled_from(('AAA', 'AAT')),
-           s.sampled_from(EdgeTraversalOrientation))
+    @pytest.mark.parametrize('start_node,orientation',
+                             itertools.product(('AAA', 'AAT'), EdgeTraversalOrientation))
     def test_two_colors_to_one_color_is_node_end(self, start_node, orientation):
         # given
         b = CortexGraphBuilder()
@@ -48,8 +50,8 @@ class TestIsUnitigEnd(object):
         search = UnitigSearch.from_node_and_graph(start_node, graph)
         assert search.is_unitig_end(start_node, orientation)
 
-    @given(s.sampled_from(('AAA', 'AAT', 'AAC')),
-           s.sampled_from(EdgeTraversalOrientation))
+    @pytest.mark.parametrize('start_node,orientation',
+                             itertools.product(('AAA', 'AAT', 'AAC'), EdgeTraversalOrientation))
     def test_one_color_to_two_nodes_is_node_end(self, start_node, orientation):
         # given
         b = CortexGraphBuilder()
@@ -125,8 +127,8 @@ class TestIsUnitigEnd(object):
                 search = UnitigSearch.from_node_and_graph(node, graph)
                 assert search.is_unitig_end(node, orientation)
 
-    @given(s.sampled_from(('AAA', 'AAT', 'ATA')),
-           s.sampled_from(EdgeTraversalOrientation))
+    @pytest.mark.parametrize('start_node,orientation',
+                             itertools.product(('AAA', 'AAT', 'ATA'), EdgeTraversalOrientation))
     def test_middle_unconnected_node_for_one_color_in_two_color_graph_results_in_three_unitigs(
         self, start_node, orientation
     ):

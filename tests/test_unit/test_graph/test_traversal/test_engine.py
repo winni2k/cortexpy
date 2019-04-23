@@ -1,6 +1,4 @@
 import pytest
-from hypothesis import given
-from hypothesis import strategies as s
 
 import cortexpy.graph
 import cortexpy.graph.parser
@@ -254,7 +252,7 @@ class TestReverseOrientation:
          .has_nodes('AAA', 'AAT', 'ATC')
          .has_edges(('AAA', 'AAT', 0), ('AAT', 'ATC', 0)))
 
-    @given(s.sampled_from(('AAA', 'AAT', 'ATA', 'TAA')))
+    @pytest.mark.parametrize('start_kmer_string', ('AAA', 'AAT', 'ATA', 'TAA'))
     def test_cycle_is_traversed_once(self, driver, start_kmer_string):
         # given
         (driver
@@ -304,10 +302,10 @@ class TestBothOrientation(object):
                        'ATA TAA 0',
                        'AAA TAA 0')
 
-    @given(s.data())
-    def test_star_with_two_colors(self, driver, data):
+    @pytest.mark.parametrize('start_kmer_index', range(5))
+    def test_star_with_two_colors(self, driver, start_kmer_index):
         kmers = ('CAA', 'GAA', 'AAA', 'AAT', 'AAC')
-        start_kmer_string = data.draw(s.sampled_from(kmers))
+        start_kmer_string = kmers[start_kmer_index]
 
         # given
         (driver
@@ -338,10 +336,10 @@ class TestBothOrientation(object):
                        'AAA AAT 0',
                        'AAA AAC 0')
 
-    @given(s.data())
-    def test_branch_with_two_colors(self, driver, data):
+    @pytest.mark.parametrize('start_kmer_index', range(4))
+    def test_branch_with_two_colors(self, driver, start_kmer_index):
         kmers = ('CAA', 'GAA', 'AAA', 'AAC')
-        start_kmer_string = data.draw(s.sampled_from(kmers))
+        start_kmer_string = kmers[start_kmer_index]
 
         # given
         driver \

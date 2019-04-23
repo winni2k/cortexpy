@@ -1,5 +1,7 @@
-import pytest
+import itertools
 import math
+
+import pytest
 from Bio.Seq import reverse_complement, Seq
 from hypothesis import given, assume, settings, strategies as s
 
@@ -272,10 +274,11 @@ class TestHasEdgeTo(object):
         with pytest.raises(ValueError):
             kmer2.has_incoming_edge_from_kmer_in_color(kmer1, 0)
 
-    @given(s.integers(min_value=0, max_value=2), s.integers(min_value=0, max_value=2))
+    @pytest.mark.parametrize('color_to_link,color_to_check',
+                             itertools.combinations(range(3), 2))
     def test_is_false_for_non_connection_color(self, color_to_link, color_to_check):
         # given
-        assume(color_to_check != color_to_link)
+        assert(color_to_check != color_to_link)
         kmer1 = EmptyKmerBuilder(3).build_or_get('AAA')
         kmer2 = EmptyKmerBuilder(3).build_or_get('AAT')
         kmer1.edges[color_to_link].add_edge('T')

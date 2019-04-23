@@ -1,11 +1,11 @@
-from hypothesis import given, strategies as s
+import pytest
 
 from cortexpy.graph.interactor import Interactor
 from cortexpy.test.builder.graph.cortex import get_cortex_builder
 
 
 class Test(object):
-    @given(s.sampled_from(('AAA', 'TTT')))
+    @pytest.mark.parametrize('seed', ['AAA', 'TTT'])
     def test_single_kmer_revcomp_seed(self, seed):
         # given
         b = get_cortex_builder()
