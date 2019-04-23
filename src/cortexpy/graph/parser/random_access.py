@@ -1,3 +1,8 @@
+"""Random access of cortexpy graphs
+===================================
+
+This module contains classes for inspecting cortex graphs with random access to their kmers.
+"""
 from bisect import bisect_left
 from collections import Sequence, Mapping
 from functools import lru_cache
@@ -120,6 +125,12 @@ class RandomAccess(Mapping):
         raise KeyError('Could not retrieve kmer: ' + lexlo_string)
 
     def __getitem__(self, lexlo_string):
+        """Return kmer associated with kmer string
+
+        No check is performed to make sure that the input string is a lexicographically-lowest
+        kmer string. Use :py:func:`get_kmer_for_string` in order to convert a kmer string to its lexlo
+        form before retrieving it from the cortex object.
+        """
         return Kmer.from_kmer_data(self._get_kmer_data_for_string(lexlo_string))
 
     def __len__(self):
@@ -137,6 +148,7 @@ class RandomAccess(Mapping):
                 kmer_generator_from_stream_and_header(self.graph_handle, self.header))
 
     def values(self):
+        """Iterate over kmers in cortex graph"""
         self.graph_handle.seek(self.graph_sequence.body_start)
         return kmer_generator_from_stream_and_header(self.graph_handle, self.header)
 

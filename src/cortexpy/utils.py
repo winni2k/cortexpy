@@ -1,3 +1,10 @@
+"""Utility functions
+====================
+
+This module contains utility functions that are used inside cortexpy.
+These functions may also be useful outside of cortexpy.
+"""
+
 from datetime import datetime
 from functools import lru_cache
 
@@ -8,17 +15,23 @@ from Bio.Seq import reverse_complement, complement
 
 @lru_cache(typed=True)
 def revcomp(dna_string):
+    """Return the reverse complement of a string"""
     return reverse_complement(dna_string)
 
 
 @lru_cache(typed=True)
-def comp(dna_string):
-    return complement(dna_string)
-
-
-@lru_cache(typed=True)
 def lexlo(kmer_string):
-    """Returns the lexicographically lowest version of the kmer string"""
+    """Return lexicographically lowest version of a kmer string and its reverse complement
+
+    The reverse complement of a kmer string is generated and the lexicographically-lowest
+    kmer string is returned.
+
+    >>> lexlo('AAA')
+    'AAA'
+
+    >>> lexlo('TTT')
+    'AAA'
+    """
     alt_kmer_string = revcomp(kmer_string)
     if alt_kmer_string < kmer_string:
         return alt_kmer_string
@@ -44,7 +57,13 @@ class IntervalLogger(object):
 
 
 def kmerize_contig(contig, kmer_size):
-    """Return generator of kmers in contig"""
+    """Return generator of kmers in contig
+
+    The returned kmers are not lexicographically lowest.
+
+    >>> list(kmerize_contig('ATTT', 3))
+    ['ATT', 'TTT']
+    """
     assert len(contig) >= kmer_size
     for start in range(len(contig) - kmer_size + 1):
         yield contig[start:(start + kmer_size)]

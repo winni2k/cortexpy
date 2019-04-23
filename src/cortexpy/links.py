@@ -7,7 +7,7 @@ from logging import getLogger
 
 import attr
 
-from cortexpy.utils import lexlo, comp
+from cortexpy.utils import lexlo
 
 logger = getLogger('cortexpy.links')
 
