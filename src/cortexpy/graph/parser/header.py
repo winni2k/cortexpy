@@ -1,3 +1,9 @@
+"""Cortex graph headers
+=======================
+
+This module contains classes for parsing and representing a Cortex file header
+"""
+
 import struct
 from struct import unpack
 
@@ -26,7 +32,11 @@ def odd(_, attribute, value):
 
 
 @attr.s(slots=True, frozen=True)
-class Header(object):
+class Header:
+    """Cortex header object
+
+    This object allows access to header information contained in a cortex file"""
+
     version = attr.ib(CORTEX_VERSION, validator=[attr.validators.in_([CORTEX_VERSION])])
     kmer_size = attr.ib(1, validator=[greater_than_zero, odd])
     kmer_container_size = attr.ib(None, validator=[none_or_greater_than_zero])
@@ -39,6 +49,7 @@ class Header(object):
 
     @classmethod
     def from_stream(cls, stream):
+        """Extract a cortex header from a file handle"""
         header = (HeaderFromStreamBuilder(stream)
                   .extract_initial_magic_word()
                   .fill_first_four_params()

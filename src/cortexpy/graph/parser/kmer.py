@@ -1,3 +1,9 @@
+"""Cortex kmers
+===============
+
+This module provides classes and functions for working with Cortex kmers.
+"""
+
 import math
 import struct
 from itertools import repeat
@@ -106,7 +112,7 @@ def find_neighbors(first, second, *, rc_is_after_reference_kmer, revcomp_second)
 
 
 def find_all_neighbors(first, second):
-    """Return kmers and letters to get from one to the other"""
+    """Return kmers and letters to get from first kmer to second"""
     for rc_is_after_reference_kmer in [True, False]:
         for revcomp_second in [True, False]:
             yield from find_neighbors(first, second,
@@ -265,7 +271,11 @@ class KmerData(object):
 
 
 @attr.s(slots=True, cmp=False)
-class Kmer(object):
+class Kmer:
+    """Represents a Cortex kmer
+
+    This class wraps a kmer data object with attributes and methods for inspecting and manipulating
+    the underlying kmer data object."""
     _kmer_data = attr.ib()
     num_colors = attr.ib()
     kmer_size = attr.ib()

@@ -1,7 +1,7 @@
-"""Random access of cortexpy graphs
+"""Random access of Cortex graphs
 ===================================
 
-This module contains classes for inspecting cortex graphs with random access to their kmers.
+This module contains classes for inspecting Cortex graphs with random access to their kmers.
 """
 from bisect import bisect_left
 from collections import Sequence, Mapping
