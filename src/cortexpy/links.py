@@ -1,3 +1,9 @@
+"""Link-informed graph traversal
+================================
+
+This module provides classes for parsing Mccortex link files and for traversing graphs while using
+links.
+"""
 import copy
 import json
 from collections import defaultdict
@@ -14,7 +20,7 @@ logger = getLogger('cortexpy.links')
 
 @attr.s(slots=True)
 class LinkedGraphTraverser(Sequence):
-    """Adapter for linked walkers to be able to work with nx.all_simple_paths"""
+    """Adapter for linked walkers to be able to work with :py:func:`nx.all_simple_paths`"""
     graph = attr.ib()
     walkers = attr.ib(attr.Factory(dict))
 
@@ -32,6 +38,11 @@ class LinkedGraphTraverser(Sequence):
         pass
 
     def __getitem__(self, item):
+        """Get the children of :py:obj:`item` according to the walker object associated with
+        :py:obj:`item`
+
+        Warning: This scheme only works with depth-first search.
+        """
         parent_walker = self.walkers[item]
         successors = list(parent_walker.successors())
         if len(successors) == 0:
@@ -48,7 +59,7 @@ class LinkedGraphTraverser(Sequence):
 
 @attr.s(slots=True)
 class UnitigLinkWalker:
-    """Traverses a unitig graph with links."""
+    """Traverses a unitig graph with links"""
     link_walker = attr.ib()
     unitigs = attr.ib()
     kmer_size = attr.ib()
@@ -99,8 +110,6 @@ class UnitigLinkWalker:
         logger.debug('Choosing next unitig: %s', self.unitigs.nodes[successor])
         next_unitigs = list(self.unitigs.successors(self.current_unitig))
         assert successor in next_unitigs
-        if len(next_unitigs) == 0:
-            raise ValueError('Cannot choose a successor for node that has no successors')
         if len(next_unitigs) > 1:
             if next(self.link_successors(), None) is not None:
                 self.link_walker.choose_branch(self._unitig_choice_base(successor))
@@ -283,7 +292,8 @@ class LinkLine:
                    juncs=juncs)
 
     def __str__(self):
-        return f'{self.orientation.name} {self.num_juncs} {",".join([str(c) for c in self.counts])} {self.juncs}'
+        return f'{self.orientation.name} {self.num_juncs} ' + \
+               f'{",".join([str(c) for c in self.counts])} {self.juncs}'
 
 
 def link_groups(lines):

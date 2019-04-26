@@ -1,3 +1,8 @@
+"""Interacting with graphs
+==========================
+
+This module contains classes and functions for inspecting, manipulating, and traversing graphs
+"""
 import collections
 import logging
 from collections import OrderedDict
@@ -175,21 +180,24 @@ class Interactor(object):
 
 
 @attr.s(slots=True)
-class SeedKmerStringIterator(object):
-    """
-    Iterates seeds and their lexlo representations that exist in the supplied all_kmers:
+class SeedKmerStringIterator:
+    """Iterates seeds and their lexlo representations that exist in the supplied all_kmers:
+
     >>> list(SeedKmerStringIterator.from_all_kmer_strings_and_seeds(['AAC'], ['GTT']))
     [('GTT', 'AAC')]
 
     Kmers that are not in the seed list are return after that:
+
     >>> list(SeedKmerStringIterator.from_all_kmer_strings_and_seeds(['AAA', 'AAC'], ['GTT']))
     [('GTT', 'AAC'), ('AAA', 'AAA')]
 
     Seeds that do not exist in the all_kmers are not returned.
+
     >>> list(SeedKmerStringIterator.from_all_kmer_strings_and_seeds([], ['CCC']))
     []
 
     Returned kmers from all_kmers list are returned in order.
+
     >>> list(SeedKmerStringIterator.from_all_kmer_strings_and_seeds(['AAA', 'AAG', 'AAC'], []))
     [('AAA', 'AAA'), ('AAG', 'AAG'), ('AAC', 'AAC')]
     """
@@ -303,43 +311,14 @@ def out_nodes_of(graph):
 
 def edge_nodes_of(graph):
     """Find all edge nodes of a graph
-    second return value is direction of edge
+
+    Second return value is direction of edge.
     """
     for node in graph.nodes():
         if graph.out_degree(node) == 0:
             yield (node, EdgeTraversalOrientation.original)
         if graph.in_degree(node) == 0:
             yield (node, EdgeTraversalOrientation.reverse)
-
-
-def _all_simple_paths_with_links(G, source, target, links, cutoff=None):
-    """This function was copied from Networkx before being edited by Warren Kretzschmar"""
-    walker = UnitigLinkWalker.from_links_unitigs_kmer_size(links, G, G.graph['kmer_size'])
-    walker.load_unitig(source)
-    assert cutoff is not None
-    if target in G:
-        targets = {target}
-    else:
-        targets = set(target)
-    visited = collections.OrderedDict.fromkeys([source])
-    stack = [walker.link_successors()]
-    while stack:
-        children = stack[-1]
-        child = next(children, None)
-        if child is None:
-            stack.pop()
-            visited.popitem()
-        elif len(visited) < cutoff:
-            if child in targets:
-                yield list(visited) + [child]
-            elif child not in visited:
-                visited[child] = None
-                stack.append(iter(G[child]))
-        else:  # len(visited) == cutoff:
-            if child in targets or len(targets & children) != 0:
-                yield list(visited) + [child]
-            stack.pop()
-            visited.popitem()
 
 
 def _all_simple_paths_graph(G, source, target, cutoff=None):

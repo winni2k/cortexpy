@@ -1,3 +1,12 @@
+"""Representing Cortex graphs as :py:class:`nx.Graph` objects
+=============================================================
+
+This module contains classes for representing Cortex graphs as
+objects that are compatible with :py:mod:`networkx` algorithms.
+
+todo: Simplify the Graph implementations
+"""
+
 import itertools
 from collections.abc import Collection, Mapping, MutableMapping
 
@@ -137,7 +146,7 @@ class CortexGraphMapping(MutableMapping):
 
 @attr.s(slots=True)
 class CortexDiGraph(Collection):
-    """Stores cortex k-mers and conforms to parts of the interface of networkx.MultiDiGraph"""
+    """Stores cortex k-mers and conforms to parts of the interface of :py:class:`nx.MultiDiGraph`"""
     _kmer_mapping = attr.ib(attr.Factory(dict))
     graph = attr.ib(attr.Factory(dict))
 
@@ -250,6 +259,8 @@ class CortexDiGraph(Collection):
     def nbunch_iter(self, nbunch=None):
         """Return an iterator over nodes contained in nbunch that are
         also in the graph.
+
+        This code has been copied from :py:mod:`networkx`.
 
         The nodes in nbunch are checked for membership in the graph
         and if not are silently ignored.
