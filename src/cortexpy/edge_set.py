@@ -13,7 +13,7 @@ EDGE_SET_LETTER_LOOKUP = {letter: idx for idx, letter in enumerate(EDGE_SET_DATA
 EDGE_IDX_TO_LETTER = ['A', 'C', 'G', 'T', 'T', 'G', 'C', 'A']
 
 
-@attr.s(slots=True, cmp=False)
+@attr.s(slots=True, eq=False)
 class EdgeSet:
     """Adds methods for accessing an edge set array (data)"""
     data = attr.ib()

@@ -3,7 +3,7 @@ from itertools import chain
 import attr
 
 
-@attr.s(slots=True, cmp=False)
+@attr.s(slots=True, eq=False)
 class KmerDataCollection(object):
     _kmers_data = attr.ib()
     num_colors = attr.ib(init=False)

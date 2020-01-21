@@ -162,7 +162,7 @@ def kmer_eq(self, other):
     return True
 
 
-@attr.s(slots=True, cmp=False)
+@attr.s(slots=True, eq=False)
 class EmptyKmer(object):
     kmer = attr.ib()
     coverage = attr.ib()
@@ -221,7 +221,7 @@ class StringKmerConverter(object):
         return little_endian_uints.tobytes()
 
 
-@attr.s(slots=True, cmp=False)
+@attr.s(slots=True, eq=False)
 class KmerData(object):
     _data = attr.ib()
     kmer_size = attr.ib()
@@ -270,7 +270,7 @@ class KmerData(object):
         return calc_kmer_container_size(self.kmer_size)
 
 
-@attr.s(slots=True, cmp=False)
+@attr.s(slots=True, eq=False)
 class Kmer:
     """Represents a Cortex kmer
 
@@ -397,7 +397,7 @@ class Kmer:
         raise KeyError
 
 
-@attr.s(slots=True, cmp=False)
+@attr.s(slots=True, eq=False)
 class KmerByStringComparator(object):
     kmer = attr.ib(None)
     kmer_object = attr.ib(None)
@@ -413,7 +413,7 @@ class KmerByStringComparator(object):
         return self.kmer < other.kmer
 
 
-@attr.s(slots=True, cmp=False)
+@attr.s(slots=True, eq=False)
 class KmerUintComparator(object):
     kmer_uints = attr.ib()
 
