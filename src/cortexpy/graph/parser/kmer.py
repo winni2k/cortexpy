@@ -13,11 +13,11 @@ import numpy as np
 
 import cortexpy.edge_set
 from cortexpy.utils import revcomp, lexlo
-from .constants import (
+from cortexpy.graph.parser.constants import (
     UINT64_T, UINT32_T, LETTER_TO_NUM,
     NUM_LETTERS_PER_UINT, NUM_TO_BITS,
 )
-from .kmer_ext import raw_kmer_to_string, raw_edges_to_list, raw_to_coverage
+from cortexpy.graph.parser.kmer_ext import raw_kmer_to_string, raw_edges_to_list, raw_to_coverage
 
 
 def check_kmer_string(kmer_string):
