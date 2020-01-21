@@ -101,13 +101,12 @@ class TestDunderIterDunder:
     RAClass = parser.RandomAccess
 
     @given(s.data(),
-           s.integers(min_value=1, max_value=13),
+           s.integers(min_value=1, max_value=7).map(lambda i: i * 2 - 1),
            s.integers(min_value=1, max_value=7),
            s.integers(min_value=0, max_value=4),
            s.booleans())
     def test_parses_records(self, data, kmer_size, num_colors, n_kmers, test_serializer):
         # given
-        assume(kmer_size % 2 == 1)
         assume(n_kmers <= (4 ** kmer_size) / 4)
 
         graph_builder = (builder.Graph()
