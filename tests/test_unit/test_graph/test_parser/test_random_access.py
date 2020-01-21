@@ -4,7 +4,7 @@ from unittest import mock
 
 import numpy as np
 import pytest
-from hypothesis import given, assume
+from hypothesis import given, assume, HealthCheck, settings
 from hypothesis import strategies as s
 
 import cortexpy.graph.parser.random_access as parser
@@ -20,13 +20,14 @@ from cortexpy.utils import lexlo
 class TestDunderGetitemDunder:
     RAClass = parser.RandomAccess
 
+    @settings(suppress_health_check=[HealthCheck.too_slow])
     @given(s.data(),
-           s.integers(min_value=0, max_value=3),
+           s.integers(min_value=1, max_value=4).map(lambda i: i * 2 - 1),
            s.integers(min_value=1, max_value=3),
            s.integers(min_value=0, max_value=3))
-    def test_record_retrieval(self, data, kmer_base_size, num_colors, n_kmers):
+    def test_record_retrieval(self, data, kmer_size, num_colors, n_kmers):
         # given
-        kmer_size = kmer_base_size * 2 + 1
+        assume(n_kmers <= 4 ** (kmer_size - 1))
         graph_builder = (builder.Graph()
                          .with_kmer_size(kmer_size)
                          .with_num_colors(num_colors))

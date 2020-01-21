@@ -1,7 +1,7 @@
 import attr
 import numpy as np
 import pytest
-from hypothesis import given
+from hypothesis import given, HealthCheck, settings
 from hypothesis import strategies as s
 
 import cortexpy.graph.parser.random_access as parser
@@ -43,14 +43,15 @@ class GraphCollection(object):
             ra_parsers=[parser.RandomAccess(builder.build()) for builder in self.graph_builders])
 
 
-class TestDunderGetitemDunder(object):
+class TestDunderGetitemDunder:
+
+    @settings(suppress_health_check=[HealthCheck.too_slow])
     @given(s.data(),
-           s.integers(min_value=1, max_value=3),
+           s.integers(min_value=1, max_value=3).map(lambda i: i * 2 + 1),
            s.lists(s.integers(min_value=1, max_value=3), min_size=1, max_size=3),
            s.integers(min_value=0, max_value=3))
-    def test_record_retrieval(self, data, base_kmer_size, num_colors_per_graph, n_kmers):
+    def test_record_retrieval(self, data, kmer_size, num_colors_per_graph, n_kmers):
         # given
-        kmer_size = base_kmer_size * 2 + 1
         num_colors = sum(num_colors_per_graph)
         collection_builder = GraphCollection(n_colors_per_graph=num_colors_per_graph,
                                              kmer_size=kmer_size)
