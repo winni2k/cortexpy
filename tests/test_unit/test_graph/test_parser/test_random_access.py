@@ -101,6 +101,7 @@ class TestGetKmerForString(object):
 class TestDunderIterDunder:
     RAClass = parser.RandomAccess
 
+    @settings(suppress_health_check=[HealthCheck.too_slow])
     @given(s.data(),
            s.integers(min_value=1, max_value=7).map(lambda i: i * 2 - 1),
            s.integers(min_value=1, max_value=7),
