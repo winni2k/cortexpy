@@ -48,7 +48,7 @@ def traverse(argv):
     from . import get_exit_code_yaml_path
     import yaml
 
-    EXIT_CODES = yaml.load(open(get_exit_code_yaml_path(), 'rt'))
+    EXIT_CODES = yaml.load(open(get_exit_code_yaml_path(), 'rt'), Loader=yaml.FullLoader)
 
     if args.out == '-':
         output = sys.stdout
