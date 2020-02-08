@@ -12,7 +12,7 @@ import networkx as nx
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-from cortexpy.constants import EdgeTraversalOrientation
+from cortexpy.constants import EdgeTraversalOrientation, EdgeDFSTraversalDirection
 from cortexpy.graph.cortex import CortexDiGraph, ConsistentCortexDiGraph
 from cortexpy.graph.parser.kmer import revcomp_target_to_match_ref
 from cortexpy.graph.serializer.unitig import UnitigCollapser
@@ -244,14 +244,14 @@ def node_generator_from_edges(edge_generator):
             else:
                 yield edge[1]
         elif len(edge) == 4:
-            if edge[3] == EdgeTraversalOrientation.reverse.name:
+            if edge[3] == EdgeDFSTraversalDirection.reverse.name:
                 yield edge[0]
-            elif edge[3] == EdgeTraversalOrientation.original.name:
+            elif edge[3] == EdgeDFSTraversalDirection.forward.name:
                 yield edge[1]
             else:
-                ValueError
+                raise ValueError('Could not make sense of edge: %s', edge)
         else:
-            raise ValueError
+            raise ValueError('Unexpected edge tuple length: %s', len(edge))
 
 
 def find_tip_from(*, n, start, graph, next_node_generator):

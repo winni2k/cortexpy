@@ -16,3 +16,7 @@ class EngineTraversalOrientation(Enum):
     original = 0
     reverse = 1
     both = 2
+
+class EdgeDFSTraversalDirection(Enum):
+    forward = 0
+    reverse = 1
