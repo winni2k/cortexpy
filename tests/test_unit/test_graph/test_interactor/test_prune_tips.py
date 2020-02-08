@@ -9,8 +9,8 @@ class TestMultiDiGraph(object):
     def test_prunes_three_tips_of_length_1(self):
         # given
         graph = nx.MultiDiGraph()
-        graph.add_path([0, 1, 2])
-        graph.add_path([0, 1, 3])
+        nx.add_path(graph, [0, 1, 2])
+        nx.add_path(graph, [0, 1, 3])
 
         # when
         graph = interactor.Interactor(graph).prune_tips_less_than(2).graph
@@ -22,8 +22,8 @@ class TestMultiDiGraph(object):
     def test_prunes_one_tip_of_length_1(self):
         # given
         graph = nx.MultiDiGraph()
-        graph.add_path([0, 1, 2, 3])
-        graph.add_path([0, 1, 4, 5])
+        nx.add_path(graph, [0, 1, 2, 3])
+        nx.add_path(graph, [0, 1, 4, 5])
 
         # when
         graph = interactor.Interactor(graph).prune_tips_less_than(2).graph

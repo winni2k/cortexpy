@@ -4,7 +4,7 @@
 This module contains classes for inspecting Cortex graphs with random access to their kmers.
 """
 from bisect import bisect_left
-from collections import Sequence, Mapping
+from collections.abc import Sequence, Mapping
 from functools import lru_cache
 from io import SEEK_END
 
