@@ -40,7 +40,7 @@ class SerializerTestDriver(object):
 
     def run(self):
         if self.retrieve:
-            self.retriever = ContigRetriever(self.graph_builder.build())
+            self.retriever = ContigRetriever.from_cortex(self.graph_builder.build())
             return self.retriever.get_kmer_graph(self.contig_to_retrieve)
         elif self.traverse:
             traverser = Engine(RandomAccess(self.graph_builder.build()),

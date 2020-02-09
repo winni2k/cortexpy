@@ -4,11 +4,11 @@ import attr
 import pytest
 from hypothesis import given, strategies as s
 
-from cortexpy.graph.traversal import branch
 import cortexpy.graph.parser
 import cortexpy.test.builder as builder
 import cortexpy.test.expectation as expectation
 from cortexpy.constants import EdgeTraversalOrientation
+from cortexpy.graph.traversal import branch
 
 
 @attr.s(slots=True)

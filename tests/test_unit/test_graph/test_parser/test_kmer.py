@@ -278,7 +278,7 @@ class TestHasEdgeTo(object):
                              itertools.combinations(range(3), 2))
     def test_is_false_for_non_connection_color(self, color_to_link, color_to_check):
         # given
-        assert(color_to_check != color_to_link)
+        assert (color_to_check != color_to_link)
         kmer1 = EmptyKmerBuilder(3).build_or_get('AAA')
         kmer2 = EmptyKmerBuilder(3).build_or_get('AAT')
         kmer1.edges[color_to_link].add_edge('T')

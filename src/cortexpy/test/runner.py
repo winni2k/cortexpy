@@ -1,7 +1,6 @@
 import contextlib
 import io
 import logging
-import os
 import subprocess
 import sys
 
@@ -13,7 +12,22 @@ logger = logging.getLogger(__name__)
 
 
 @attr.s(slots=True)
-class Mccortex(object):
+class Bifrost:
+    kmer_size = attr.ib()
+    bifrost_bin = attr.ib('Bifrost')
+
+    def run(self, bifrost_args):
+        if self.kmer_size > 31:
+            raise Exception(f'Kmer size ({self.kmer_size}) too big for available bifrost binaries')
+        command = [self.bifrost_bin]
+        command += bifrost_args
+        command = [str(arg) for arg in command]
+
+        return subprocess.run(command, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+
+@attr.s(slots=True)
+class Mccortex:
     kmer_size = attr.ib()
     mccortex_bin = attr.ib('mccortex')
 
@@ -44,7 +58,7 @@ class Mccortex(object):
 
 
 @attr.s(slots=True)
-class Cortexpy(object):
+class Cortexpy:
     spawn_process = attr.ib(False)
 
     def view_graph(self, graph, kmers=False, out=None):

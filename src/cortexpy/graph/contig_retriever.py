@@ -11,10 +11,9 @@ RETRIEVED_CONTIG_NAME = 'retrieved_contig'
 
 
 @attr.s(slots=True)
-class ContigRetriever(object):
-    graph_handle = attr.ib()
+class ContigRetriever:
+    graph_parser = attr.ib()
     seen_kmer_strings = attr.ib(attr.Factory(dict))
-    graph_parser = attr.ib(init=False)
     num_colors = attr.ib(init=False)
     contig_color = attr.ib(init=False)
     non_contig_colors = attr.ib(init=False)
@@ -22,12 +21,19 @@ class ContigRetriever(object):
     empty_kmer_builder = attr.ib(init=False)
 
     def __attrs_post_init__(self):
-        self.graph_parser = RandomAccess(self.graph_handle)
         self.num_colors = self.graph_parser.num_colors + 1
         self.contig_color = self.num_colors - 1
         self.non_contig_colors = list(range(self.num_colors - 1))
         self.colors = self.non_contig_colors + [self.contig_color]
         self.empty_kmer_builder = EmptyKmerBuilder(num_colors=self.num_colors, default_coverage=0)
+
+    @classmethod
+    def from_cortex(cls, graph_handle):
+        return cls(RandomAccess(graph_handle))
+
+    @classmethod
+    def from_bifrost(cls, graph_handle):
+        return None
 
     def get_kmers(self, contig):
         kmer_size = self.graph_parser.kmer_size

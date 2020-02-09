@@ -1,8 +1,8 @@
 import json
 
 import cortexpy.graph.serializer.serializer
-from cortexpy.graph.interactor import Interactor
 from cortexpy.graph.contig_retriever import ContigRetriever
+from cortexpy.graph.interactor import Interactor
 from cortexpy.graph.parser.streaming import load_cortex_graph
 from cortexpy.test import builder as builder, expectation
 
@@ -18,7 +18,7 @@ class TestFromKmerGraph(object):
             .with_kmer('AAA 1 1 .....C.. ........') \
             .with_kmer('AAC 1 0 a....... ........')
 
-        retriever = ContigRetriever(graph_builder.build())
+        retriever = ContigRetriever.from_cortex(graph_builder.build())
         graph = retriever.get_kmer_graph('GTTT')
 
         # when

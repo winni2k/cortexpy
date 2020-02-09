@@ -3,7 +3,7 @@ import pytest
 from cortexpy.test.driver.graph.serializer import CollapseKmerUnitigsTestDriver
 
 
-class TestCreatesSingleUnitig(object):
+class TestCreatesSingleUnitig:
     def test_with_missing_kmer(self):
         # given
         driver = CollapseKmerUnitigsTestDriver() \

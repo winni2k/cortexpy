@@ -32,32 +32,39 @@ class CDBGBuilder:
 
 @attr.s(slots=True)
 class Bifrost(CDBGBuilder):
-    mccortex_bin = attr.ib('Bifrost')
+    bifrost_bin = attr.ib('/Volumes/mac-3/home/to_be_backupped_unsensitive/Projects/cortexpy/Bifrost')
 
     def build(self, tmpdir):
-        mccortex_args = ['build', '--force', '--sort', '--kmer', str(self.kmer_size)]
+        ref_seq_file = tmpdir / 'ref_seq_file.txt'
+        bifrost_args = f'build --colors --kmer-length {self.kmer_size}'.split()
         counter = 0
+        input_fastas = []
         for name, dna_sequences in self.sequences.items():
-            input_fasta = str(tmpdir.join('input.{}.fasta'.format(name)))
+            input_fasta = str(tmpdir.join(f'input.{name}.fasta'))
             with open(input_fasta, 'w') as fh:
                 for sequence in dna_sequences:
                     fh.write(
-                        SeqRecord(Seq(sequence), id=str(counter), description='').format('fasta'))
+                        SeqRecord(Seq(sequence), id=str(counter), description='').format('fasta')
+                    )
                     counter += 1
-            mccortex_args.extend(['--sample', name, '-1', input_fasta])
+            input_fastas.append(input_fasta)
 
-        output_graph = str(tmpdir.join('output.ctx'))
-        mccortex_args.append(output_graph)
+        with open(ref_seq_file, 'w') as rsfh:
+            rsfh.writelines(input_fastas)
+        bifrost_args += ['--input-ref-file', ref_seq_file]
 
-        ret = runner.Mccortex(self.kmer_size, mccortex_bin=self.mccortex_bin).run(mccortex_args)
+        out_prefix = str(tmpdir.join('output'))
+        bifrost_args += ['--output-file', out_prefix]
+
+        ret = runner.Bifrost(self.kmer_size, bifrost_bin=self.bifrost_bin).run(bifrost_args)
         logger.debug('\n' + ret.stdout.decode())
         logger.debug('\n' + ret.stderr.decode())
 
-        ret = runner.Mccortex(self.kmer_size, mccortex_bin=self.mccortex_bin).view(output_graph)
-        logger.debug('\n' + ret.stdout.decode())
-        logger.debug('\n' + ret.stderr.decode())
+        # ret = runner.Mccortex(self.kmer_size, mccortex_bin=self.mccortex_bin).view(output_graph)
+        # logger.debug('\n' + ret.stdout.decode())
+        # logger.debug('\n' + ret.stderr.decode())
 
-        return output_graph
+        return out_prefix + '.bfg_colors'
 
 
 @attr.s(slots=True)

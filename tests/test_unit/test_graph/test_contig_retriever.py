@@ -1,5 +1,5 @@
-from cortexpy.graph.contig_retriever import ContigRetriever
 import cortexpy.test.builder as builder
+from cortexpy.graph.contig_retriever import ContigRetriever
 from cortexpy.test.expectation.graph import KmerGraphExpectation
 
 
@@ -9,7 +9,7 @@ class TestGetKmers(object):
         graph_builder = builder.Graph().with_kmer_size(3)
 
         # when
-        kmer_list = ContigRetriever(graph_builder.build()).get_kmers('TTAA')
+        kmer_list = ContigRetriever.from_cortex(graph_builder.build()).get_kmers('TTAA')
 
         # then
         assert len(kmer_list) == 2
@@ -30,7 +30,7 @@ class TestGetKmerGraph(object):
         # given
         graph_builder = (builder.Graph()
                          .with_kmer_size(3))
-        retriever = ContigRetriever(graph_builder.build())
+        retriever = ContigRetriever.from_cortex(graph_builder.build())
 
         # when
         expect = KmerGraphExpectation(retriever.get_kmer_graph('AAA'))
@@ -46,7 +46,7 @@ class TestGetKmerGraph(object):
         graph_builder = (builder.Graph()
                          .with_kmer_size(3))
         graph_builder.with_kmer('AAA', 1, '........')
-        retriever = ContigRetriever(graph_builder.build())
+        retriever = ContigRetriever.from_cortex(graph_builder.build())
 
         # when
         kmer_graph = retriever.get_kmer_graph('AAA')
@@ -60,7 +60,7 @@ class TestGetKmerGraph(object):
         graph_builder = (builder.Graph()
                          .with_kmer_size(3))
         graph_builder.with_kmer('AAA', 1, '........')
-        retriever = ContigRetriever(graph_builder.build())
+        retriever = ContigRetriever.from_cortex(graph_builder.build())
 
         # when
         kmer_graph = retriever.get_kmer_graph('AAAA')
@@ -76,7 +76,7 @@ class TestGetKmerGraph(object):
                          .with_kmer_size(3))
         graph_builder.with_kmer('AAA', 1, '.....C..')
         graph_builder.with_kmer('AAC', 1, 'a.......')
-        retriever = ContigRetriever(graph_builder.build())
+        retriever = ContigRetriever.from_cortex(graph_builder.build())
 
         # when
         expect = KmerGraphExpectation(retriever.get_kmer_graph('AAA'))
@@ -93,7 +93,7 @@ class TestGetKmerGraph(object):
         graph_builder.with_kmer('AAA', [1, 1], ['.....C..', '.......T'])
         graph_builder.with_kmer('AAC', [1, 0], ['a.......', '........'])
         graph_builder.with_kmer('AAT', [0, 1], ['........', 'a.......'])
-        retriever = ContigRetriever(graph_builder.build())
+        retriever = ContigRetriever.from_cortex(graph_builder.build())
 
         # when
         kmer_graph = retriever.get_kmer_graph('AAAC')
@@ -108,7 +108,7 @@ class TestGetKmerGraph(object):
                          .with_kmer_size(3))
         graph_builder.with_kmer('AAA', 1, '........')
         graph_builder.with_kmer('ACC', 1, '........')
-        retriever = ContigRetriever(graph_builder.build())
+        retriever = ContigRetriever.from_cortex(graph_builder.build())
 
         # when
         expect = KmerGraphExpectation(retriever.get_kmer_graph('AAACC'))
@@ -125,7 +125,7 @@ class TestGetKmerGraph(object):
                          .with_kmer_size(3))
         graph_builder.with_kmer('AAA', 1, '........')
         graph_builder.with_kmer('AAC', 1, '........')
-        retriever = ContigRetriever(graph_builder.build())
+        retriever = ContigRetriever.from_cortex(graph_builder.build())
 
         # when
         expect = KmerGraphExpectation(retriever.get_kmer_graph('AAAC'))
@@ -150,7 +150,7 @@ class TestGetKmerGraphComplex(object):
                          .with_kmer('GAC', 1, '.c....G.')
                          )
 
-        retriever = ContigRetriever(graph_builder.build())
+        retriever = ContigRetriever.from_cortex(graph_builder.build())
 
         # when
         expect = KmerGraphExpectation(retriever.get_kmer_graph('AAACGAC'))
@@ -170,7 +170,7 @@ class TestGetKmerGraphComplex(object):
 
         # when
         expect = KmerGraphExpectation(
-            ContigRetriever(graph_builder.build()).get_kmer_graph('TTAA'))
+            ContigRetriever.from_cortex(graph_builder.build()).get_kmer_graph('TTAA'))
 
         # then
         expect.has_edge('TTA', 'TAA', 1)
@@ -183,7 +183,7 @@ class TestGetKmerGraphRevcomp(object):
         graph_builder = (builder.Graph()
                          .with_kmer_size(3))
         graph_builder.with_kmer('AAA', 1, '........')
-        retriever = ContigRetriever(graph_builder.build())
+        retriever = ContigRetriever.from_cortex(graph_builder.build())
 
         # when
         kmer_graph = retriever.get_kmer_graph('TTT')
@@ -198,7 +198,7 @@ class TestGetKmerGraphRevcomp(object):
                          .with_kmer_size(3))
         graph_builder.with_kmer('AAA', 1, '.....C..')
         graph_builder.with_kmer('AAC', 1, 'a.......')
-        retriever = ContigRetriever(graph_builder.build())
+        retriever = ContigRetriever.from_cortex(graph_builder.build())
 
         # when
         kmer_graph = retriever.get_kmer_graph('GTTT')
@@ -215,7 +215,7 @@ class TestGetKmerGraphRevcomp(object):
         graph_builder.with_kmer('AAA', [1, 1], ['.....C..', '.......T'])
         graph_builder.with_kmer('AAC', [1, 0], ['a.......', '........'])
         graph_builder.with_kmer('AAT', [0, 1], ['........', 'a.......'])
-        retriever = ContigRetriever(graph_builder.build())
+        retriever = ContigRetriever.from_cortex(graph_builder.build())
 
         # when
         kmer_graph = retriever.get_kmer_graph('GTTT')

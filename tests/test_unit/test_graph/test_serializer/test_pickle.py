@@ -16,7 +16,7 @@ class Test(object):
             .with_color_names(*color_names) \
             .with_kmer('AAA', [1, 1], ['.....C..', '.......T']) \
             .with_kmer('AAC', [1, 0], ['a.......', '........'])
-        retriever = ContigRetriever(graph_builder.build())
+        retriever = ContigRetriever.from_cortex(graph_builder.build())
         kmer_graph = retriever.get_kmer_graph('GTTT')
 
         # when

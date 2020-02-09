@@ -50,7 +50,7 @@ def view_contig(argv):
     from cortexpy.graph.contig_retriever import ContigRetriever
     from cortexpy.graph.serializer.serializer import Serializer
 
-    contig_retriever = ContigRetriever(open(args.graph, 'rb'))
+    contig_retriever = ContigRetriever.from_cortex(open(args.graph, 'rb'))
     if args.to_json:
         serializer = Serializer(contig_retriever.get_kmer_graph(args.contig))
         print(serializer.to_json())
