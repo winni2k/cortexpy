@@ -56,6 +56,10 @@ class LinkedGraphTraverser(Sequence):
             self.walkers[children[-1]] = walker
         return children
 
+    @classmethod
+    def is_multigraph(cls):
+        return False
+
 
 @attr.s(slots=True)
 class UnitigLinkWalker:

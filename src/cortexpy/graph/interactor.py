@@ -3,7 +3,6 @@
 
 This module contains classes and functions for inspecting, manipulating, and traversing graphs
 """
-import collections
 import logging
 from collections import OrderedDict
 
@@ -158,15 +157,15 @@ class Interactor(object):
                         source
                     )
                 )
-                paths = _all_simple_paths_graph(wrapped_graph,
-                                                source,
-                                                out_nodes,
-                                                cutoff=len(self.graph) - 1)
+                paths = nx.all_simple_paths(wrapped_graph,
+                                            source,
+                                            out_nodes,
+                                            cutoff=len(self.graph) - 1)
             else:
-                paths = _all_simple_paths_graph(unitig_graph,
-                                                source,
-                                                out_nodes,
-                                                cutoff=len(self.graph) - 1)
+                paths = nx.all_simple_paths(unitig_graph,
+                                            source,
+                                            out_nodes,
+                                            cutoff=len(self.graph) - 1)
 
             for pidx, path in enumerate(paths):
                 if pidx % 100000 == 0:
@@ -319,32 +318,3 @@ def edge_nodes_of(graph):
             yield (node, EdgeTraversalOrientation.original)
         if graph.in_degree(node) == 0:
             yield (node, EdgeTraversalOrientation.reverse)
-
-
-def _all_simple_paths_graph(G, source, target, cutoff=None):
-    """This function was copied from Networkx before being edited by Warren Kretzschmar
-    todo: switch back to nx.all_simple_paths once Networkx 2.2 is released"""
-    assert cutoff is not None
-    if target in G:
-        targets = {target}
-    else:
-        targets = set(target)
-    visited = collections.OrderedDict.fromkeys([source])
-    stack = [iter(G[source])]
-    while stack:
-        children = stack[-1]
-        child = next(children, None)
-        if child is None:
-            stack.pop()
-            visited.popitem()
-        elif len(visited) < cutoff:
-            if child in targets:
-                yield list(visited) + [child]
-            elif child not in visited:
-                visited[child] = None
-                stack.append(iter(G[child]))
-        else:  # len(visited) == cutoff:
-            if child in targets or len(targets & children) != 0:
-                yield list(visited) + [child]
-            stack.pop()
-            visited.popitem()
