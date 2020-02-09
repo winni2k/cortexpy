@@ -1,9 +1,9 @@
 import logging
+import sys
 from collections import OrderedDict
 from pathlib import Path
 
 import attr
-import sys
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -15,10 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 @attr.s(slots=True)
-class Mccortex:
+class CDBGBuilder:
     kmer_size = attr.ib(3)
     sequences = attr.ib(Factory(OrderedDict))
-    mccortex_bin = attr.ib('mccortex')
 
     def with_kmer_size(self, kmer_size):
         self.kmer_size = kmer_size
@@ -29,6 +28,41 @@ class Mccortex:
             self.sequences[name] = []
         self.sequences[name].append(sequence)
         return self
+
+
+@attr.s(slots=True)
+class Bifrost(CDBGBuilder):
+    mccortex_bin = attr.ib('Bifrost')
+
+    def build(self, tmpdir):
+        mccortex_args = ['build', '--force', '--sort', '--kmer', str(self.kmer_size)]
+        counter = 0
+        for name, dna_sequences in self.sequences.items():
+            input_fasta = str(tmpdir.join('input.{}.fasta'.format(name)))
+            with open(input_fasta, 'w') as fh:
+                for sequence in dna_sequences:
+                    fh.write(
+                        SeqRecord(Seq(sequence), id=str(counter), description='').format('fasta'))
+                    counter += 1
+            mccortex_args.extend(['--sample', name, '-1', input_fasta])
+
+        output_graph = str(tmpdir.join('output.ctx'))
+        mccortex_args.append(output_graph)
+
+        ret = runner.Mccortex(self.kmer_size, mccortex_bin=self.mccortex_bin).run(mccortex_args)
+        logger.debug('\n' + ret.stdout.decode())
+        logger.debug('\n' + ret.stderr.decode())
+
+        ret = runner.Mccortex(self.kmer_size, mccortex_bin=self.mccortex_bin).view(output_graph)
+        logger.debug('\n' + ret.stdout.decode())
+        logger.debug('\n' + ret.stderr.decode())
+
+        return output_graph
+
+
+@attr.s(slots=True)
+class Mccortex(CDBGBuilder):
+    mccortex_bin = attr.ib('mccortex')
 
     def build(self, tmpdir):
         mccortex_args = ['build', '--force', '--sort', '--kmer', str(self.kmer_size)]
@@ -81,7 +115,7 @@ class MccortexLinks:
         args = f'thread -1 {input_fasta} -o {out_links} {mccortex_graph}:0'.split()
         ret = runner.Mccortex(self.kmer_size, mccortex_bin=self.mccortex_bin).run(args)
         print(ret.stdout.decode())
-        print(ret.stderr.decode(),file=sys.stderr)
+        print(ret.stderr.decode(), file=sys.stderr)
         assert 0 == ret.returncode
         return out_links
 
